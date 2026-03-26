@@ -1,5 +1,5 @@
 -- Migracion de prueba para verificar el CI de GitHub Actions
--- Eliminar esta migracion una vez confirmado que funciona
+-- Eliminar esta tabla una vez confirmado que funciona
 
 CREATE TABLE IF NOT EXISTS test_workflow (
     id SERIAL PRIMARY KEY,
