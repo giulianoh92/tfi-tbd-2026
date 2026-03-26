@@ -4,6 +4,29 @@ Base de datos PostgreSQL con entorno local en Docker, cliente SQL en el navegado
 
 ---
 
+## Por que trabajamos asi
+
+La materia recomienda usar **Oracle APEX** como entorno de desarrollo y no exige Git, Docker ni ninguna herramienta particular para el TFI. Con APEX alcanza para cumplir los requisitos. Entonces, ¿por que armamos todo esto?
+
+**El problema con APEX para trabajo en equipo:**
+
+- APEX es un entorno web compartido donde todos editan la misma base en tiempo real. No hay forma nativa de saber quien cambio que, cuando, ni por que.
+- Si alguien rompe el schema, no hay un "deshacer" facil. Hay que acordarse que habia antes y reescribirlo a mano.
+- No se puede trabajar en paralelo: si dos personas editan la misma tabla o procedimiento al mismo tiempo, uno le pisa los cambios al otro.
+- No queda un historial real del trabajo. Al momento de la entrega, no hay forma de demostrar quien hizo que.
+
+**Lo que este workflow resuelve:**
+
+- **Cada uno trabaja en su propia copia local** de la base (via Docker), sin interferir con los demas.
+- **Git registra cada cambio** con autor, fecha y descripcion. Se puede volver atras a cualquier version anterior.
+- **Los Pull Requests** obligan a que al menos otra persona revise los cambios antes de aplicarlos. Esto atrapa errores temprano.
+- **El deploy a Supabase es automatico.** Al mergear un PR, la base compartida se actualiza sola. Nadie tiene que copiar SQL a mano.
+- **El schema siempre es legible.** Cada tabla, constraint o funcion esta en su propio archivo. No hay que navegar un entorno web para entender que hay en la base.
+
+Es mas setup inicial que APEX, pero una vez configurado el flujo diario es: escribir SQL en el browser, guardar el archivo, hacer commit y abrir un PR. La complejidad queda en la infraestructura, no en el uso.
+
+---
+
 ## Herramientas del proyecto
 
 | Herramienta | Que es | Por que la usamos |
