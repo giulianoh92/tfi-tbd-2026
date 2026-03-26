@@ -339,3 +339,34 @@ docker compose up -d               # levantar containers
 # esperar unos segundos a que PostgreSQL arranque
 ./scripts/deploy.sh                # desplegar schema completo
 ```
+
+---
+
+## Limpieza / Desinstalacion
+
+Si terminaste el proyecto y queres borrar todo, no queda nada repartido por el sistema. Todo vive dentro de Docker y la carpeta del repo.
+
+### Borrar el entorno local
+
+```bash
+cd tfi-tbd-2026
+docker compose down -v             # para containers y borra los datos
+cd ..
+rm -rf tfi-tbd-2026                # borra el repo local
+```
+
+### Borrar las imagenes de Docker (opcional)
+
+Desde Docker Desktop: **Images** > borrar `postgres:16` y `sosedoff/pgweb`. O por terminal:
+
+```bash
+docker rmi postgres:16 sosedoff/pgweb
+```
+
+### Desinstalar todo (opcional)
+
+Si instalaste Docker o WSL solo para este proyecto:
+
+- **Docker Desktop:** desinstalar desde el panel de aplicaciones del sistema. Arrastra todo: containers, imagenes, volumenes.
+- **WSL2 (Windows):** Settings > Apps > Ubuntu (o la distro que hayas instalado) > Desinstalar.
+- **GitHub Desktop:** desinstalar desde el panel de aplicaciones.
