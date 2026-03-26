@@ -1,0 +1,30 @@
+# Variables de entorno (NO commitear secretos)
+.env
+!.env.example
+
+# Docker volumes/data
+docker-data/
+pgdata/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Supabase local
+.supabase/
+
+# Node modules (Supabase CLI tools)
+node_modules/
+package-lock.json
+
+# Database dumps
+*.backup
+*.dump
+*.sql.gz
