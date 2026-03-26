@@ -12,14 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Force IPv4 for Supabase (GitHub runners can't reach IPv6)
-        run: |
-          DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
-          DB_IPV4=$(dig +short A "$DB_HOST" | head -1)
-          echo "$DB_IPV4 $DB_HOST" | sudo tee -a /etc/hosts
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-
       - name: Apply migrations
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
