@@ -26,7 +26,7 @@ cd TBD_TFI
 
 Al terminar, abri el navegador en **http://localhost:8081** y ya tenes pgweb listo para escribir SQL.
 
-> El script `setup.sh` crea el `.env`, levanta Docker, aplica migraciones y carga datos de prueba. Todo automatico.
+> El script `setup.sh` crea el `.env`, levanta Docker y despliega el schema completo (drop + recreate). Todo automatico.
 
 ---
 
@@ -66,25 +66,27 @@ Anda a **http://localhost:8081** en el navegador. Desde ahi podes explorar tabla
 
 ### 3. Escribir SQL y probar queries
 
-Usa pgweb para experimentar. Cuando tengas un cambio de esquema listo (tabla nueva, indice, constraint, etc.), guardalo como archivo SQL.
+Usa pgweb para experimentar. Cuando tengas un cambio de esquema listo (tabla nueva, indice, constraint, etc.), guardalo como archivo SQL en la carpeta correspondiente de `schema/`.
 
-### 4. Guardar la migracion
+### 4. Editar o crear archivos en schema/
 
-Crea un archivo nuevo en `migrations/` con el proximo numero disponible:
+Agrega o edita el archivo SQL en la subcarpeta que corresponda:
 
 ```
-migrations/003_create_tabla_pedidos.sql
+schema/01_tables/clientes.sql          # tabla nueva
+schema/02_constraints/fk_pedidos.sql   # foreign key nueva
+schema/03_indexes/idx_clientes_email.sql  # indice nuevo
 ```
 
-> Ver la seccion [Trabajar con migraciones](#trabajar-con-migraciones) para la convencion de nombres y reglas.
+> Ver la seccion [Estructura del schema](#estructura-del-schema) para las convenciones de cada carpeta.
 
 ### 5. Probar localmente
 
 ```bash
-./scripts/migrate.sh          # aplica migraciones pendientes
-# o si queres empezar de cero:
-./scripts/reset-db.sh         # borra todo + recrea + migra + seeds
+./scripts/deploy.sh          # drop + recreate completo del schema
 ```
+
+El script borra el schema public, lo recrea, y aplica todos los archivos SQL en orden. Es seguro ejecutarlo todas las veces que quieras -- siempre te deja la base en un estado limpio y consistente.
 
 ### 6. Subir los cambios
 
@@ -92,7 +94,7 @@ migrations/003_create_tabla_pedidos.sql
 
 ```bash
 git checkout -b feat/nombre-descriptivo
-git add migrations/003_create_tabla_pedidos.sql
+git add schema/01_tables/pedidos.sql
 git commit -m "crear tabla pedidos"
 git push -u origin feat/nombre-descriptivo
 ```
@@ -112,7 +114,7 @@ git push -u origin feat/nombre-descriptivo
 
 ### 8. Mergear
 
-Una vez aprobado, mergea el PR desde GitHub. **GitHub Actions aplica automaticamente las migraciones a Supabase.**
+Una vez aprobado, mergea el PR desde GitHub. **GitHub Actions despliega automaticamente el schema completo a Supabase** (drop + recreate, igual que en local).
 
 ### 9. Al terminar la sesion
 
@@ -170,55 +172,59 @@ Para traer los ultimos cambios de `main`:
 
 ---
 
-## Trabajar con migraciones
+## Estructura del schema
 
-### Convencion de nombres
-
-```
-NNN_descripcion.sql
-```
-
-Ejemplos:
-
-- `000_extensions.sql`
-- `001_create_tabla_clientes.sql`
-- `002_create_tabla_pedidos.sql`
-- `003_add_index_pedidos_fecha.sql`
-
-### Reglas
-
-1. **Nunca modifiques una migracion que ya fue mergeada a main.** Si necesitas cambiar algo, crea una nueva migracion.
-2. **Coordina los numeros con el equipo** antes de crear una migracion nueva, para evitar conflictos. Si dos personas usan el mismo numero, una va a tener que renumerar.
-3. **Cada migracion debe ser idempotente cuando sea posible** (usa `IF NOT EXISTS`, `IF EXISTS`, etc.).
-4. **Proba localmente antes de pushear.** Usa `./scripts/migrate.sh` o `./scripts/reset-db.sh`.
+El enfoque es **drop + recreate**: cada deploy borra el schema public y lo reconstruye completo desde los archivos SQL. Esto es posible porque es una base de datos academica/de prueba donde perder datos en deploy es aceptable.
 
 ### Estructura del proyecto
 
 ```
 TBD_TFI/
-├── migrations/     # Archivos SQL de migracion (esquema, tablas, constraints)
-├── seeds/          # Datos de prueba / seed data
-├── scripts/        # Scripts utilitarios (reset, migrate, seed, setup)
-├── tests/          # Tests de base de datos
+├── schema/
+│   ├── 00_extensions.sql      # Extensiones de PostgreSQL (uuid-ossp, pgcrypto)
+│   ├── 01_tables/             # CREATE TABLE (un archivo por tabla)
+│   ├── 02_constraints/        # Foreign keys y constraints
+│   ├── 03_indexes/            # Indices
+│   ├── 04_functions/          # Funciones, triggers y vistas
+│   └── 05_seeds/              # Datos de prueba (INSERT INTO)
+├── scripts/                   # Scripts utilitarios (deploy, setup)
+├── tests/                     # Tests de base de datos
 ├── docker-compose.yml
-├── .env.example    # Template de variables de entorno
+├── .env.example               # Template de variables de entorno
 └── README.md
 ```
 
 | Carpeta | Que va ahi |
 |---------|-----------|
-| `migrations/` | Archivos `.sql` numerados que definen el esquema. Se ejecutan en orden. Nunca modificar una migracion ya mergeada. |
-| `seeds/` | Archivos `.sql` con datos de prueba para desarrollo local. |
-| `scripts/` | Scripts de shell para automatizar tareas comunes (resetear la base, correr migraciones, etc.). |
+| `schema/00_extensions.sql` | Extensiones de PostgreSQL. Se ejecuta primero. |
+| `schema/01_tables/` | Un archivo `.sql` por tabla (ej: `clientes.sql`, `pedidos.sql`). Solo `CREATE TABLE`. |
+| `schema/02_constraints/` | Foreign keys y constraints que dependen de multiples tablas. |
+| `schema/03_indexes/` | Indices para optimizar queries. |
+| `schema/04_functions/` | Funciones, triggers y vistas. |
+| `schema/05_seeds/` | Datos de prueba para desarrollo local. `INSERT INTO ... VALUES`. |
+| `scripts/` | Scripts de shell para automatizar tareas comunes. |
 | `tests/` | Tests automatizados sobre la base de datos. |
+
+### Orden de ejecucion
+
+El script `deploy.sh` (y el CI) aplican los archivos en este orden estricto:
+
+1. `schema/00_extensions.sql`
+2. `schema/01_tables/*.sql` (ordenados alfabeticamente)
+3. `schema/02_constraints/*.sql` (ordenados alfabeticamente)
+4. `schema/03_indexes/*.sql` (ordenados alfabeticamente)
+5. `schema/04_functions/*.sql` (ordenados alfabeticamente)
+6. `schema/05_seeds/*.sql` (ordenados alfabeticamente)
+
+Si necesitas que un archivo se ejecute antes que otro dentro de la misma carpeta, usa un prefijo numerico en el nombre (ej: `01_clientes.sql`, `02_pedidos.sql`).
 
 ---
 
-## CI/CD: Migraciones automaticas a Supabase
+## CI/CD: Deploy automatico a Supabase
 
-Al mergear a `main`, un workflow de GitHub Actions aplica automaticamente las migraciones nuevas a la base de Supabase. No hace falta instalar nada ni correr comandos manuales.
+Al mergear a `main`, un workflow de GitHub Actions hace un **drop + recreate completo** del schema en Supabase. Es el mismo proceso que `deploy.sh` en local: borra el schema public, lo recrea, y aplica todos los archivos SQL en orden.
 
-El workflow solo se dispara cuando hay cambios en `migrations/`.
+El workflow solo se dispara cuando hay cambios en `schema/`.
 
 ### Setup del CI (una sola vez, lo hace el admin del repo)
 
@@ -226,7 +232,7 @@ El workflow solo se dispara cuando hay cambios en `migrations/`.
 2. En GitHub, anda a **Settings > Secrets and variables > Actions**.
 3. Crea un secret llamado `SUPABASE_DB_URL` con el connection string como valor.
 
-Listo. A partir de ahora, cada push a `main` que incluya cambios en `migrations/` dispara el workflow automaticamente.
+Listo. A partir de ahora, cada push a `main` que incluya cambios en `schema/` dispara el workflow automaticamente.
 
 ---
 
@@ -258,9 +264,7 @@ El host, password y demas datos los encontras en el Dashboard. No los commitees 
 | `docker compose ps` | Muestra el estado de los containers |
 | `docker compose logs db` | Ver logs de PostgreSQL |
 | `./scripts/setup.sh` | Setup completo (primera vez) |
-| `./scripts/migrate.sh` | Ejecuta todas las migraciones |
-| `./scripts/seed.sh` | Carga los datos de prueba |
-| `./scripts/reset-db.sh` | Resetea la base completa (drop + create + migrate + seed) |
+| `./scripts/deploy.sh` | Drop + recreate del schema completo |
 | `psql -h localhost -p 5432 -U postgres -d tbd_tfi` | Conectarse a la base local por terminal |
 
 ### GitHub Desktop (equivalencias)
@@ -300,12 +304,12 @@ Si ves un error como `port is already allocated`:
 - Cambia el puerto en `.env` (ej: `POSTGRES_PORT=5433` o `PGWEB_PORT=8082`).
 - Volve a levantar con `docker compose up -d`.
 
-### Conflicto de numeros de migracion
+### Orden de dependencias en el schema
 
-Si dos personas crearon migraciones con el mismo numero:
+Si un archivo SQL falla porque referencia una tabla que todavia no existe, revisa el orden de ejecucion:
 
-- Hablen antes de numerar. Revisen cual es el proximo numero libre en `main`.
-- La persona que pusheo despues renumera su archivo y vuelve a commitear.
+- Las tablas se crean en `01_tables/` y se ordenan alfabeticamente. Si `pedidos` depende de `clientes`, asegurate de que `clientes.sql` se ejecute primero (ej: usa `01_clientes.sql` y `02_pedidos.sql`).
+- Las foreign keys van en `02_constraints/`, que se ejecuta despues de todas las tablas. Asi evitas problemas de dependencia circular.
 
 ### pgweb no carga
 
@@ -330,6 +334,5 @@ chmod +x scripts/*.sh
 cp .env.example .env              # crear .env
 docker compose up -d               # levantar containers
 # esperar unos segundos a que PostgreSQL arranque
-./scripts/migrate.sh               # aplicar migraciones
-./scripts/seed.sh                  # cargar datos de prueba
+./scripts/deploy.sh                # desplegar schema completo
 ```

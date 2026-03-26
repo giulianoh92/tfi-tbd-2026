@@ -1,0 +1,41 @@
+name: Deploy Schema to Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'schema/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy schema
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "==> Recreando schema public..."
+          psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" --set ON_ERROR_STOP=1
+
+          echo "==> Extensiones..."
+          for file in $(ls schema/00_extensions.sql 2>/dev/null); do
+            echo "  -> $(basename "$file")"
+            psql "$DATABASE_URL" -f "$file" --set ON_ERROR_STOP=1
+          done
+
+          for dir_label in "01_tables:Tablas" "02_constraints:Constraints" "03_indexes:Indices" "04_functions:Funciones" "05_seeds:Seeds"; do
+            dir="${dir_label%%:*}"
+            label="${dir_label##*:}"
+            files=$(ls schema/"$dir"/*.sql 2>/dev/null || true)
+            if [ -n "$files" ]; then
+              echo "==> $label..."
+              for file in $files; do
+                echo "  -> $(basename "$file")"
+                psql "$DATABASE_URL" -f "$file" --set ON_ERROR_STOP=1
+              done
+            fi
+          done
+
+          echo "==> Deploy completado."
