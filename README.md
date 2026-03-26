@@ -14,14 +14,14 @@ La materia no exige ninguna herramienta particular para el TFI. Elegimos este st
 
 | Herramienta | Que es | Por que la usamos |
 |---|---|---|
-| **PostgreSQL** | Motor de base de datos relacional open-source. Uno de los mas usados en la industria junto con MySQL y Oracle. | La materia recomienda Oracle, pero elegimos PostgreSQL para el TFI porque es open-source (no requiere licencias ni cuentas corporativas), corre en Docker sin instalacion, tiene soporte nativo en Supabase para colaborar en la nube, y cubre todo lo que necesitamos: funciones, triggers, vistas materializadas, procedimientos almacenados y permisos. La sintaxis SQL es practicamente la misma y los conceptos son transferibles a cualquier motor. |
-| **Docker** | Plataforma que permite correr aplicaciones en contenedores aislados, sin instalar nada directamente en tu sistema. | Cada integrante levanta su propia base de datos local con un solo comando, sin instalar PostgreSQL ni configurar nada. Todos trabajan con el mismo entorno. |
-| **pgweb** | Cliente SQL web liviano. Se abre en el navegador y permite ejecutar queries, explorar tablas y ver resultados. | Elimina la necesidad de instalar un cliente de base de datos. Se levanta junto con Docker y esta listo para usar en `localhost:8081`. |
-| **Supabase** | Plataforma cloud que ofrece una base de datos PostgreSQL accesible desde internet, con dashboard y API. | Funciona como entorno compartido del equipo. Todos pueden ver el estado actual del schema sin levantar nada en local. El profesor tambien puede acceder. |
-| **Git** | Sistema de control de versiones. Registra cada cambio que se hace al codigo y permite trabajar en paralelo sin pisarse. | Permite que varios integrantes trabajen al mismo tiempo en archivos distintos, con historial completo de quien cambio que y cuando. |
-| **GitHub** | Plataforma web que aloja repositorios Git y agrega herramientas de colaboracion (Pull Requests, Issues, Actions). | Es donde vive el repo del equipo. Los PRs permiten revisar cambios antes de aplicarlos, y GitHub Actions automatiza el deploy a Supabase. |
-| **GitHub Desktop** | Aplicacion de escritorio que ofrece una interfaz grafica para Git, sin necesidad de usar la terminal. | Alternativa visual para los integrantes que no estan familiarizados con la linea de comandos. Permite clonar, commitear, pushear y abrir PRs con clicks. |
-| **GitHub Actions** | Sistema de CI/CD integrado en GitHub. Ejecuta tareas automaticas cuando ocurren eventos en el repositorio (ej: push a main). | Al mergear un PR a main, aplica automaticamente los cambios del schema a Supabase. Nadie tiene que correr nada manual. |
+| **PostgreSQL** | Motor de base de datos relacional open-source. | La materia recomienda Oracle, pero elegimos PostgreSQL porque es gratuito, corre en Docker, tiene Supabase como plataforma cloud, y cubre todo lo que necesitamos. Los conceptos son transferibles a cualquier motor. |
+| **Docker** | Corre aplicaciones en contenedores aislados, sin instalar nada en tu sistema. | Cada integrante levanta su propia base de datos local con un solo comando. |
+| **pgweb** | Cliente SQL web liviano que se abre en el navegador. | No hace falta instalar un cliente de BD. Se levanta con Docker en `localhost:8081`. |
+| **Supabase** | Plataforma cloud con una base de datos PostgreSQL accesible desde internet. | Entorno compartido del equipo. El profesor tambien puede acceder. |
+| **Git** | Sistema de control de versiones. | Historial de cambios con autor y fecha. Permite trabajar en paralelo sin pisarse. |
+| **GitHub** | Plataforma web para alojar repos Git con herramientas de colaboracion. | PRs para revisar cambios antes de aplicarlos. GitHub Actions automatiza el deploy. |
+| **GitHub Desktop** | Interfaz grafica para Git, sin usar la terminal. | Para los integrantes que prefieran no usar linea de comandos. |
+| **GitHub Actions** | Automatizacion integrada en GitHub que se ejecuta ante eventos en el repo. | Al mergear a main, aplica el schema a Supabase automaticamente. |
 
 ---
 
