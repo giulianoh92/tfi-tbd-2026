@@ -33,6 +33,17 @@ TBD_TFI/
 - (Opcional) **Supabase CLI** -- `npm install -g supabase`
 - (Opcional) **psql** -- cliente de linea de comandos de PostgreSQL
 
+### Windows (WSL2 + Docker Desktop)
+
+Si estas en Windows, todo se corre desde una terminal WSL2 (Ubuntu). **No uses PowerShell ni CMD** para ejecutar los scripts.
+
+1. Instala [Docker Desktop](https://www.docker.com/products/docker-desktop/) y activa la integracion con WSL2 en **Settings > Resources > WSL Integration**.
+2. Instala una distro WSL2 (ej: Ubuntu) desde la Microsoft Store si no tenes una.
+3. Abri una terminal WSL2 (`wsl` desde PowerShell o busca "Ubuntu" en el menu inicio).
+4. Desde ahi segui el setup normal de abajo.
+
+> Los scripts `.sh`, `docker compose`, y `localhost` funcionan igual desde WSL2. El `.gitattributes` del repo garantiza que los archivos mantengan line endings Unix (LF) aunque Git este configurado en Windows.
+
 ---
 
 ## Setup local con Docker

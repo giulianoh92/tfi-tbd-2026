@@ -1,0 +1,9 @@
+# Forzar line endings Unix (LF) en archivos criticos
+# Evita que Git en Windows convierta a CRLF y rompa scripts/configs
+*.sh text eol=lf
+*.sql text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+.env* text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf

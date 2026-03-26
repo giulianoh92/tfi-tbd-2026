@@ -31,15 +31,16 @@ fi
 
 # Determinar si usar psql local o via docker
 if command -v psql &>/dev/null; then
-  run_psql() { psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" "$@"; }
+  run_sql() { psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$1" --set ON_ERROR_STOP=1; }
 else
-  run_psql() { docker compose -f "$PROJECT_DIR/docker-compose.yml" exec -T db psql -U "$DB_USER" -d "$DB_NAME" "$@"; }
+  # Usa el volumen montado en /sql/seeds dentro del container
+  run_sql() { docker compose -f "$PROJECT_DIR/docker-compose.yml" exec -T db psql -U "$DB_USER" -d "$DB_NAME" -f "/sql/seeds/$(basename "$1")" --set ON_ERROR_STOP=1; }
 fi
 
 echo "==> Ejecutando seeds..."
 for file in $SQL_FILES; do
   echo "  -> $(basename "$file")"
-  run_psql -f /dev/stdin --set ON_ERROR_STOP=1 < "$file"
+  run_sql "$file"
 done
 
 echo "==> Seeds aplicados exitosamente."
