@@ -25,29 +25,35 @@ Usa guiones (`-`) para separar palabras. Todo en minusculas. Sin espacios.
 
 ---
 
-## Migraciones
+## Archivos de schema
 
-### Nombre del archivo
+Usamos un enfoque de **drop + recreate**: cada deploy borra el schema public y lo reconstruye completo. Esto significa que podes **editar los archivos directamente** -- ese es el punto. No hay migraciones incrementales.
 
-```
-NNN_descripcion.sql
-```
+### Donde va cada cosa
 
-El numero `NNN` es secuencial y de tres digitos. Ejemplos:
+| Carpeta | Que va | Convencion de nombre |
+|---------|--------|---------------------|
+| `schema/01_tables/` | `CREATE TABLE` | Un archivo por tabla: `clientes.sql`, `pedidos.sql` |
+| `schema/02_constraints/` | Foreign keys y constraints | Un archivo por FK o agrupados: `fk_pedidos.sql` |
+| `schema/03_indexes/` | Indices | `idx_clientes_email.sql` |
+| `schema/04_functions/` | Funciones, triggers, vistas | Nombre descriptivo: `fn_calcular_total.sql` |
+| `schema/05_seeds/` | Datos de prueba | `clientes.sql`, `pedidos.sql` |
 
-- `000_extensions.sql`
-- `001_create_tabla_clientes.sql`
-- `002_create_tabla_pedidos.sql`
+### Reglas
 
-### Reglas de oro
+1. **Edita el archivo directamente.** Si necesitas agregar una columna a la tabla `clientes`, editas `schema/01_tables/clientes.sql`. No crees un archivo separado tipo "alter table". Ese es el punto del enfoque drop + recreate.
 
-1. **NUNCA modifiques una migracion que ya fue mergeada a `main`.** Si necesitas cambiar algo, crea una migracion nueva (ej: `005_alter_tabla_clientes_add_email.sql`).
+2. **Un archivo por tabla en `01_tables/`.** Mantiene todo organizado y facilita los code reviews.
 
-2. **Coordina el numero con el equipo.** Antes de crear una migracion, revisa cual es el proximo numero libre en `main`. Si dos personas eligen el mismo numero, una va a tener que renumerar. Avisale al grupo antes de empezar.
+3. **Foreign keys en `02_constraints/`, no en `01_tables/`.** Asi evitas problemas de dependencias circulares entre tablas.
 
-3. **Proba localmente antes de pushear.** Ejecuta `./scripts/migrate.sh` para verificar que tu SQL anda. Si queres empezar de cero, usa `./scripts/reset-db.sh`.
+4. **Usa `IF NOT EXISTS` / `CREATE OR REPLACE` donde sea posible** como red de seguridad adicional, aunque el schema siempre se recrea desde cero.
 
-4. **Cada migracion debe ser idempotente cuando sea posible.** Usa `CREATE TABLE IF NOT EXISTS`, `DROP TABLE IF EXISTS`, etc. Asi se puede re-ejecutar sin romper nada.
+5. **Seeds usan `INSERT INTO ... VALUES` simple.** No hace falta `ON CONFLICT` ni `UPSERT` porque el schema siempre esta fresco.
+
+6. **Orden de ejecucion dentro de una carpeta:** los archivos se ejecutan en orden alfabetico. Si necesitas que uno vaya antes que otro, usa prefijos numericos (ej: `01_clientes.sql`, `02_pedidos.sql`).
+
+7. **Proba localmente antes de pushear.** Ejecuta `./scripts/deploy.sh` para verificar que todo funciona.
 
 ---
 
@@ -79,7 +85,7 @@ No hace falta seguir ningun formato tipo "Conventional Commits". Lo importante e
 - Todo cambio a `main` pasa por Pull Request. No se mergea sin review.
 - Necesitas **al menos 1 aprobacion** de otro miembro del equipo.
 - El titulo del PR tiene que ser descriptivo (ej: "Crear tabla pedidos con FK a clientes").
-- Si tu migracion depende de otra que todavia no fue mergeada, aclara eso en la descripcion del PR.
+- Si tu cambio depende de otro PR que todavia no fue mergeado, aclara eso en la descripcion del PR.
 
 ### Como abrir un PR
 
@@ -104,9 +110,9 @@ Cuando te pidan review:
 | Que | Como |
 |-----|------|
 | Nombre de branch | `feat/descripcion` o `fix/descripcion` |
-| Nombre de migracion | `NNN_descripcion.sql` |
+| Archivos de schema | Editar directamente en `schema/` (ese es el punto) |
+| Tablas | Un archivo por tabla en `schema/01_tables/` |
+| FKs y constraints | En `schema/02_constraints/` |
 | Commits | En espanol, descriptivos, sin formato rigido |
 | PRs | Titulo descriptivo, 1 aprobacion minima |
-| Migracion ya mergeada | NUNCA se modifica, crear una nueva |
-| Numero de migracion | Coordinar con el equipo |
-| Antes de pushear | `./scripts/migrate.sh` o `./scripts/reset-db.sh` |
+| Antes de pushear | `./scripts/deploy.sh` |

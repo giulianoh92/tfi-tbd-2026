@@ -25,12 +25,9 @@ until docker compose -f "$PROJECT_DIR/docker-compose.yml" exec -T db pg_isready 
   sleep 1
 done
 
-# Correr migraciones
-echo "==> Aplicando migraciones..."
-"$SCRIPT_DIR/migrate.sh"
-
-# Correr seeds si hay
-"$SCRIPT_DIR/seed.sh"
+# Desplegar schema completo
+echo "==> Desplegando schema..."
+"$SCRIPT_DIR/deploy.sh"
 
 echo ""
 echo "==> Todo listo!"
