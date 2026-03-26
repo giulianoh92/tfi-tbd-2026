@@ -25,7 +25,7 @@ jobs:
             psql "$DATABASE_URL" -f "$file" --set ON_ERROR_STOP=1
           done
 
-          for dir_label in "01_tables:Tablas" "02_constraints:Constraints" "03_indexes:Indices" "04_functions:Funciones" "05_seeds:Seeds"; do
+          for dir_label in "01_tables:Tablas" "02_constraints:Constraints" "03_indexes:Indices" "04_functions:Funciones" "05_seeds:Seeds" "06_permissions:Permisos"; do
             dir="${dir_label%%:*}"
             label="${dir_label##*:}"
             files=$(ls schema/"$dir"/*.sql 2>/dev/null || true)
