@@ -1,0 +1,23 @@
+name: Apply Migrations to Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'migrations/**'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply migrations
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          for file in $(ls migrations/*.sql | sort); do
+            echo "==> Applying $(basename "$file")..."
+            psql "$DATABASE_URL" -f "$file" --set ON_ERROR_STOP=1
+          done
+          echo "==> All migrations applied."

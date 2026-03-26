@@ -30,7 +30,6 @@ TBD_TFI/
 
 - **Docker** y **Docker Compose** (v2+)
 - **Git**
-- (Opcional) **Supabase CLI** -- `npm install -g supabase`
 - (Opcional) **psql** -- cliente de linea de comandos de PostgreSQL
 
 ### Windows (WSL2 + Docker Desktop)
@@ -48,48 +47,30 @@ Si estas en Windows, todo se corre desde una terminal WSL2 (Ubuntu). **No uses P
 
 ## Setup local con Docker
 
-### 1. Clonar el repo
+### Inicio rapido (un solo comando)
 
 ```bash
 git clone <url-del-repo>
 cd TBD_TFI
+./scripts/setup.sh
 ```
 
-### 2. Configurar variables de entorno
+Esto crea el `.env`, levanta Docker, aplica migraciones y carga seeds. Al terminar te muestra la URL de pgweb.
+
+### Paso a paso (si preferis hacerlo manual)
 
 ```bash
-cp .env.example .env
+git clone <url-del-repo>
+cd TBD_TFI
+cp .env.example .env              # editar password si queres
+docker compose up -d               # levanta PostgreSQL + pgweb
+./scripts/migrate.sh               # aplica migraciones
+./scripts/seed.sh                  # carga datos de prueba
 ```
 
-Edita `.env` y pone tu password. Para desarrollo local con los valores por defecto alcanza, solo cambia `POSTGRES_PASSWORD`.
+### Usar pgweb (cliente SQL en el navegador)
 
-### 3. Levantar la base de datos
-
-```bash
-docker compose up -d
-```
-
-Espera unos segundos a que PostgreSQL termine de iniciar. Podes verificar el estado con:
-
-```bash
-docker compose ps
-```
-
-### 4. Aplicar migraciones
-
-```bash
-./scripts/migrate.sh
-```
-
-### 5. Cargar datos de prueba
-
-```bash
-./scripts/seed.sh
-```
-
-### 6. Abrir el cliente web (pgweb)
-
-Una vez levantado Docker, pgweb esta disponible en:
+Una vez levantado Docker, abri en el navegador:
 
 ```
 http://localhost:8081
@@ -97,7 +78,7 @@ http://localhost:8081
 
 Desde ahi podes explorar tablas, ejecutar queries y ver resultados sin instalar nada extra.
 
-### 7. Conectarse por terminal (opcional)
+### Conectarse por terminal (opcional)
 
 ```bash
 psql -h localhost -p 5432 -U postgres -d tbd_tfi
@@ -136,63 +117,51 @@ Esto elimina la base, la recrea, corre todas las migraciones y los seeds.
 
 ---
 
-## Conectar GitHub con Supabase
+## CI/CD: Migraciones automaticas a Supabase
 
-### 1. Crear un proyecto en Supabase
+Al mergear a `main`, un workflow de GitHub Actions aplica automaticamente las migraciones nuevas a la base de Supabase. No hace falta instalar nada ni correr comandos manuales.
 
-Anda a [supabase.co](https://supabase.co), crea una cuenta (si no tenes) y crea un nuevo proyecto. Anota el **Project ID** y las keys que te da.
+### Setup (una sola vez, lo hace el admin del repo)
 
-### 2. Conectar el repo de GitHub
+1. En el Dashboard de Supabase, anda a **Project Settings > Database** y copia el **Connection String** (URI). Reemplaza `[YOUR-PASSWORD]` con la password del proyecto.
+2. En GitHub, anda a **Settings > Secrets and variables > Actions**.
+3. Crea un secret llamado `SUPABASE_DB_URL` con el connection string como valor.
 
-1. En el Dashboard de Supabase, anda a **Project Settings > Integrations > GitHub**.
-2. Conecta tu cuenta de GitHub y selecciona este repositorio.
-3. Esto permite que Supabase vea los cambios del repo.
-
-### 3. Configurar Supabase CLI
-
-Si todavia no inicializaste Supabase en el repo:
-
-```bash
-supabase init
-```
-
-Despues vincula el proyecto remoto:
-
-```bash
-supabase link --project-ref <tu-project-id>
-```
-
-Para aplicar las migraciones al proyecto de Supabase:
-
-```bash
-supabase db push
-```
-
-### 4. (Opcional) CI/CD con GitHub Actions
-
-Podes configurar un workflow de GitHub Actions que corra `supabase db push` automaticamente al mergear a `main`. Supabase tiene documentacion oficial sobre esto: [Supabase CI/CD](https://supabase.com/docs/guides/cli/managing-environments).
+Listo. A partir de ahora, cada push a `main` que incluya cambios en `migrations/` dispara el workflow automaticamente.
 
 ---
 
 ## Flujo de trabajo del equipo
 
-```
-1. Clonar repo + levantar Docker local
-2. Crear una branch para tu cambio
-3. Escribir migraciones y probar localmente
-4. Commit + push a tu branch
-5. Abrir un PR para que el equipo revise
-6. Mergear a main
-7. Aplicar migraciones a Supabase (manual con `supabase db push` o automatico con CI)
+### Setup inicial (una sola vez por persona)
+
+```bash
+git clone <url-del-repo>
+cd TBD_TFI
+./scripts/setup.sh
 ```
 
-### En detalle:
+### Dia a dia
 
-1. **Cada miembro** clona el repo y levanta su entorno local con Docker. Esto les da una base PostgreSQL propia para desarrollo.
-2. **Para hacer cambios en el esquema**, crea un archivo nuevo en `migrations/` con el proximo numero disponible. Probalo localmente con `./scripts/migrate.sh` o `./scripts/reset-db.sh`.
-3. **Commit y push** a una branch con nombre descriptivo (ej: `feat/create-tabla-clientes`).
-4. **Abrir un Pull Request** en GitHub para que al menos otro miembro revise los cambios.
-5. **Al mergear a `main`**, las migraciones se aplican al Supabase compartido (manualmente o via CI/CD).
+1. **Levantar el entorno** (si no esta corriendo): `docker compose up -d`
+2. **Abrir pgweb** en `http://localhost:8081` para explorar y probar queries.
+3. **Cuando tengas un cambio de esquema listo**, guardalo en un archivo nuevo en `migrations/` con el proximo numero (ej: `001_create_tabla_x.sql`).
+4. **Probar localmente**: `./scripts/migrate.sh` (o `./scripts/reset-db.sh` para empezar de cero).
+5. **Subir los cambios**:
+   ```bash
+   git checkout -b feat/nombre-descriptivo
+   git add migrations/001_create_tabla_x.sql
+   git commit -m "feat: crear tabla X"
+   git push -u origin feat/nombre-descriptivo
+   ```
+6. **Abrir un Pull Request** en GitHub para que al menos otro miembro revise.
+7. **Al mergear a `main`**, GitHub Actions aplica las migraciones a Supabase automaticamente.
+
+### Al terminar la sesion
+
+```bash
+docker compose down
+```
 
 ---
 
@@ -220,10 +189,10 @@ El host, password y demas datos los encontras en el Dashboard. No los commitees 
 | `docker compose down` | Para y elimina los containers (los datos persisten en el volumen) |
 | `docker compose down -v` | Para containers Y elimina el volumen (borra todos los datos) |
 | `docker compose logs db` | Ver logs de PostgreSQL |
+| `./scripts/setup.sh` | Setup completo (primera vez) |
 | `./scripts/migrate.sh` | Ejecuta todas las migraciones pendientes |
 | `./scripts/seed.sh` | Carga los datos de prueba |
 | `./scripts/reset-db.sh` | Resetea la base completa (drop + create + migrate + seed) |
 | `psql -h localhost -p 5432 -U postgres -d tbd_tfi` | Conectarse a la base local |
 | `http://localhost:8081` | pgweb -- cliente SQL en el navegador |
-| `supabase db push` | Aplicar migraciones al proyecto Supabase remoto |
-| `supabase db diff` | Ver diferencias entre el esquema local y remoto |
+| Push a `main` con cambios en `migrations/` | GitHub Actions aplica migraciones a Supabase |
