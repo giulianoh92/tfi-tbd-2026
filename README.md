@@ -4,6 +4,21 @@ Base de datos PostgreSQL con entorno local en Docker, cliente SQL en el navegado
 
 ---
 
+## Herramientas del proyecto
+
+| Herramienta | Que es | Por que la usamos |
+|---|---|---|
+| **PostgreSQL** | Motor de base de datos relacional open-source. Uno de los mas usados en la industria junto con MySQL y Oracle. | Es el motor principal de la materia. Soporta funciones, triggers, vistas materializadas y PL/pgSQL que vamos a necesitar en el TFI. |
+| **Docker** | Plataforma que permite correr aplicaciones en contenedores aislados, sin instalar nada directamente en tu sistema. | Cada integrante levanta su propia base de datos local con un solo comando, sin instalar PostgreSQL ni configurar nada. Todos trabajan con el mismo entorno. |
+| **pgweb** | Cliente SQL web liviano. Se abre en el navegador y permite ejecutar queries, explorar tablas y ver resultados. | Elimina la necesidad de instalar un cliente de base de datos. Se levanta junto con Docker y esta listo para usar en `localhost:8081`. |
+| **Supabase** | Plataforma cloud que ofrece una base de datos PostgreSQL accesible desde internet, con dashboard y API. | Funciona como entorno compartido del equipo. Todos pueden ver el estado actual del schema sin levantar nada en local. El profesor tambien puede acceder. |
+| **Git** | Sistema de control de versiones. Registra cada cambio que se hace al codigo y permite trabajar en paralelo sin pisarse. | Permite que varios integrantes trabajen al mismo tiempo en archivos distintos, con historial completo de quien cambio que y cuando. |
+| **GitHub** | Plataforma web que aloja repositorios Git y agrega herramientas de colaboracion (Pull Requests, Issues, Actions). | Es donde vive el repo del equipo. Los PRs permiten revisar cambios antes de aplicarlos, y GitHub Actions automatiza el deploy a Supabase. |
+| **GitHub Desktop** | Aplicacion de escritorio que ofrece una interfaz grafica para Git, sin necesidad de usar la terminal. | Alternativa visual para los integrantes que no estan familiarizados con la linea de comandos. Permite clonar, commitear, pushear y abrir PRs con clicks. |
+| **GitHub Actions** | Sistema de CI/CD integrado en GitHub. Ejecuta tareas automaticas cuando ocurren eventos en el repositorio (ej: push a main). | Al mergear un PR a main, aplica automaticamente los cambios del schema a Supabase. Nadie tiene que correr nada manual. |
+
+---
+
 ## Inicio rapido
 
 Tres pasos para tener todo funcionando:
