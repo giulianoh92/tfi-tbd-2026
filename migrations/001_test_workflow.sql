@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS test_workflow (
     creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO test_workflow (mensaje) VALUES ('Deploy automatico desde GitHub Actions');
+INSERT INTO test_workflow (mensaje) VALUES ('Deploy automatico via GitHub Actions CI');
