@@ -11,8 +11,8 @@ Tres pasos para tener todo funcionando:
 ### Opcion A: desde la terminal
 
 ```bash
-git clone <url-del-repo>
-cd TBD_TFI
+git clone https://github.com/giulianoh92/tfi-tbd-2026.git
+cd tfi-tbd-2026
 ./scripts/setup.sh
 ```
 
@@ -179,14 +179,15 @@ El enfoque es **drop + recreate**: cada deploy borra el schema public y lo recon
 ### Estructura del proyecto
 
 ```
-TBD_TFI/
+tfi-tbd-2026/
 ├── schema/
 │   ├── 00_extensions.sql      # Extensiones de PostgreSQL (uuid-ossp, pgcrypto)
 │   ├── 01_tables/             # CREATE TABLE (un archivo por tabla)
 │   ├── 02_constraints/        # Foreign keys y constraints
 │   ├── 03_indexes/            # Indices
 │   ├── 04_functions/          # Funciones, triggers y vistas
-│   └── 05_seeds/              # Datos de prueba (INSERT INTO)
+│   ├── 05_seeds/              # Datos de prueba (INSERT INTO)
+│   └── 06_permissions/        # Roles, GRANT, REVOKE
 ├── scripts/                   # Scripts utilitarios (deploy, setup)
 ├── tests/                     # Tests de base de datos
 ├── docker-compose.yml
@@ -202,6 +203,7 @@ TBD_TFI/
 | `schema/03_indexes/` | Indices para optimizar queries. |
 | `schema/04_functions/` | Funciones, triggers y vistas. |
 | `schema/05_seeds/` | Datos de prueba para desarrollo local. `INSERT INTO ... VALUES`. |
+| `schema/06_permissions/` | Roles, permisos (`GRANT`, `REVOKE`). Se ejecuta al final. |
 | `scripts/` | Scripts de shell para automatizar tareas comunes. |
 | `tests/` | Tests automatizados sobre la base de datos. |
 
@@ -215,6 +217,7 @@ El script `deploy.sh` (y el CI) aplican los archivos en este orden estricto:
 4. `schema/03_indexes/*.sql` (ordenados alfabeticamente)
 5. `schema/04_functions/*.sql` (ordenados alfabeticamente)
 6. `schema/05_seeds/*.sql` (ordenados alfabeticamente)
+7. `schema/06_permissions/*.sql` (ordenados alfabeticamente)
 
 Si necesitas que un archivo se ejecute antes que otro dentro de la misma carpeta, usa un prefijo numerico en el nombre (ej: `01_clientes.sql`, `02_pedidos.sql`).
 
