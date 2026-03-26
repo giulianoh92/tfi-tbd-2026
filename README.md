@@ -62,10 +62,38 @@ Al terminar, abri el navegador en **http://localhost:8081** y ya tenes pgweb lis
 
 Si estas en Windows, todo se corre desde una terminal WSL2 (Ubuntu). **No uses PowerShell ni CMD** para ejecutar los scripts.
 
-1. Instala [Docker Desktop](https://www.docker.com/products/docker-desktop/) y activa la integracion con WSL2 en **Settings > Resources > WSL Integration**.
-2. Instala una distro WSL2 (ej: Ubuntu) desde la Microsoft Store si no tenes una.
-3. Abri una terminal WSL2 (`wsl` desde PowerShell o busca "Ubuntu" en el menu inicio).
-4. Desde ahi segui el setup normal de arriba.
+#### 1. Instalar WSL2
+
+Abri **PowerShell como administrador** (click derecho > "Ejecutar como administrador") y ejecuta:
+
+```powershell
+wsl --install
+```
+
+Esto instala WSL2 con Ubuntu por defecto. **Reinicia la PC** cuando te lo pida. Al reiniciar, se abre una ventana de Ubuntu que te pide crear un usuario y contraseña (son para Linux, no para Windows).
+
+> Si ya tenes WSL pero no es version 2, ejecuta `wsl --set-default-version 2` para actualizar.
+
+#### 2. Instalar Docker Desktop
+
+Descarga e instala [Docker Desktop](https://www.docker.com/products/docker-desktop/). Despues de instalar:
+
+1. Abri Docker Desktop.
+2. Anda a **Settings > Resources > WSL Integration**.
+3. Activa la integracion con tu distro Ubuntu.
+4. Hace click en **Apply & Restart**.
+
+#### 3. Instalar Git dentro de WSL
+
+Abri la terminal de Ubuntu (busca "Ubuntu" en el menu inicio) y ejecuta:
+
+```bash
+sudo apt update && sudo apt install -y git
+```
+
+#### 4. Seguir el setup normal
+
+Desde la misma terminal de Ubuntu, segui las instrucciones de [Inicio rapido](#inicio-rapido) de arriba.
 
 > Los scripts `.sh`, `docker compose`, y `localhost` funcionan igual desde WSL2. El `.gitattributes` del repo garantiza que los archivos mantengan line endings Unix (LF) aunque Git este configurado en Windows.
 
