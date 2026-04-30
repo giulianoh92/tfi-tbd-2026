@@ -1,26 +1,171 @@
 # TBD - Trabajo Final Integrador
 
-Base de datos PostgreSQL con entorno local en Docker, cliente SQL en el navegador (pgweb) y deploy automatico a Supabase via GitHub Actions.
+Base de datos PostgreSQL para el TFI de Tecnologias de Bases de Datos. Todo el esquema vive en este repo y se aplica automaticamente a una instancia de Supabase compartida por el equipo.
+
+> [!tip]
+> **Si nunca colaboraste en un repo de GitHub, leete primero "Como trabajamos" hasta el final.** Esta pensada para arrancar sin instalar nada.
+
+---
+
+## Como trabajamos (sin instalar nada)
+
+Trabajamos 100% desde **github.dev**, un VS Code que corre dentro del navegador. No hace falta Git, Docker, ni un editor instalado: alcanza con tener una cuenta de GitHub.
+
+### El flujo de un cambio, paso a paso
+
+1. **Abri el repo en GitHub.** [github.com/giulianoh92/tfi-tbd-2026](https://github.com/giulianoh92/tfi-tbd-2026).
+
+2. **Apreta la tecla `.` (el punto).** Se abre VS Code dentro del navegador, con todo el codigo del repo cargado. No descarga nada — corre en la nube.
+
+3. **Edita el archivo `.sql` que necesites.** El esquema vive en la carpeta `schema/`. Mas abajo se explica que va en cada subcarpeta.
+
+4. **Commit + push.** En el panel **Source Control** (icono de rama, tercero a la izquierda):
+    1. Escribi un mensaje breve (ej: `agregar columna telefono a cliente`).
+    2. Click en el `✓` para confirmar el commit.
+    3. Click en **Sync Changes** para subirlo a `main`.
+
+5. **GitHub se encarga del resto.** En 30 a 60 segundos tu cambio se aplica a Supabase. Si algo sale mal, llega un aviso al canal de Discord del equipo.
+
+6. **Listo.** Abris Supabase y la base ya tiene tu cambio.
+
+> [!tip]
+> Para cambios muy chicos podes editar directo desde la web de github.com: abris el archivo, click al lapiz, editas, commit. Mas limitado que github.dev pero alcanza si tocas una sola linea.
+
+---
+
+## El repo y Supabase: dos cosas distintas
+
+> [!important]
+> **Esto es lo mas importante de entender para no confundirse o perder trabajo.**
+
+|   | Repo (GitHub) | Supabase |
+|---|---|---|
+| **Que es** | El **esquema definitivo** del TFI | La **base de datos en ejecucion** |
+| **Quien lo modifica** | Vos, editando archivos `.sql` desde github.dev | Se regenera **automaticamente** cuando pusheas al repo |
+| **Permanencia** | **Permanente.** Es la fuente de verdad. | **Efimera.** Se borra y recrea en cada deploy. |
+| **Para que sirve** | Definir como debe ser la base | Probar queries, ver datos, validar resultados |
+
+### La regla de oro
+
+> [!warning]
+> **Cualquier cambio que hagas DIRECTAMENTE en Supabase (crear una tabla desde el SQL Editor, modificar datos, etc.) SE VA A PERDER al proximo push al repo.**
+>
+> Si queres que algo sea definitivo, **va al repo**. Supabase es solo el lugar donde se ejecuta lo que escribiste en el repo.
+
+### Para que se usa cada uno
+
+**El repo (GitHub) es para:**
+- Definir el esquema final: tablas, FKs, indices, triggers, vistas.
+- Cargar los datos de prueba (seeds).
+- Versionar todos los cambios: que cambio, cuando, quien.
+
+**Supabase es para:**
+- Ver el resultado de aplicar el esquema.
+- Probar queries SQL rapidas (ej: `SELECT * FROM alquiler WHERE estado = 'en_curso'`).
+- Experimentar con un `CREATE TABLE` o un `INSERT` antes de formalizarlo.
+- Confirmar que un cambio que hiciste hace lo que esperabas.
+
+### Ejemplo: como crear una vista nueva, bien
+
+1. Vas al **SQL Editor de Supabase** y escribis la query que necesitas. Iteras hasta que devuelve lo que querias.
+2. Abris el repo en github.dev (apretas `.`).
+3. Creas el archivo `schema/04_functions/02_vw_lo_que_sea.sql` con `CREATE OR REPLACE VIEW vw_lo_que_sea AS ...`.
+4. Commit + push a `main`.
+5. Despues del deploy, la vista existe oficialmente y se va a recrear cada vez que el equipo aplica el esquema.
+
+Si te saltearas los pasos 2 a 4 y solo crearas la vista desde el SQL Editor, **se borra al proximo push**. La regla aplica a todo: tablas, datos, funciones, lo que sea.
+
+---
+
+## Como funciona por detras (CI/CD)
+
+Cada push a `main` con cambios en `schema/` dispara el workflow `Deploy Schema to Supabase` en GitHub Actions. Tiene **dos etapas encadenadas**:
+
+```mermaid
+flowchart LR
+    A[Push a main] --> B[Validate<br/>Postgres efimero]
+    B -- OK --> C[Deploy<br/>a Supabase]
+    B -- Error --> D[Aviso Discord]
+    C -- Error --> D
+    C -- OK --> E[Supabase<br/>actualizada]
+```
+
+### 1. Validate (red de seguridad)
+
+GitHub levanta un **Postgres temporal** dentro de su runner y aplica TODO el esquema desde cero, seeds incluidos. Si algun `.sql` esta roto:
+- Sintaxis invalida (`VARCAHR` en vez de `VARCHAR`).
+- Una FK que apunta a una columna que no existe.
+- Un `UNIQUE` violado por los seeds.
+
+...el job falla aca, en menos de un minuto. **Supabase no se toca.**
+
+### 2. Deploy (aplicar a Supabase)
+
+Solo corre si `validate` paso. Repite el mismo proceso pero contra Supabase:
+
+1. `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`
+2. Aplica los archivos en orden: extensiones → tablas → constraints → indices → funciones → seeds → permisos.
+
+Cuando termina, Supabase queda con exactamente lo que define el repo. **Sin diferencias, sin estados a medias.**
+
+### 3. Monitoreo
+
+- **En vivo:** la pestana [Actions](https://github.com/giulianoh92/tfi-tbd-2026/actions) del repo muestra el estado de cada corrida.
+- **Notificaciones:** si cualquier paso falla, llega un mensaje al canal de Discord con:
+    - Commit (SHA corto + autor + mensaje).
+    - Job que fallo (`validate` o `deploy`).
+    - Cola del log con el error real.
+    - Link directo a la corrida en GitHub.
+
+Si rompiste algo, te enteras enseguida y sabes exactamente que.
+
+---
+
+## Estructura del schema
+
+```
+schema/
+├── 00_extensions.sql     # Extensiones de PostgreSQL
+├── 01_tables/            # CREATE TABLE (un archivo por tabla)
+├── 02_constraints/       # Foreign keys y constraints multi-columna
+├── 03_indexes/           # Indices
+├── 04_functions/         # Funciones, triggers, vistas
+├── 05_seeds/             # Datos de prueba (INSERT INTO)
+└── 06_permissions/       # Roles, GRANT, REVOKE
+```
+
+Las carpetas se aplican en orden numerico (`00_` → `06_`). Los archivos dentro de cada carpeta tambien arrancan con dos digitos (`01_`, `02_`, ...) y se aplican en ese orden alfabetico.
+
+> Reglas detalladas (que va en cada carpeta, como nombrar archivos, convenciones de SQL): [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
 
 ## Stack
 
-| Herramienta | Que es |
+| Herramienta | Uso |
 |---|---|
-| **PostgreSQL** | Motor de base de datos relacional. |
-| **Docker** | Corre la base local en un contenedor aislado. |
-| **pgweb** | Cliente SQL en el navegador (`localhost:8081`). |
-| **Supabase** | PostgreSQL en la nube (entorno compartido del equipo). |
-| **Git + GitHub** | Control de versiones y revision via PRs. |
-| **GitHub Actions** | Deploy automatico a Supabase al mergear a `main`. |
-| **GitHub Desktop** | (Opcional) GUI para Git. |
+| **PostgreSQL 16** | Motor de base de datos |
+| **Supabase** | PostgreSQL en la nube (entorno compartido) |
+| **GitHub Actions** | CI/CD: validacion + deploy automatico |
+| **Discord** | Notificaciones de fallos |
+| **github.dev** | Editor en el navegador (lo que usamos a diario) |
+| Docker *(opcional)* | Postgres local para quien quiera entorno offline |
+| pgweb *(opcional)* | Cliente SQL web para el Postgres local |
 
 ---
 
-## Inicio rapido
+## Desarrollo local (opcional)
 
-### Opcion A: terminal
+> [!note]
+> **Esta seccion es opcional.** El flujo principal es desde github.dev: editas, pusheas, el CI valida y aplica. La unica razon para tener entorno local es si queres iterar contra una base de Postgres antes de cada push, **algo que el CI ya hace por vos**. Si nunca tuviste necesidad, no lo instales.
+
+### Requisitos
+
+- **Docker** y **Docker Compose** v2+ -- [Descargar](https://www.docker.com/products/docker-desktop/)
+- **Git** -- [Descargar](https://git-scm.com/downloads)
+- *(Opcional)* **psql**, **GitHub Desktop**
+
+### Setup
 
 ```bash
 git clone https://github.com/giulianoh92/tfi-tbd-2026.git
@@ -28,26 +173,11 @@ cd tfi-tbd-2026
 ./scripts/setup.sh
 ```
 
-### Opcion B: GitHub Desktop
-
-1. **File > Clone Repository** > pega la URL del repo.
-2. **Repository > Open in Terminal** y ejecuta `./scripts/setup.sh`.
-
-Al terminar, abri **http://localhost:8081** en el navegador.
-
-> `setup.sh` crea el `.env`, levanta Docker y aplica el schema completo.
-
----
-
-## Requisitos previos
-
-- **Docker** y **Docker Compose** v2+ -- [Descargar](https://www.docker.com/products/docker-desktop/)
-- **Git** -- [Descargar](https://git-scm.com/downloads)
-- (Opcional) **psql**, **GitHub Desktop**
+Cuando termina, abri **http://localhost:8081** en el navegador para usar pgweb. `setup.sh` crea el `.env`, levanta Docker y aplica el esquema completo.
 
 ### Windows (WSL2 + Docker Desktop)
 
-Si estas en Windows, todo se corre desde una terminal WSL2 (Ubuntu). **No uses PowerShell ni CMD** para ejecutar los scripts.
+Si estas en Windows, todo se corre desde una terminal **WSL2 (Ubuntu)**. **No uses PowerShell ni CMD** para ejecutar los scripts.
 
 #### 1. Instalar WSL2
 
@@ -57,120 +187,47 @@ Abri **PowerShell como administrador** (click derecho > "Ejecutar como administr
 wsl --install
 ```
 
-Esto instala WSL2 con Ubuntu por defecto. **Reinicia la PC** cuando te lo pida. Al reiniciar, se abre una ventana de Ubuntu que te pide crear un usuario y contraseña (son para Linux, no para Windows).
+Esto instala WSL2 con Ubuntu por defecto. **Reinicia la PC** cuando te lo pida. Al reiniciar, se abre una ventana de Ubuntu que te pide crear un usuario y contrasena (son para Linux, no para Windows).
 
 > Si ya tenes WSL pero no es version 2, ejecuta `wsl --set-default-version 2` para actualizar.
 
 #### 2. Instalar Docker Desktop
 
-Descarga e instala [Docker Desktop](https://www.docker.com/products/docker-desktop/). Despues de instalar:
+Descarga e instala [Docker Desktop](https://www.docker.com/products/docker-desktop/). Despues:
 
 1. Abri Docker Desktop.
-2. Anda a **Settings > Resources > WSL Integration**.
+2. **Settings > Resources > WSL Integration**.
 3. Activa la integracion con tu distro Ubuntu.
-4. Hace click en **Apply & Restart**.
+4. **Apply & Restart**.
 
 #### 3. Instalar Git dentro de WSL
 
-Abri la terminal de Ubuntu (busca "Ubuntu" en el menu inicio) y ejecuta:
+Desde la terminal de Ubuntu:
 
 ```bash
 sudo apt update && sudo apt install -y git
 ```
 
-#### 4. Seguir el setup normal
+#### 4. Setup normal
 
-Desde la misma terminal de Ubuntu, segui las instrucciones de [Inicio rapido](#inicio-rapido) de arriba.
+Desde la misma terminal de Ubuntu, segui las instrucciones de Setup de arriba.
 
-> Los scripts `.sh`, `docker compose`, y `localhost` funcionan igual desde WSL2. El `.gitattributes` del repo garantiza que los archivos mantengan line endings Unix (LF) aunque Git este configurado en Windows.
+> Los scripts `.sh`, `docker compose` y `localhost` funcionan igual desde WSL2. El `.gitattributes` del repo asegura line endings Unix (LF) aunque Git este en Windows.
 
----
-
-## Uso diario
-
-```bash
-docker compose up -d              # levantar entorno
-# editar archivos en schema/
-./scripts/deploy.sh               # drop + recreate local
-git checkout -b feat/mi-cambio    # branch nuevo
-# commit, push, abrir PR
-docker compose down               # al terminar
-```
-
-`deploy.sh` borra el schema public, lo recrea y aplica todos los `.sql` en orden. Se puede ejecutar todas las veces que quieras.
-
-Ver [`CONTRIBUTING.md`](./CONTRIBUTING.md) para convenciones de branches, commits y PRs.
-
----
-
-## Estructura del schema
-
-Enfoque **drop + recreate**: cada deploy borra el schema public y lo reconstruye desde los archivos. Sin migraciones incrementales -- editas el archivo directamente.
-
-```
-tfi-tbd-2026/
-├── schema/
-│   ├── 00_extensions.sql      # Extensiones de PostgreSQL
-│   ├── 01_tables/             # CREATE TABLE (un archivo por tabla)
-│   ├── 02_constraints/        # Foreign keys y constraints
-│   ├── 03_indexes/            # Indices
-│   ├── 04_functions/          # Funciones, triggers, vistas
-│   ├── 05_seeds/              # Datos de prueba
-│   └── 06_permissions/        # Roles, GRANT, REVOKE
-├── scripts/                   # setup.sh, deploy.sh
-├── tests/
-├── docker-compose.yml
-└── .env.example
-```
-
-### Orden de ejecucion
-
-Los archivos se aplican en el orden numerico de las carpetas (`00_` -> `06_`) y, dentro de cada carpeta, alfabeticamente. Por eso los archivos `.sql` tambien llevan prefijo numerico (ej: `01_clientes.sql`, `02_pedidos.sql`). Detalle completo en [`CONTRIBUTING.md`](./CONTRIBUTING.md).
-
----
-
-## Deploy a Supabase
-
-Al mergear a `main` con cambios en `schema/`, GitHub Actions corre el mismo `drop + recreate` contra Supabase.
-
-### Setup del CI (una vez, lo hace el admin)
-
-1. Supabase Dashboard > **Project Settings > Database** > copia el **Connection String** (URI).
-2. GitHub > **Settings > Secrets and variables > Actions** > crea el secret `SUPABASE_DB_URL`.
-
-### Conectarse a Supabase remoto
-
-Desde cualquier cliente SQL (psql, DBeaver, DataGrip) usando el connection string del Dashboard. **No commitees credenciales** -- guardalas en `.env`.
-
----
-
-## Comandos utiles
+### Comandos utiles
 
 | Comando | Que hace |
-|---------|----------|
+|---|---|
 | `docker compose up -d` | Levanta base de datos y pgweb |
-| `docker compose down` | Para containers (datos persisten) |
+| `docker compose down` | Para containers (los datos persisten) |
 | `docker compose down -v` | Para containers Y borra los datos |
 | `docker compose ps` | Estado de los containers |
-| `docker compose logs db` | Ver logs de PostgreSQL |
+| `docker compose logs db` | Logs de PostgreSQL |
 | `./scripts/setup.sh` | Setup completo (primera vez) |
-| `./scripts/deploy.sh` | Drop + recreate del schema |
+| `./scripts/deploy.sh` | Drop + recreate del schema local |
 | `psql -h localhost -p 5432 -U postgres -d tbd_tfi` | Conectarse por terminal |
 
-### Equivalencias terminal / GitHub Desktop
-
-| Accion | Terminal | GitHub Desktop |
-|--------|----------|---------------|
-| Crear branch | `git checkout -b feat/...` | Barra superior > New Branch |
-| Commitear | `git add ... && git commit -m "..."` | Seleccionar archivos + mensaje + Commit |
-| Subir cambios | `git push -u origin feat/...` | Push origin / Publish branch |
-| Abrir PR | Link del push | Boton "Create Pull Request" |
-| Traer cambios | `git pull origin main` | Fetch origin > Pull origin |
-| Actualizar branch | `git merge main` | Branch > Update from main |
-
----
-
-## Troubleshooting
+### Troubleshooting
 
 **Puerto ocupado.** Cambia `POSTGRES_PORT` o `PGWEB_PORT` en `.env` y volve a `docker compose up -d`.
 
@@ -178,7 +235,7 @@ Desde cualquier cliente SQL (psql, DBeaver, DataGrip) usando el connection strin
 
 **Permission denied en scripts.** `chmod +x scripts/*.sh`.
 
-**Windows: scripts no corren.** Asegurate de estar en una terminal **WSL2 (Ubuntu)**, no PowerShell ni CMD. Si clonaste desde Windows, los line endings pueden estar mal -- borra y volve a clonar desde WSL2.
+**Windows: scripts no corren.** Asegurate de estar en una terminal **WSL2 (Ubuntu)**, no PowerShell ni CMD. Si clonaste desde Windows, los line endings pueden estar mal — borra y volve a clonar desde WSL2.
 
 **Falla por orden de dependencias.** Revisa los prefijos numericos de los `.sql`. Las FKs van en `02_constraints/`, no dentro del `CREATE TABLE`.
 
