@@ -35,20 +35,23 @@ else
 fi
 
 # Funcion para aplicar todos los .sql de un directorio (sorted)
+# Usa find -print0 / read -d '' para manejar paths con espacios.
 apply_dir() {
   local dir="$1"
   local label="$2"
+  local files=()
 
-  local sql_files
-  sql_files=$(find "$dir" -maxdepth 1 -name '*.sql' 2>/dev/null | sort)
+  while IFS= read -r -d '' file; do
+    files+=("$file")
+  done < <(find "$dir" -maxdepth 1 -name '*.sql' -print0 2>/dev/null | sort -z)
 
-  if [ -z "$sql_files" ]; then
+  if [ ${#files[@]} -eq 0 ]; then
     return
   fi
 
   echo ""
   echo "==> $label"
-  for file in $sql_files; do
+  for file in "${files[@]}"; do
     echo "  -> $(basename "$file")"
     run_sql_file "$file"
   done
