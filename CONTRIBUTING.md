@@ -4,24 +4,38 @@ Guia rapida de como trabajamos en este repo. Leela una vez y consultala cuando t
 
 ---
 
-## Branches
+## Como contribuir
 
-Siempre trabaja en un branch propio. **Nunca commitees directo a `main`.**
+El repo esta pensado para que **cualquiera pueda aportar sin instalar nada**: github.dev (`.` en cualquier URL del repo) abre un VS Code en el navegador. Editas, commiteas y pusheas todo desde ahi.
 
-### Formato de nombres
+### Push directo a `main`
+
+**No usamos Pull Requests.** Pushea directo a `main`. La validacion ocurre en CI:
+
+1. Push dispara el workflow `Deploy Schema to Supabase`.
+2. Job **`validate`**: levanta un Postgres efimero en GitHub y aplica el schema completo. Si algun `.sql` esta roto (sintaxis, FK invalida, constraint violado por un seed), falla aca.
+3. Solo si `validate` pasa, corre el job **`deploy`** contra Supabase.
+
+Si rompes `validate`, Supabase **nunca se entera**. Quedate tranquilo: el peor caso es ver una corrida en rojo en la pestana Actions y empujar otro commit con la correccion.
+
+### Cuando si abrir un branch + PR
+
+Aunque `main` esta abierto, hay casos donde abrir un branch tiene sentido:
+
+- Cambios grandes que queres discutir antes de mergear.
+- Trabajo en progreso que no querras que toque Supabase todavia.
+- Experimentos que probablemente revertas.
+
+Para esos casos: branch nuevo, push, abris PR si queres feedback. Una vez listo, mergeas vos mismo.
+
+### Formato de nombres de branch (cuando uses)
 
 ```
 feat/descripcion-corta
 fix/descripcion-corta
 ```
 
-Ejemplos:
-
-- `feat/crear-tabla-pedidos`
-- `feat/agregar-index-clientes-email`
-- `fix/corregir-fk-pedidos-clientes`
-
-Usa guiones (`-`) para separar palabras. Todo en minusculas. Sin espacios.
+Guiones, minusculas, sin espacios.
 
 ---
 
@@ -46,7 +60,7 @@ Usamos un enfoque de **drop + recreate**: cada deploy borra el schema public y l
 
 1. **Edita el archivo directamente.** Si necesitas agregar una columna a la tabla `clientes`, editas `schema/01_tables/clientes.sql`. No crees un archivo separado tipo "alter table". Ese es el punto del enfoque drop + recreate.
 
-2. **Un archivo por tabla en `01_tables/`.** Mantiene todo organizado y facilita los code reviews.
+2. **Un archivo por tabla en `01_tables/`.** Mantiene todo organizado y facilita revisar diffs.
 
 3. **Foreign keys en `02_constraints/`, no en `01_tables/`.** Asi evitas problemas de dependencias circulares entre tablas.
 
@@ -56,7 +70,7 @@ Usamos un enfoque de **drop + recreate**: cada deploy borra el schema public y l
 
 6. **Prefijos numericos obligatorios en archivos SQL.** Los archivos dentro de cada carpeta se ejecutan en orden alfabetico, asi que **todo `.sql` debe arrancar con prefijo de dos digitos** (`01_`, `02_`, ...). No es opcional ni "solo si hace falta": el orden de ejecucion siempre importa (FKs, seeds que dependen de otras tablas, indices sobre columnas que existen, etc.). Dejar huecos entre numeros (ej: `01_`, `05_`, `10_`) es buena idea para poder insertar archivos despues sin renumerar todo.
 
-7. **Proba localmente antes de pushear.** Ejecuta `./scripts/deploy.sh` para verificar que todo funciona.
+7. **Si tenes entorno local, proba antes de pushear.** `./scripts/deploy.sh` aplica el schema contra Docker. Si no tenes entorno local (trabajas desde github.dev), no es obligatorio: el CI hace la misma validacion en su Postgres efimero.
 
 ---
 
@@ -75,36 +89,18 @@ Manten los mensajes simples y descriptivos. En espanol esta bien.
 
 - `cambios` (no dice nada)
 - `asdasd` (no)
-- `WIP` (si no esta listo, no lo pushees)
+- `WIP` (si no esta listo, no lo pushees a main)
 
 No hace falta seguir ningun formato tipo "Conventional Commits". Lo importante es que cualquiera pueda leer el mensaje y entender que hiciste.
 
 ---
 
-## Pull Requests
+## Que pasa si rompo el deploy
 
-### Reglas
-
-- Todo cambio a `main` pasa por Pull Request. No se mergea sin review.
-- Necesitas **al menos 1 aprobacion** de otro miembro del equipo.
-- El titulo del PR tiene que ser descriptivo (ej: "Crear tabla pedidos con FK a clientes").
-- Si tu cambio depende de otro PR que todavia no fue mergeado, aclara eso en la descripcion del PR.
-
-### Como abrir un PR
-
-**Desde GitHub Desktop:** despues de hacer push, aparece el boton **Create Pull Request**.
-
-**Desde la terminal:** cuando haces `git push`, la salida te muestra un link para crear el PR.
-
-**Desde el navegador:** anda al repo en GitHub > **Pull Requests > New Pull Request** > selecciona tu branch.
-
-### Review
-
-Cuando te pidan review:
-
-- Mira el SQL. Verifica que tenga sentido, que los tipos de datos sean correctos, que las FK apunten bien.
-- Si tenes dudas, pregunta en el PR (deja un comentario).
-- Si esta todo bien, aprobalo.
+1. Mira la pestana **Actions** del repo en GitHub. La corrida en rojo te muestra el job que fallo.
+2. Si fallo `validate`: Supabase no se toco. Solo arregla el `.sql`, push, y la proxima corrida deberia pasar.
+3. Si fallo `deploy` (raro, porque ya paso validate): Supabase puede haber quedado en estado parcial. Pushea otro commit (aunque sea trivial) o re-disparas el workflow desde Actions con **Run workflow** -- el `drop + recreate` deja todo limpio de nuevo.
+4. **Tambien llega un mensaje al canal de Discord** del equipo con el motivo del error y un link a la corrida.
 
 ---
 
@@ -112,11 +108,13 @@ Cuando te pidan review:
 
 | Que | Como |
 |-----|------|
-| Nombre de branch | `feat/descripcion` o `fix/descripcion` |
+| Editar sin entorno local | github.dev (apretas `.` en el repo) |
+| Push | Directo a `main` |
+| Validacion | Automatica en CI antes de tocar Supabase |
+| Branches | Solo si queres aislar trabajo en progreso |
 | Archivos de schema | Editar directamente en `schema/` (ese es el punto) |
-| Prefijos numericos | Obligatorios en carpetas **y** en archivos `.sql` (ej: `01_clientes.sql`) |
-| Tablas | Un archivo por tabla en `schema/01_tables/`, con prefijo numerico |
-| FKs y constraints | En `schema/02_constraints/`, con prefijo numerico |
+| Prefijos numericos | Obligatorios en carpetas **y** en archivos `.sql` |
+| Tablas | Un archivo por tabla en `schema/01_tables/` |
+| FKs y constraints | En `schema/02_constraints/` |
 | Commits | En espanol, descriptivos, sin formato rigido |
-| PRs | Titulo descriptivo, 1 aprobacion minima |
-| Antes de pushear | `./scripts/deploy.sh` |
+| Si rompo el deploy | Lo arreglo y vuelvo a pushear, miro Actions y Discord |
