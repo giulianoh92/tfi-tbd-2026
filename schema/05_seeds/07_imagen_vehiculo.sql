@@ -1,0 +1,23 @@
+-- Entre 1 y 5 imagenes por vehiculo (trigger trg_imagen_vehiculo_max)
+INSERT INTO imagen_vehiculo (id_vehiculo, url_imagen, orden) VALUES
+    (1,  'https://example.com/img/corolla-1.jpg',  1),
+    (1,  'https://example.com/img/corolla-2.jpg',  2),
+    (1,  'https://example.com/img/corolla-3.jpg',  3),
+    (2,  'https://example.com/img/tiguan-1.jpg',   1),
+    (2,  'https://example.com/img/tiguan-2.jpg',   2),
+    (3,  'https://example.com/img/focus-1.jpg',    1),
+    (3,  'https://example.com/img/focus-2.jpg',    2),
+    (4,  'https://example.com/img/cronos-1.jpg',   1),
+    (5,  'https://example.com/img/208gt-1.jpg',    1),
+    (5,  'https://example.com/img/208gt-2.jpg',    2),
+    (5,  'https://example.com/img/208gt-3.jpg',    3),
+    (6,  'https://example.com/img/tracker-1.jpg',  1),
+    (6,  'https://example.com/img/tracker-2.jpg',  2),
+    (7,  'https://example.com/img/hilux-1.jpg',    1),
+    (7,  'https://example.com/img/hilux-2.jpg',    2),
+    (8,  'https://example.com/img/logan-1.jpg',    1),
+    (9,  'https://example.com/img/polo-1.jpg',     1),
+    (9,  'https://example.com/img/polo-2.jpg',     2),
+    (10, 'https://example.com/img/renegade-1.jpg', 1),
+    (10, 'https://example.com/img/renegade-2.jpg', 2),
+    (10, 'https://example.com/img/renegade-3.jpg', 3);
