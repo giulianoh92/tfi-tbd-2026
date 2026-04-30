@@ -33,11 +33,14 @@ Usamos un enfoque de **drop + recreate**: cada deploy borra el schema public y l
 
 | Carpeta | Que va | Convencion de nombre |
 |---------|--------|---------------------|
-| `schema/01_tables/` | `CREATE TABLE` | Un archivo por tabla: `clientes.sql`, `pedidos.sql` |
-| `schema/02_constraints/` | Foreign keys y constraints | Un archivo por FK o agrupados: `fk_pedidos.sql` |
-| `schema/03_indexes/` | Indices | `idx_clientes_email.sql` |
-| `schema/04_functions/` | Funciones, triggers, vistas | Nombre descriptivo: `fn_calcular_total.sql` |
-| `schema/05_seeds/` | Datos de prueba | `clientes.sql`, `pedidos.sql` |
+| `schema/01_tables/` | `CREATE TABLE` | Un archivo por tabla con prefijo numerico: `01_clientes.sql`, `02_pedidos.sql` |
+| `schema/02_constraints/` | Foreign keys y constraints | Un archivo por FK o agrupados, con prefijo: `01_fk_pedidos.sql` |
+| `schema/03_indexes/` | Indices | Con prefijo: `01_idx_clientes_email.sql` |
+| `schema/04_functions/` | Funciones, triggers, vistas | Con prefijo: `01_fn_calcular_total.sql` |
+| `schema/05_seeds/` | Datos de prueba | Con prefijo, mismo orden que las tablas: `01_clientes.sql`, `02_pedidos.sql` |
+| `schema/06_permissions/` | Roles, GRANT, REVOKE | Con prefijo: `01_roles.sql`, `02_grants.sql` |
+
+> **Importante:** tanto las carpetas (`01_tables/`, `02_constraints/`, ...) **como los archivos SQL dentro de ellas** llevan prefijo numerico de dos digitos. La carpeta define el orden entre etapas; el prefijo del archivo define el orden dentro de la etapa. Sin el prefijo, el deploy puede romper por dependencias resueltas en orden incorrecto.
 
 ### Reglas
 
@@ -51,7 +54,7 @@ Usamos un enfoque de **drop + recreate**: cada deploy borra el schema public y l
 
 5. **Seeds usan `INSERT INTO ... VALUES` simple.** No hace falta `ON CONFLICT` ni `UPSERT` porque el schema siempre esta fresco.
 
-6. **Orden de ejecucion dentro de una carpeta:** los archivos se ejecutan en orden alfabetico. Si necesitas que uno vaya antes que otro, usa prefijos numericos (ej: `01_clientes.sql`, `02_pedidos.sql`).
+6. **Prefijos numericos obligatorios en archivos SQL.** Los archivos dentro de cada carpeta se ejecutan en orden alfabetico, asi que **todo `.sql` debe arrancar con prefijo de dos digitos** (`01_`, `02_`, ...). No es opcional ni "solo si hace falta": el orden de ejecucion siempre importa (FKs, seeds que dependen de otras tablas, indices sobre columnas que existen, etc.). Dejar huecos entre numeros (ej: `01_`, `05_`, `10_`) es buena idea para poder insertar archivos despues sin renumerar todo.
 
 7. **Proba localmente antes de pushear.** Ejecuta `./scripts/deploy.sh` para verificar que todo funciona.
 
@@ -111,8 +114,9 @@ Cuando te pidan review:
 |-----|------|
 | Nombre de branch | `feat/descripcion` o `fix/descripcion` |
 | Archivos de schema | Editar directamente en `schema/` (ese es el punto) |
-| Tablas | Un archivo por tabla en `schema/01_tables/` |
-| FKs y constraints | En `schema/02_constraints/` |
+| Prefijos numericos | Obligatorios en carpetas **y** en archivos `.sql` (ej: `01_clientes.sql`) |
+| Tablas | Un archivo por tabla en `schema/01_tables/`, con prefijo numerico |
+| FKs y constraints | En `schema/02_constraints/`, con prefijo numerico |
 | Commits | En espanol, descriptivos, sin formato rigido |
 | PRs | Titulo descriptivo, 1 aprobacion minima |
 | Antes de pushear | `./scripts/deploy.sh` |
