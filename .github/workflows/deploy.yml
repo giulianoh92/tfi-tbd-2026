@@ -33,7 +33,15 @@ jobs:
       - name: Aplicar schema en Postgres efimero
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/tbd_tfi_test
-        run: ./scripts/apply.sh
+        run: |
+          set -o pipefail
+          ./scripts/apply.sh 2>&1 | tee /tmp/apply.log
+
+      - name: Notificar fallo a Discord
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: ./scripts/notify-discord.sh validate /tmp/apply.log
 
   deploy:
     name: Aplicar schema en Supabase
@@ -45,4 +53,12 @@ jobs:
       - name: Deploy a Supabase
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: ./scripts/apply.sh
+        run: |
+          set -o pipefail
+          ./scripts/apply.sh 2>&1 | tee /tmp/apply.log
+
+      - name: Notificar fallo a Discord
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: ./scripts/notify-discord.sh deploy /tmp/apply.log
