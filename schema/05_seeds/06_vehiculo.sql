@@ -13,4 +13,5 @@ INSERT INTO vehiculo (id_sucursal, id_tipo, marca, modelo, anio, patente, km_act
     (3, 5, 'Toyota',     'Hilux',     2022, 'AC901OP', 41000, 'Aire acond., 4x4, direccion asistida',          'disponible'),
     (4, 1, 'Renault',    'Logan',     2021, 'AD234QR', 65000, 'Aire acond., direccion asistida',               'disponible'),
     (4, 4, 'Volkswagen', 'Polo',      2022, 'AD567ST', 38000, 'Aire acond., GPS, USB',                         'alquilado'),
+    (4, 4, 'Dodge', 'Viper',      2022, 'AD567ST', 38000, 'Aire acond., GPS, USB',                         'alquilado'),
     (5, 2, 'Jeep',       'Renegade',  2023, 'AD890UV', 12000, 'Aire acond., asientos cuero, GPS',              'disponible');
