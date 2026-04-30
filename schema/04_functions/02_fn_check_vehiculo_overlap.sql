@@ -7,14 +7,26 @@ DECLARE
     v_id_vehiculo  BIGINT     := NEW.id_vehiculo;
     v_inicio       TIMESTAMP  := NEW.fecha_inicio;
     v_fin          TIMESTAMP  := NEW.fecha_fin_prevista;
+    -- Reserva a excluir del chequeo:
+    --   * en INSERT/UPDATE de reserva: la propia reserva (auto-exclusion)
+    --   * en INSERT/UPDATE de alquiler: la reserva vinculada (la que se esta concretando)
+    -- Ambas tablas tienen la columna id_reserva, asi que la asignacion es valida.
+    v_exclude_res  BIGINT     := NEW.id_reserva;
+    -- Alquiler a excluir (solo aplica en INSERT/UPDATE de alquiler).
+    -- Se asigna condicionalmente porque la tabla reserva no tiene id_alquiler
+    -- y PL/pgSQL valida la referencia al planificar.
+    v_exclude_alq  BIGINT;
 BEGIN
+    IF TG_TABLE_NAME = 'alquiler' THEN
+        v_exclude_alq := NEW.id_alquiler;
+    END IF;
     -- Conflicto contra otras reservas activas del mismo vehiculo
     IF EXISTS (
         SELECT 1
         FROM reserva r
         WHERE r.id_vehiculo = v_id_vehiculo
           AND r.estado IN ('pendiente', 'confirmada')
-          AND (TG_TABLE_NAME <> 'reserva' OR r.id_reserva <> NEW.id_reserva)
+          AND r.id_reserva IS DISTINCT FROM v_exclude_res
           AND r.fecha_inicio       <  v_fin
           AND r.fecha_fin_prevista >  v_inicio
     ) THEN
@@ -29,7 +41,7 @@ BEGIN
         FROM alquiler a
         WHERE a.id_vehiculo = v_id_vehiculo
           AND a.estado = 'en_curso'
-          AND (TG_TABLE_NAME <> 'alquiler' OR a.id_alquiler <> NEW.id_alquiler)
+          AND a.id_alquiler IS DISTINCT FROM v_exclude_alq
           AND a.fecha_inicio                                          <  v_fin
           AND COALESCE(a.fecha_devolucion_real, a.fecha_fin_prevista) >  v_inicio
     ) THEN
