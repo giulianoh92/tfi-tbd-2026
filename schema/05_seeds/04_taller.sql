@@ -1,4 +1,5 @@
+-- Talleres mecanicos externos en el NEA, alineados con las sucursales operativas.
 INSERT INTO taller (nombre, direccion, telefono) VALUES
-    ('Taller Norte SRL',     'Av. Cabildo 4500, CABA',        '011-4700-1100'),
-    ('Mecanica Express',     'Av. Pueyrredon 1200, CABA',     '011-4900-2200'),
-    ('Auto Service Rosario', 'Av. Pellegrini 2000, Rosario',  '0341-500-3300');
+    ('Posadas Motors',            'Av. Quaranta 3450, Posadas',         '0376-444-7100'),
+    ('Mecanica Corrientes Centro','Av. Maipu 2300, Corrientes',         '0379-442-7200'),
+    ('Iguazu Auto Service',       'Av. Cordoba 750, Puerto Iguazu',     '0375-742-7300');
