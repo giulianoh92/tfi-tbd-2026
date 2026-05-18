@@ -1,3 +1,8 @@
+-- Secuencia para autonumerar facturas en formato correlativo.
+-- Aporte original: Marcia Viera (commit 257d86f, "funcionalidad finalizar alquiler"),
+-- adaptado al schema actual.
+CREATE SEQUENCE IF NOT EXISTS seq_numero_factura START WITH 1;
+
 CREATE TABLE IF NOT EXISTS factura (
     id_factura                     BIGSERIAL      PRIMARY KEY,
     id_alquiler                    BIGINT         NOT NULL UNIQUE,
