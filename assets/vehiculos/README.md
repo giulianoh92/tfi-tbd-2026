@@ -115,6 +115,8 @@ Todas las imágenes fueron obtenidas de Wikimedia Commons. Licencias compatibles
 - `v03-vw-gol-trend/exterior-01.jpg`: foto por **Maxi-carp-99** (subida por Just a Man), licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:VW_Gol_Trend_Sportline_1.6_(2016).jpg>
 - `v03-vw-gol-trend/exterior-02.jpg`: foto por **Maxi-Napo-99** (subida por Just a Man), licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2013_Volkswagen_Gol_1.4_Power,_front.jpg>
 - `v03-vw-gol-trend/exterior-03.jpg`: foto por **Maxi-Napo-99** (subida por Just a Man), licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2013_Volkswagen_Gol_1.4_Power,_rear.jpg>
+- `v03-vw-gol-trend/interior-01.jpg`: foto por **Esmihel Muhammed**, licencia **Pexels License** (uso libre, atribucion opcional), fuente <https://www.pexels.com/photo/the-interior-of-a-volkswagen-passat-15223421/>. Nota: foto generica de tablero VW (Passat) usada como referencia visual; Wikimedia Commons no dispone de fotos del interior del Gol Trend.
+- `v03-vw-gol-trend/interior-02.jpg`: foto por **Nicklas** (daslebendesnicklas), licencia **Pexels License** (uso libre, atribucion opcional), fuente <https://www.pexels.com/photo/a-black-steering-wheel-11537268/>. Nota: foto generica de cabina VW moderna usada como referencia visual; Wikimedia Commons no dispone de fotos del interior del Gol Trend.
 
 ### v04-chevrolet-onix
 
