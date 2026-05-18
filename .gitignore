@@ -20,6 +20,13 @@ Thumbs.db
 # Supabase local
 .supabase/
 
+# Engram memory cache (local)
+.atl/
+
+# Next.js
+.next/
+out/
+
 # Node modules (Supabase CLI tools)
 node_modules/
 package-lock.json

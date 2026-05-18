@@ -1,0 +1,94 @@
+# Supabase CLI — configuración local del proyecto TBD TFI 2026
+# Referencia: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "tbd-tfi-2026"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# Para desarrollo local, deshabilitar la confirmación de email facilita las pruebas.
+# Cambiar a true en producción.
+enable_confirmations = false
+secure_password_change = false
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+# ---------------------------------------------------------------------------
+# NOTA IMPORTANTE — Schema y migraciones
+# ---------------------------------------------------------------------------
+# El Supabase CLI usa el directorio `supabase/migrations/` (formato de
+# migraciones numeradas: YYYYMMDDHHMMSS_nombre.sql) para `supabase db reset`.
+# NO puede leer directamente el directorio `schema/` del repo porque los
+# archivos SQL allí usan un formato idempotente (CREATE TABLE IF NOT EXISTS)
+# pensado para el script `scripts/apply.sh` (que hace DROP SCHEMA CASCADE).
+#
+# Para usar `supabase db reset` con el schema del repo tenés dos opciones:
+#
+# Opción A — Script wrapper (recomendada para PoC):
+#   Usar `bash scripts/dev-frontend.sh` que llama a `supabase start` y luego
+#   ejecuta `scripts/apply.sh` contra la base local.
+#   La URL local es: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+#
+# Opción B — Migraciones formales:
+#   Crear `supabase/migrations/20260101000000_initial.sql` con el contenido
+#   del repo (en orden de aplicación) y usar `supabase db reset` normalmente.
+#   Esto requiere adaptar el script porque `db reset` espera el formato de
+#   migraciones, no el DROP CASCADE de apply.sh.
+#
+# El script `scripts/dev-frontend.sh` implementa la Opción A.
+# ---------------------------------------------------------------------------
+
+[analytics]
+enabled = false
