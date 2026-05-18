@@ -1,6 +1,9 @@
 # Variables de entorno (NO commitear secretos)
 .env
+.env.local
+.env.*.local
 !.env.example
+!.env.local.example
 
 # Docker volumes/data
 docker-data/
