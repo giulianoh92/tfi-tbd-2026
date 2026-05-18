@@ -27,17 +27,29 @@ export default async function MisReservasPage() {
     redirect('/login')
   }
 
-  // El frontend NO filtra por cliente — confía en RLS.
-  // La policy `reserva_owner_crud` filtra automáticamente las filas
-  // que pertenecen al usuario autenticado.
-  const { data: reservas, error } = await supabase
-    .from('reserva')
-    .select(`
-      *,
-      vehiculo ( marca, modelo, patente ),
-      tipo_reserva ( nombre )
-    `)
-    .order('fecha_creacion', { ascending: false })
+  // Resolvemos el id_cliente del usuario autenticado y filtramos explicito.
+  // RLS por si sola no alcanza: si el user tiene claim de staff, la policy
+  // reserva_staff_all abre todas las filas (OR con reserva_owner_crud).
+  // "Mis reservas" debe ser literal -> filtramos por cliente en el frontend.
+  const { data: clienteRow } = await supabase
+    .from('cliente')
+    .select('id_cliente')
+    .eq('auth_user_id', user.id)
+    .maybeSingle()
+
+  const idCliente = clienteRow?.id_cliente ?? null
+
+  const { data: reservas, error } = idCliente
+    ? await supabase
+        .from('reserva')
+        .select(`
+          *,
+          vehiculo ( marca, modelo, patente ),
+          tipo_reserva ( nombre )
+        `)
+        .eq('id_cliente', idCliente)
+        .order('fecha_creacion', { ascending: false })
+    : { data: [], error: null }
 
   if (error) {
     return (
