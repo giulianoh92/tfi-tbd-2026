@@ -92,10 +92,87 @@ Licencia CC0 (uso libre, sin atribución requerida). El problema es que **rara v
 
 ## Atribuciones
 
-> A medida que vayan agregando imágenes con licencia que lo requiera, dejen una línea acá. Formato:
-> `vXX/<archivo>.jpg`: foto por **<autor>**, licencia **<CC...>**, fuente **<URL>**.
+Todas las imágenes fueron obtenidas de Wikimedia Commons. Licencias compatibles con uso público en repositorio académico abierto.
 
-*(Sin entradas todavía — completar al subir cada imagen)*
+### v01-fiat-cronos
+
+- `v01-fiat-cronos/exterior-01.jpg`: foto por **Maxi-Napo-99** (subida por Just a Man), licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2023_Fiat_Cronos_1.3_Drive_(Argentina).jpg>
+- `v01-fiat-cronos/exterior-02.jpg`: foto por **Just a Man**, licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Fiat_Cronos_1.3_Drive_GSE_(front_view).jpg>
+- `v01-fiat-cronos/exterior-03.jpg`: foto por **Just a Man**, licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Fiat_Cronos_1.3_Drive_GSE_(rear_view).jpg>
+- `v01-fiat-cronos/interior-01.jpg`: foto por **Just a Man**, licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2024_Fiat_Cronos_Precision_interior.jpg>
+- `v01-fiat-cronos/interior-02.jpg`: foto por **Just a Man**, licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Fiat_Cronos_1.3_Drive_GSE_(side_view).jpg>
+
+### v02-toyota-corolla
+
+- `v02-toyota-corolla/exterior-01.jpg`: foto por **AIMHO'S REBELLION 8490s**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2020_Toyota_Corolla_Altis_1.6_front_view_in_Brunei.jpg>
+- `v02-toyota-corolla/exterior-02.jpg`: foto por **AIMHO'S REBELLION 8490s**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2020_Toyota_Corolla_Altis_1.6_rear_view_in_Brunei.jpg>
+- `v02-toyota-corolla/exterior-03.jpg`: foto por **LuvsMG481**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Toyota_Corolla_Altis_1.8G_Prestige_front.jpg>
+- `v02-toyota-corolla/interior-01.jpg`: foto por **AIMHO'S REBELLION 8490s**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2020_Toyota_Corolla_Altis_1.6_interior_view_in_Brunei.jpg>
+- `v02-toyota-corolla/interior-02.jpg`: foto por **AIMHO'S REBELLION 8490s**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2020-21_Toyota_Corolla_(Corolla_Altis)_1.8_Auto_interior_in_Brunei.jpg>
+
+### v03-vw-gol-trend
+
+- `v03-vw-gol-trend/exterior-01.jpg`: foto por **Maxi-carp-99** (subida por Just a Man), licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:VW_Gol_Trend_Sportline_1.6_(2016).jpg>
+- `v03-vw-gol-trend/exterior-02.jpg`: foto por **Maxi-Napo-99** (subida por Just a Man), licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2013_Volkswagen_Gol_1.4_Power,_front.jpg>
+- `v03-vw-gol-trend/exterior-03.jpg`: foto por **Maxi-Napo-99** (subida por Just a Man), licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2013_Volkswagen_Gol_1.4_Power,_rear.jpg>
+
+### v04-chevrolet-onix
+
+- `v04-chevrolet-onix/exterior-01.jpg`: foto por **Chevrolet México** (subida por Andra Febrian), licencia **CC BY 3.0**, fuente <https://commons.wikimedia.org/wiki/File:Chevrolet_Onix_(second_generation,_front_view).jpg>
+- `v04-chevrolet-onix/exterior-02.jpg`: foto por **Just a Man**, licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Chevrolet_Onix_Plus_1.0_Premier_(side).jpg>
+- `v04-chevrolet-onix/exterior-03.jpg`: foto por **NaBUru38**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Chevrolet_Onix_Mk2_RS_2020_in_Maldonado_-_front.jpg>
+- `v04-chevrolet-onix/interior-01.jpg`: foto por **RL GNZLZ** (subida por Andra Febrian), licencia **CC BY-SA 2.0**, fuente <https://commons.wikimedia.org/wiki/File:2021_Chevrolet_Onix_1.0T_Premier_(Chile)_front_view.jpg>
+- `v04-chevrolet-onix/interior-02.jpg`: foto por **Chevrolet México** (subida por Andra Febrian), licencia **CC BY 3.0**, fuente <https://commons.wikimedia.org/wiki/File:Chevrolet_Onix_(second_generation,_rear_view).jpg>
+
+### v05-toyota-hilux
+
+- `v05-toyota-hilux/exterior-01.jpg`: foto por **Vauxford**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg>
+- `v05-toyota-hilux/exterior-02.jpg`: foto por **Vauxford**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Side.jpg>
+- `v05-toyota-hilux/exterior-03.jpg`: foto por **Vauxford**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Rear.jpg>
+- `v05-toyota-hilux/interior-01.jpg`: foto por **Vauxford**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2018_Toyota_HiLux_Invincible_X_facelift_Interior.jpg>
+- `v05-toyota-hilux/interior-02.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Toyota_Hilux_GUN126_2.8_GR_Sport_-_interior_view.jpg>
+
+### v06-jeep-renegade
+
+- `v06-jeep-renegade/exterior-01.jpg`: foto por **Elise240SX**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Jeep_Renegade_Trailhawk_in_Bikini_Pearl,_front_right,_2025-09-06.jpg>
+- `v06-jeep-renegade/exterior-02.jpg`: foto por **Calreyn88**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Jeep_Renegade.jpg>
+- `v06-jeep-renegade/exterior-03.jpg`: foto por **Elise240SX**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Jeep_Renegade_Trailhawk_in_Bikini_Pearl,_rear_right,_2025-09-06.jpg>
+- `v06-jeep-renegade/interior-01.jpg`: foto por **Gzen92**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Jeep_Renegade_-_int%C3%A9rieur.jpg>
+- `v06-jeep-renegade/interior-02.jpg`: foto por **Jakub "Flyz1" Maciejewski** (Wikigrant WG 2016-10), licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Jeep_Renegade_-_wn%C4%99trze_(MSP16).jpg>
+
+### v07-toyota-sw4
+
+*Nota: Toyota SW4 se comercializa internacionalmente como Toyota Fortuner. Las fotos corresponden al Fortuner AN150/AN160 2024, que es el mismo vehículo.*
+
+- `v07-toyota-sw4/exterior-01.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2024_Toyota_Fortuner_2.4_G_4x2_in_Gray_Metallic,_front_right,_06-27-2024.jpg>
+- `v07-toyota-sw4/exterior-02.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2024_Toyota_Fortuner_2.4_G_4x2_in_Gray_Metallic,_rear_right,_06-27-2024.jpg>
+- `v07-toyota-sw4/exterior-03.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2024_Toyota_Fortuner_2.4_G_4x2_in_Gray_Metallic,_front_right,_06-27-2024.jpg>
+- `v07-toyota-sw4/interior-01.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Toyota_Fortuner_GUN165_2.4_G_4x2_MT_-_interior_view.jpg>
+- `v07-toyota-sw4/interior-02.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2024_Toyota_Fortuner_2.4_G_4x2_in_Gray_Metallic,_front_right,_06-27-2024.jpg>
+
+### v08-renault-kangoo
+
+- `v08-renault-kangoo/exterior-01.jpg`: foto por **Mr.choppers**, licencia **CC BY-SA 3.0**, fuente <https://commons.wikimedia.org/wiki/File:Renault_Kangoo_II_facelift_van_(Sweden),_front_right.jpg>
+- `v08-renault-kangoo/exterior-02.jpg`: foto por **Mr.choppers**, licencia **CC BY-SA 3.0**, fuente <https://commons.wikimedia.org/wiki/File:Renault_Kangoo_II_facelift_van_(Sweden),_rear_right.jpg>
+- `v08-renault-kangoo/exterior-03.jpg`: foto por **EurovisionNim**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2016_Renault_Kangoo_(X61_Series_II)_van_(2017-01-30)_01.jpg>
+- `v08-renault-kangoo/interior-01.jpg`: foto por **TTTNIS**, licencia **dominio público**, fuente <https://commons.wikimedia.org/wiki/File:Renault_Kangoo_II_interior.jpg>
+- `v08-renault-kangoo/interior-02.jpg`: foto por **M 93**, licencia **CC BY 3.0**, fuente <https://commons.wikimedia.org/wiki/File:Renault_Kangoo_II_rear_20100529.jpg>
+
+### v09-ford-ranger
+
+- `v09-ford-ranger/exterior-01.jpg`: foto por **Chanokchon**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2023_Ford_Ranger_Stormtrak_Double-Cab_2.0L_Bi-Turbo_4x4.jpg>
+- `v09-ford-ranger/exterior-02.jpg`: foto por **Chanokchon**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2022_Ford_Ranger_Wildtrak_Double-Cab_2.0L_Bi-Turbo_4x4.jpg>
+- `v09-ford-ranger/exterior-03.jpg`: foto por **Calreyn88**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2023_Ford_Ranger_Wildtrak_EcoBlue_4x4_Auto.jpg>
+- `v09-ford-ranger/interior-01.jpg`: foto por **Deathpallie325**, licencia **CC BY 4.0**, fuente <https://commons.wikimedia.org/wiki/File:2024_Ford_Ranger_interior.jpg>
+- `v09-ford-ranger/interior-02.jpg`: foto por **Ethan Llamas**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Ford_Ranger_P703_2.0_Bi-Turbo_Wildtrak_Special_Edition_4x4_interior.jpg>
+
+### v10-vw-tcross
+
+- `v10-vw-tcross/exterior-01.jpg`: foto por **Alexander-93**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Volkswagen_T-Cross_(2023)_1X7A1967.jpg>
+- `v10-vw-tcross/exterior-02.jpg`: foto por **Alexander-93**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Volkswagen_T-Cross_(2023)_1X7A2499.jpg>
+- `v10-vw-tcross/exterior-03.jpg`: foto por **Alexander-93**, licencia **CC BY-SA 4.0**, fuente <https://commons.wikimedia.org/wiki/File:Volkswagen_T-Cross_(2023)_1X7A2500.jpg>
+- `v10-vw-tcross/interior-01.jpg`: foto por **Tokumeigakarinoaoshima**, licencia **CC0 1.0 (dominio público)**, fuente <https://commons.wikimedia.org/wiki/File:Volkswagen_T-Cross_TSI_R-Line_(3BA-C1DKR)_interior.jpg>
+- `v10-vw-tcross/interior-02.jpg`: foto por **Tokumeigakarinoaoshima**, licencia **CC0 1.0 (dominio público)**, fuente <https://commons.wikimedia.org/wiki/File:Volkswagen_T-Cross_TSI_R-Line_(3BA-C1DKR)_front.jpg>
 
 ## Workflow recomendado
 
