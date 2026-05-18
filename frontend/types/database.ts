@@ -49,7 +49,7 @@ export interface TipoVehiculo {
 export interface EstadoVehiculo {
   id_estado: number
   nombre: string
-  codigo: string
+  descripcion: string | null
 }
 
 export interface ImagenVehiculo {
@@ -94,6 +94,42 @@ export interface Cliente {
   dni: string
   telefono: string | null
   direccion: string | null
+}
+
+export interface Sucursal {
+  id_sucursal: number
+  nombre: string
+  direccion: string | null
+  telefono: string | null
+}
+
+export interface Alquiler {
+  id_alquiler: number
+  id_reserva: number | null
+  id_cliente: number
+  id_vehiculo: number
+  id_tarifa: number
+  id_sucursal_devolucion: number | null
+  fecha_inicio: string
+  fecha_fin_prevista: string
+  fecha_devolucion_real: string | null
+  km_inicio: number
+  km_fin: number | null
+  estado: 'activo' | 'cerrado'
+}
+
+export interface Factura {
+  id_factura: number
+  id_alquiler: number
+  id_cliente: number
+  numero_factura: string
+  fecha_emision: string
+  precio_por_dia_aplicado: number
+  porcentaje_recargo_aplicado: number | null
+  costo_base: number
+  horas_excedidas: number | null
+  recargo_excedente: number | null
+  total: number
 }
 
 // ---------------------------------------------------------------------------
@@ -144,9 +180,36 @@ export type Database = {
         Insert: Omit<Cliente, 'id_cliente'>
         Update: Partial<Omit<Cliente, 'id_cliente'>>
       }
+      sucursal: {
+        Row: Sucursal
+        Insert: Omit<Sucursal, 'id_sucursal'>
+        Update: Partial<Omit<Sucursal, 'id_sucursal'>>
+      }
+      alquiler: {
+        Row: Alquiler
+        Insert: Omit<Alquiler, 'id_alquiler'>
+        Update: Partial<Omit<Alquiler, 'id_alquiler'>>
+      }
+      factura: {
+        Row: Factura
+        Insert: Omit<Factura, 'id_factura'>
+        Update: Partial<Omit<Factura, 'id_factura'>>
+      }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      pa_finalizar_alquiler: {
+        Args: {
+          p_id_alquiler: number
+          p_km_fin: number
+          p_id_sucursal_devolucion: number
+          p_estado_final_vehiculo?: string
+          p_id_taller?: number | null
+          p_observaciones?: string | null
+        }
+        Returns: void
+      }
+    }
     Enums: Record<string, never>
   }
 }

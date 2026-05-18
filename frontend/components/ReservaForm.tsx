@@ -46,24 +46,32 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
       return
     }
 
-    // NOTA sobre id_cliente:
-    // La RLS policy `reserva_owner_crud` (schema/06_permissions) valida que
-    // id_cliente pertenezca al usuario autenticado. Si la policy usa una función
-    // helper `fn_cliente_del_usuario()` o similar, el INSERT puede omitir id_cliente
-    // y la DB lo resuelve. Si la policy requiere el id explícito, necesitás hacer
-    // un SELECT previo: supabase.from('cliente').select('id_cliente').eq('id_usuario', user.id).single()
-    // y pasar ese valor acá.
-    //
-    // Para el PoC asumimos que id_cliente tiene un DEFAULT basado en el JWT o que
-    // la policy lo maneja. Ajustar según la implementación final de la policy.
+    // Resolver id_cliente del usuario autenticado. La RLS policy
+    // reserva_owner_crud exige WITH CHECK id_cliente = fn_cliente_del_usuario().
+    // Aunque la policy podria inferirlo, PostgREST necesita el valor explicito
+    // en el INSERT (no lo deduce). SELECT contra cliente filtra por RLS:
+    // solo retorna la fila del propio usuario via cliente_self_read.
+    const { data: clienteRow, error: clienteError } = await supabase
+      .from('cliente')
+      .select('id_cliente')
+      .maybeSingle()
+
+    if (clienteError || !clienteRow) {
+      setError(
+        clienteError?.message ??
+          'No se encontro tu perfil de cliente. Cerra sesion y volve a entrar.',
+      )
+      setLoading(false)
+      return
+    }
+
     const { error: insertError } = await supabase.from('reserva').insert({
+      id_cliente: clienteRow.id_cliente,
       id_vehiculo: idVehiculo,
       id_tipo_reserva: idTipoReserva,
-      // Las timestamps deben incluir hora; usamos inicio/fin del día
       fecha_inicio: `${fechaInicio}T00:00:00`,
       fecha_fin_prevista: `${fechaFin}T23:59:59`,
-      // id_cliente: resolverlo con SELECT si la policy lo requiere explícito
-    } as { id_vehiculo: number; id_tipo_reserva: number; fecha_inicio: string; fecha_fin_prevista: string })
+    })
 
     if (insertError) {
       if (insertError.code === '23P01' || insertError.message?.includes('overlap')) {

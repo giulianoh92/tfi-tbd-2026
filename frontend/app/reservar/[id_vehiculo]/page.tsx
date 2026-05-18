@@ -30,7 +30,7 @@ export default async function ReservarPage({ params }: PageProps) {
     .from('vehiculo')
     .select(`
       *,
-      tipo_vehiculo!vehiculo_id_tipo_fkey ( nombre )
+      tipo_vehiculo ( nombre )
     `)
     .eq('id_vehiculo', idVehiculo)
     .single()

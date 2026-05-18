@@ -12,20 +12,27 @@ export type VehiculoConDetalles = Vehiculo & {
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Trae los 10 vehículos con sus relaciones.
-  // El filtro de disponibilidad queda para cuando exista la RLS policy
-  // `vehiculo_public_read` + la policy de estado. Por ahora traemos todos
-  // los que el rol `anon` pueda ver.
-  const { data: vehiculos, error } = await supabase
-    .from('vehiculo')
-    .select(`
-      *,
-      tipo_vehiculo!vehiculo_id_tipo_fkey ( nombre ),
-      imagen_vehiculo ( url_imagen, orden ),
-      estado_vehiculo!vehiculo_id_estado_fkey ( codigo ),
-      tarifa ( precio_por_dia, id_sucursal, id_tipo )
-    `)
-    .limit(10)
+  // Dos queries en paralelo: vehiculos con joins directos (FKs unicas, sin
+  // hints de constraint) + tarifas planas. La relacion tipo+sucursal -> tarifa
+  // se resuelve en JS abajo (no hay FK directa vehiculo->tarifa).
+  const [vehiculosRes, tarifasRes] = await Promise.all([
+    supabase
+      .from('vehiculo')
+      .select(`
+        *,
+        tipo_vehiculo ( nombre ),
+        imagen_vehiculo ( url_imagen, orden ),
+        estado_vehiculo ( nombre )
+      `)
+      .limit(10),
+    supabase
+      .from('tarifa')
+      .select('precio_por_dia, id_sucursal, id_tipo'),
+  ])
+
+  const vehiculos = vehiculosRes.data
+  const tarifasAll = tarifasRes.data ?? []
+  const error = vehiculosRes.error ?? tarifasRes.error
 
   if (error) {
     // En PoC mostramos el error técnico; en producción loguear y mostrar UI amigable.
@@ -46,11 +53,11 @@ export default async function HomePage() {
     const imgs = (v.imagen_vehiculo as ImagenVehiculo[] | null) ?? []
     const portada = imgs.find((i) => i.orden === 1)?.url_imagen ?? null
 
-    // Busca la tarifa que corresponde al tipo del vehículo y su sucursal origen
-    const tarifas = (v.tarifa as Tarifa[] | null) ?? []
-    const tarifa = tarifas.find(
+    // Busca la tarifa que corresponde al tipo del vehículo y su sucursal origen.
+    // Fallback: cualquier tarifa del mismo tipo si no hay una especifica de la sucursal.
+    const tarifa = (tarifasAll as Tarifa[]).find(
       (t) => t.id_tipo === v.id_tipo && t.id_sucursal === v.id_sucursal_origen
-    ) ?? tarifas[0] ?? null
+    ) ?? (tarifasAll as Tarifa[]).find((t) => t.id_tipo === v.id_tipo) ?? null
 
     return {
       ...v,
@@ -75,8 +82,8 @@ export default async function HomePage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehiculosNormalizados.map((v) => (
-            <VehiculoCard key={v.id_vehiculo} vehiculo={v} />
+          {vehiculosNormalizados.map((v, idx) => (
+            <VehiculoCard key={v.id_vehiculo} vehiculo={v} priority={idx < 3} />
           ))}
         </div>
       )}

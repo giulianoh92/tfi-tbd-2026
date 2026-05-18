@@ -4,16 +4,13 @@ import type { VehiculoConDetalles } from '@/app/page'
 
 interface VehiculoCardProps {
   vehiculo: VehiculoConDetalles
+  priority?: boolean
 }
 
 const PLACEHOLDER_URL =
   'https://raw.githubusercontent.com/giulianoh92/tfi-tbd-2026/main/assets/vehiculos/placeholder.jpg'
 
-/**
- * Card presentacional de vehículo.
- * Muestra imagen de portada, marca/modelo, tipo y tarifa diaria.
- */
-export function VehiculoCard({ vehiculo: v }: VehiculoCardProps) {
+export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProps) {
   const imageSrc = v.imagen_portada ?? PLACEHOLDER_URL
 
   return (
@@ -25,8 +22,7 @@ export function VehiculoCard({ vehiculo: v }: VehiculoCardProps) {
           fill
           className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          // Si la imagen falla (URLs del repo aún no subidas), no rompe la UI
-          onError={() => {}}
+          priority={priority}
         />
       </div>
 

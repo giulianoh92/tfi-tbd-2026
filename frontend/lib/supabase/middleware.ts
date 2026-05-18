@@ -36,8 +36,10 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Rutas que requieren autenticación
-  const protectedPaths = ['/mis-reservas', '/reservar']
+  // Rutas que requieren autenticación.
+  // NOTA: /admin solo chequea sesión acá; la verificación de rol staff
+  // la hace app/admin/layout.tsx (doble barrera).
+  const protectedPaths = ['/mis-reservas', '/reservar', '/admin']
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   )
