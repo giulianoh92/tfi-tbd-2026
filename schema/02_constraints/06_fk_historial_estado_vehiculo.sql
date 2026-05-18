@@ -1,0 +1,11 @@
+ALTER TABLE historial_estado_vehiculo
+    ADD CONSTRAINT fk_historial_vehiculo
+        FOREIGN KEY (id_vehiculo)
+        REFERENCES vehiculo (id_vehiculo)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    ADD CONSTRAINT fk_historial_estado
+        FOREIGN KEY (id_estado)
+        REFERENCES estado_vehiculo (id_estado)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT;

@@ -1,0 +1,11 @@
+ALTER TABLE ubicacion_vehiculo
+    ADD CONSTRAINT fk_ubicacion_vehiculo_vehiculo
+        FOREIGN KEY (id_vehiculo)
+        REFERENCES vehiculo (id_vehiculo)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    ADD CONSTRAINT fk_ubicacion_vehiculo_sucursal
+        FOREIGN KEY (id_sucursal)
+        REFERENCES sucursal (id_sucursal)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT;

@@ -1,9 +1,16 @@
 ALTER TABLE vehiculo
     ADD CONSTRAINT fk_vehiculo_sucursal
-        FOREIGN KEY (id_sucursal) REFERENCES sucursal (id_sucursal)
-        ON UPDATE CASCADE ON DELETE RESTRICT;
-
-ALTER TABLE vehiculo
+        FOREIGN KEY (id_sucursal_origen)
+        REFERENCES sucursal (id_sucursal)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
     ADD CONSTRAINT fk_vehiculo_tipo
-        FOREIGN KEY (id_tipo) REFERENCES tipo_vehiculo (id_tipo)
-        ON UPDATE CASCADE ON DELETE RESTRICT;
+        FOREIGN KEY (id_tipo)
+        REFERENCES tipo_vehiculo (id_tipo)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    ADD CONSTRAINT fk_vehiculo_estado
+        FOREIGN KEY (id_estado)
+        REFERENCES estado_vehiculo (id_estado)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT;

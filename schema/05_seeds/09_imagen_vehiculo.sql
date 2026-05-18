@@ -1,4 +1,4 @@
--- Entre 1 y 5 imagenes por vehiculo (trigger trg_imagen_vehiculo_max)
+-- Between 1 and 5 images per vehicle (trigger trg_imagen_vehiculo_max enforces max 5)
 INSERT INTO imagen_vehiculo (id_vehiculo, url_imagen, orden) VALUES
     (1,  'https://example.com/img/corolla-1.jpg',  1),
     (1,  'https://example.com/img/corolla-2.jpg',  2),

@@ -1,0 +1,16 @@
+ALTER TABLE reserva
+    ADD CONSTRAINT fk_reserva_cliente
+        FOREIGN KEY (id_cliente)
+        REFERENCES cliente (id_cliente)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    ADD CONSTRAINT fk_reserva_vehiculo
+        FOREIGN KEY (id_vehiculo)
+        REFERENCES vehiculo (id_vehiculo)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    ADD CONSTRAINT fk_reserva_tipo
+        FOREIGN KEY (id_tipo_reserva)
+        REFERENCES tipo_reserva (id_tipo_reserva)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT;

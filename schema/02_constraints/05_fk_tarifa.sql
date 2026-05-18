@@ -1,9 +1,0 @@
-ALTER TABLE tarifa
-    ADD CONSTRAINT fk_tarifa_sucursal
-        FOREIGN KEY (id_sucursal) REFERENCES sucursal (id_sucursal)
-        ON UPDATE CASCADE ON DELETE RESTRICT;
-
-ALTER TABLE tarifa
-    ADD CONSTRAINT fk_tarifa_tipo
-        FOREIGN KEY (id_tipo) REFERENCES tipo_vehiculo (id_tipo)
-        ON UPDATE CASCADE ON DELETE RESTRICT;

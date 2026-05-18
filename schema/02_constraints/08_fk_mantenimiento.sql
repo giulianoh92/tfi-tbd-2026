@@ -1,9 +1,0 @@
-ALTER TABLE mantenimiento
-    ADD CONSTRAINT fk_mantenimiento_vehiculo
-        FOREIGN KEY (id_vehiculo) REFERENCES vehiculo (id_vehiculo)
-        ON UPDATE CASCADE ON DELETE RESTRICT;
-
-ALTER TABLE mantenimiento
-    ADD CONSTRAINT fk_mantenimiento_taller
-        FOREIGN KEY (id_taller) REFERENCES taller (id_taller)
-        ON UPDATE CASCADE ON DELETE RESTRICT;
