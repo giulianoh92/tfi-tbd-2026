@@ -5,10 +5,10 @@ DECLARE
     v_id_estado BIGINT;
 BEGIN
     SELECT id_estado INTO v_id_estado
-    FROM estado_vehiculo WHERE nombre = 'en_mantenimiento';
+    FROM estado_vehiculo WHERE nombre = 'mantenimiento';
 
     IF v_id_estado IS NULL THEN
-        RAISE EXCEPTION 'Estado vehiculo "en_mantenimiento" no encontrado en catalogo';
+        RAISE EXCEPTION 'Estado vehiculo "_mantenimiento" no encontrado en catalogo';
     END IF;
 
     -- Close current open historial row

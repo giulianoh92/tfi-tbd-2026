@@ -10,15 +10,19 @@ DECLARE
     v_exclude_res  BIGINT;
     v_exclude_alq  BIGINT;
 BEGIN
+--Identificación del contexto del disparador
     IF TG_TABLE_NAME = 'reserva' THEN
-        v_exclude_res := NEW.id_reserva;
+    -- Si es un INSERT nuevo, id_reserva es NULL. Usamos -1 para evitar conflictos.
+        v_exclude_res := COALESCE(NEW.id_reserva, -1);
         v_exclude_alq := -1;
     ELSE
         -- alquiler: excluir la reserva vinculada (la que se esta concretando) y el propio alquiler
         v_exclude_res := COALESCE(NEW.id_reserva, -1);
-        v_exclude_alq := NEW.id_alquiler;
+        -- Si es un INSERT nuevo, id_alquiler es NULL. Usamos -1.
+        v_exclude_alq := COALESCE(NEW.id_alquiler, -1);
     END IF;
 
+    --CONTROL DE SUPERPOSICIÓN CONTRA RESERVAS ACTIVAS
     -- Conflicto contra otras reservas activas del mismo vehiculo
     IF EXISTS (
         SELECT 1
@@ -34,7 +38,7 @@ BEGIN
             v_id_vehiculo;
     END IF;
 
-    -- Conflicto contra alquileres activos del mismo vehiculo.
+    --CONTROL DE SUPERPOSICIÓN CONTRA ALQUILERES ACTIVOS
     -- Excluye el alquiler que referencia la misma reserva (al concretar una reserva
     -- desde fn_alquiler_start, el alquiler ya existe en estado activo para el mismo periodo).
     IF EXISTS (
@@ -43,9 +47,10 @@ BEGIN
         WHERE a.id_vehiculo = v_id_vehiculo
           AND a.estado = 'activo'
           AND a.id_alquiler <> v_exclude_alq
+    -- Excluye el alquiler que proviene de la misma reserva que se está concretando
           AND (NEW.id_reserva IS NULL OR a.id_reserva IS DISTINCT FROM NEW.id_reserva)
           AND a.fecha_inicio                                          < v_fin
-          AND COALESCE(a.fecha_devolucion_real, a.fecha_fin_prevista) > v_inicio
+          AND GREATEST(a.fecha_fin_prevista, COALESCE(a.fecha_devolucion_real, NOW())) > v_inicio
     ) THEN
         RAISE EXCEPTION
             'El vehiculo % tiene un alquiler activo que se superpone con el periodo solicitado',
@@ -56,6 +61,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- CREACIÓN DE DISPARADORES ASOCIADOS
 DROP TRIGGER IF EXISTS trg_reserva_no_overlap  ON reserva;
 DROP TRIGGER IF EXISTS trg_alquiler_no_overlap ON alquiler;
 
