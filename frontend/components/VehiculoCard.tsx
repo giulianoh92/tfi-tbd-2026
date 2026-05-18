@@ -12,15 +12,24 @@ const PLACEHOLDER_URL =
 
 export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProps) {
   const imageSrc = v.imagen_portada ?? PLACEHOLDER_URL
+  const detalleHref = `/vehiculos/${v.id_vehiculo}`
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+    <div className="relative group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-gray-300 transition-all flex flex-col">
+      {/* Overlay link cubre la card entera para que cualquier click vaya al detalle.
+          El boton "Reservar" usa z-20 + relative para escapar este overlay. */}
+      <Link
+        href={detalleHref}
+        aria-label={`Ver detalle de ${v.marca} ${v.modelo}`}
+        className="absolute inset-0 z-10"
+      />
+
       <div className="relative h-48 bg-gray-100">
         <Image
           src={imageSrc}
           alt={`${v.marca} ${v.modelo}`}
           fill
-          className="object-cover"
+          className="object-cover transition-transform group-hover:scale-[1.02]"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           priority={priority}
         />
@@ -29,7 +38,7 @@ export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProp
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="font-semibold text-gray-900 text-base leading-tight">
+            <h2 className="font-semibold text-gray-900 text-base leading-tight group-hover:text-blue-700 transition-colors">
               {v.marca} {v.modelo}
             </h2>
             <p className="text-gray-500 text-sm">{v.anio}</p>
@@ -61,7 +70,7 @@ export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProp
 
           <Link
             href={`/reservar/${v.id_vehiculo}`}
-            className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="relative z-20 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             Reservar →
           </Link>
