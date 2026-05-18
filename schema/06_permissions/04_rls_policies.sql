@@ -69,11 +69,11 @@ DROP POLICY IF EXISTS cliente_self_update ON cliente;
 DROP POLICY IF EXISTS cliente_staff_all   ON cliente;
 CREATE POLICY cliente_self_read ON cliente
     FOR SELECT TO authenticated
-    USING (auth_user_id = (SELECT auth.uid()));
+    USING (auth_user_id = fn_auth_uid());
 CREATE POLICY cliente_self_update ON cliente
     FOR UPDATE TO authenticated
-    USING      (auth_user_id = (SELECT auth.uid()))
-    WITH CHECK (auth_user_id = (SELECT auth.uid()));
+    USING      (auth_user_id = fn_auth_uid())
+    WITH CHECK (auth_user_id = fn_auth_uid());
 CREATE POLICY cliente_staff_all ON cliente
     FOR ALL TO authenticated
     USING (fn_es_staff()) WITH CHECK (fn_es_staff());
