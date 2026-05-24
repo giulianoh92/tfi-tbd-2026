@@ -77,7 +77,7 @@ Reglas operativas que se derivan:
 
 > `audit_log` tiene policy `USING (FALSE)` para `authenticated, anon`, pero el rol `quique` (con ALL PRIVILEGES) puede `UPDATE/DELETE` y borrar huella. Ademas, dentro de un trigger SECURITY DEFINER, `current_user = postgres` siempre, lo que invalida la doble identidad documentada.
 
-- [ ] B2.1 Crear `schema/07_triggers/08_trg_audit_log_append_only.sql` con trigger BEFORE UPDATE OR DELETE:
+- [x] B2.1 Crear `schema/07_triggers/08_trg_audit_log_append_only.sql` con trigger BEFORE UPDATE OR DELETE:
   ```sql
   -- El audit_log es append-only por contrato. La policy RLS lo bloquea para
   -- authenticated/anon, pero NO para roles superiores que no sean NOBYPASSRLS.
@@ -96,7 +96,7 @@ Reglas operativas que se derivan:
       BEFORE UPDATE OR DELETE ON audit_log
       FOR EACH ROW EXECUTE FUNCTION fn_audit_log_append_only();
   ```
-- [ ] B2.2 **Editar** `schema/04_functions/12_fn_audit_generic.sql` y reemplazar `current_user` por `session_user` en la asignacion de `usuario_db`, con comentario:
+- [x] B2.2 **Editar** `schema/04_functions/12_fn_audit_generic.sql` y reemplazar `current_user` por `session_user` en la asignacion de `usuario_db`, con comentario:
   ```sql
   -- session_user devuelve el rol con el que se autentico la sesion HTTP
   -- (ej. 'authenticated'), aun dentro de un SECURITY DEFINER que rota
@@ -104,8 +104,8 @@ Reglas operativas que se derivan:
   -- registraria 'postgres' y la doble identidad documentada (DB + JWT)
   -- perderia su mitad de DB. Ver Postgres docs: "session_user vs current_user".
   ```
-- [ ] B2.3 Smoke test (script bash en `tests/audit_append_only.sh` o `psql -c` en validacion manual): conectarse como `quique`, ejecutar `UPDATE audit_log SET tabla='x' WHERE id_audit=1;`. Debe fallar con `audit_log es append-only`.
-- [ ] B2.4 Smoke test doble identidad: `INSERT` en `cliente` desde rol `authenticated`. Leer `audit_log` y verificar que `usuario_db = 'authenticated'`, no `'postgres'`.
+- [x] B2.3 Smoke test (script bash en `tests/audit_append_only.sh` o `psql -c` en validacion manual): conectarse como `quique`, ejecutar `UPDATE audit_log SET tabla='x' WHERE id_audit=1;`. Debe fallar con `audit_log es append-only`.
+- [x] B2.4 Smoke test doble identidad: `INSERT` en `cliente` desde rol `authenticated`. Leer `audit_log` y verificar que `usuario_db = 'authenticated'`, no `'postgres'`.
 
 **Commit**: `fix(schema): audit_log append-only via trigger y session_user en doble identidad`
 
