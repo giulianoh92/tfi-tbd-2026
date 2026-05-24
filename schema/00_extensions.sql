@@ -1,5 +1,17 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Sprint 6 (B5): se elimino "uuid-ossp". pgcrypto provee gen_random_uuid()
+-- (RFC 4122 v4). uuid-ossp historicamente aportaba uuid_generate_v4() y
+-- derivados, pero hoy duplica funcionalidad y suma superficie de attack
+-- sin uso real en el proyecto (no hay un solo call a uuid_generate_* en
+-- el schema). Mantenemos solo pgcrypto.
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Sprint 6 (B1): btree_gist habilita combinar tipos de igualdad (BIGINT)
+-- con rangos (tsrange) en una misma EXCLUDE constraint via indice GiST.
+-- Es la unica forma idiomatica en Postgres de garantizar no-superposicion
+-- temporal a nivel de indice (no de trigger). Postgres-only: en Oracle el
+-- equivalente se hace con triggers + locking explicito, mucho mas pesado
+-- y propenso a race conditions entre el SELECT y el INSERT.
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 -- Sprint 4 (R9): pg_cron para jobs programados (deteccion de devoluciones
 -- vencidas). La extension viene precargada en supabase/postgres y en

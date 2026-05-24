@@ -190,6 +190,15 @@ EXCEPTION
         p_estado      := 'ERROR_DUPLICADO';
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
+    WHEN exclusion_violation THEN
+        -- Sprint 6 (B1): 23P01 = exclusion_violation. Lo dispara la EXCLUDE
+        -- constraint excl_alquiler_overlap cuando otra transaccion ya ocupo
+        -- el rango con un id_vehiculo + tsrange solapado. Es el "lock
+        -- optimista" idiomatico: el indice GiST valida atomicamente, sin
+        -- ventana de carrera entre SELECT y INSERT como tenia el trigger.
+        p_estado      := 'ERROR_SUPERPOSICION';
+        p_mensaje     := 'El vehiculo ya esta reservado/alquilado en ese periodo.';
+        p_id_generado := NULL;
     WHEN foreign_key_violation THEN
         p_estado      := 'ERROR_REFERENCIAL';
         p_mensaje     := SQLERRM;
@@ -204,11 +213,12 @@ EXCEPTION
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN OTHERS THEN
-        -- Captura el RAISE del trigger fn_check_vehiculo_overlap (sin
-        -- SQLSTATE especifico) y lo mapea a ERROR_VALIDACION para que el
-        -- frontend lo trate como error de negocio.
+        -- Captura el RAISE del trigger best-effort fn_check_vehiculo_overlap
+        -- (mensaje legible antes de llegar al EXCLUDE). La garantia dura es
+        -- la EXCLUDE (rama exclusion_violation arriba); esta rama solo
+        -- existe para mensajes mas claros en el camino feliz.
         IF SQLERRM ILIKE '%superpone%' OR SQLERRM ILIKE '%overlap%' THEN
-            p_estado := 'ERROR_VALIDACION';
+            p_estado := 'ERROR_SUPERPOSICION';
         ELSE
             p_estado := 'ERROR';
         END IF;

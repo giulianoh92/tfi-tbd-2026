@@ -33,13 +33,13 @@ Reglas operativas que se derivan:
 
 > Race condition real: `fn_check_vehiculo_overlap` es best-effort. Dos transacciones pueden colarse en la ventana entre `SELECT EXISTS` y el `INSERT`. La solucion idiomatica en Postgres son EXCLUDE constraints con `btree_gist` + `tsrange`.
 
-- [ ] B1.1 En `schema/00_extensions.sql`, agregar `CREATE EXTENSION IF NOT EXISTS btree_gist;` con comentario:
+- [x] B1.1 En `schema/00_extensions.sql`, agregar `CREATE EXTENSION IF NOT EXISTS btree_gist;` con comentario:
   ```sql
   -- btree_gist habilita combinar tipos de igualdad (BIGINT) con rangos (tsrange)
   -- en una misma EXCLUDE constraint via indice GiST. Postgres-only; en Oracle
   -- el equivalente se hace con triggers + locking explicito, mucho mas pesado.
   ```
-- [ ] B1.2 Editar **directamente** `schema/02_constraints/` (archivo de constraints de alquiler, o crear `XX_alquiler_exclude.sql` siguiendo la numeracion existente). NO usar ALTER:
+- [x] B1.2 Editar **directamente** `schema/02_constraints/` (archivo de constraints de alquiler, o crear `XX_alquiler_exclude.sql` siguiendo la numeracion existente). NO usar ALTER:
   ```sql
   -- Garantia de no-superposicion a nivel de indice, NO a nivel de trigger.
   -- WHERE estado='activo' excluye alquileres cancelados/finalizados: dos clientes
@@ -55,8 +55,8 @@ Reglas operativas que se derivan:
       WHERE (estado = 'activo');
   ```
   > Nota: este es el unico lugar donde se usa la palabra ALTER, y es porque el README lo dicta: las constraints multi-columna van en `02_constraints/`. NO es una migracion en sentido versionado; es la definicion canonica que se re-aplica desde cero en cada deploy.
-- [ ] B1.3 Equivalente para `reserva` (`excl_reserva_overlap`) en el mismo archivo o uno paralelo. Restringido a `estado IN ('pendiente','confirmada')`. Mismo comentario explicativo adaptado.
-- [ ] B1.4 En `schema/04_functions/16_pa_registrar_reserva.sql` y `18_pa_registrar_alquiler.sql`, **editar el bloque EXCEPTION existente** para mapear el nuevo SQLSTATE:
+- [x] B1.3 Equivalente para `reserva` (`excl_reserva_overlap`) en el mismo archivo o uno paralelo. Restringido a `estado IN ('pendiente','confirmada')`. Mismo comentario explicativo adaptado.
+- [x] B1.4 En `schema/04_functions/16_pa_registrar_reserva.sql` y `18_pa_registrar_alquiler.sql`, **editar el bloque EXCEPTION existente** para mapear el nuevo SQLSTATE:
   ```sql
   EXCEPTION
       ...
@@ -67,7 +67,7 @@ Reglas operativas que se derivan:
           p_mensaje := 'El vehiculo ya esta reservado/alquilado en ese periodo.';
       ...
   ```
-- [ ] B1.5 Eliminar el trigger `fn_check_vehiculo_overlap` o convertirlo en mensaje amigable previo (validacion best-effort para errores legibles antes del EXCLUDE). Documentar la decision en el header del archivo: "este trigger NO es la garantia de unicidad; lo es la EXCLUDE constraint. Existe solo para devolver mensajes mas claros en el camino feliz."
+- [x] B1.5 Eliminar el trigger `fn_check_vehiculo_overlap` o convertirlo en mensaje amigable previo (validacion best-effort para errores legibles antes del EXCLUDE). Documentar la decision en el header del archivo: "este trigger NO es la garantia de unicidad; lo es la EXCLUDE constraint. Existe solo para devolver mensajes mas claros en el camino feliz."
 
 **Commit**: `feat(schema): exclude constraint para superposicion de alquileres y reservas`
 
