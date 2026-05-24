@@ -20,7 +20,7 @@
 
 > Objetivo: eliminar la repeticion de `border-gray-300 focus:ring-2 focus:ring-blue-500` esparcida en 15+ archivos y dar identidad visual real.
 
-- [ ] F1.1 Llenar `frontend/tailwind.config.ts` con paleta semantica:
+- [x] F1.1 Llenar `frontend/tailwind.config.ts` con paleta semantica:
   ```ts
   colors: {
     brand:   { 50, 100, 200, 500, 600, 700 },   // elegir un color que NO sea blue-600 tailwind default
@@ -32,13 +32,13 @@
     muted:   { fg, bg },
   }
   ```
-- [ ] F1.2 Agregar `fontFamily.display` distinta a Inter para H1/H2 de pagina (Inter Tight / Geist / Outfit via next/font).
-- [ ] F1.3 Crear `frontend/components/ui/Button.tsx` con CVA: variants `primary | secondary | ghost | destructive | link`, sizes `sm | md | lg`. Estados focus-visible / disabled / loading.
-- [ ] F1.4 Crear `frontend/components/ui/Input.tsx`, `Select.tsx`, `Textarea.tsx`, `Label.tsx` con focus ring brand-500 y border error rojo via prop `aria-invalid`.
-- [ ] F1.5 Crear `frontend/components/ui/Card.tsx` con variants `flat | raised | elevated | paper` (jerarquia visual).
-- [ ] F1.6 Crear `frontend/components/ui/Badge.tsx` con variants semanticos (success/danger/warning/info/muted).
-- [ ] F1.7 Crear `frontend/lib/cn.ts` con `clsx + tailwind-merge`.
-- [ ] F1.8 Migrar `app/login/page.tsx` como prueba piloto (form completo usando UI primitives).
+- [x] F1.2 Agregar `fontFamily.display` distinta a Inter para H1/H2 de pagina (Inter Tight / Geist / Outfit via next/font).
+- [x] F1.3 Crear `frontend/components/ui/Button.tsx` con CVA: variants `primary | secondary | ghost | destructive | link`, sizes `sm | md | lg`. Estados focus-visible / disabled / loading.
+- [x] F1.4 Crear `frontend/components/ui/Input.tsx`, `Select.tsx`, `Textarea.tsx`, `Label.tsx` con focus ring brand-500 y border error rojo via prop `aria-invalid`.
+- [x] F1.5 Crear `frontend/components/ui/Card.tsx` con variants `flat | raised | elevated | paper` (jerarquia visual).
+- [x] F1.6 Crear `frontend/components/ui/Badge.tsx` con variants semanticos (success/danger/warning/info/muted).
+- [x] F1.7 Crear `frontend/lib/cn.ts` con `clsx + tailwind-merge`.
+- [x] F1.8 Migrar `app/login/page.tsx` como prueba piloto (form completo usando UI primitives).
 
 **Commit**: `feat(ui): design system minimo (tokens semanticos, Button/Input/Card/Badge)`
 
