@@ -4,11 +4,14 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_id_estado BIGINT;
 BEGIN
+    -- Bugfix deploy: el catalogo estado_vehiculo registra "en_mantenimiento"
+    -- (no "mantenimiento"). El nombre antiguo provocaba que el seed de
+    -- mantenimiento fallara y bloqueaba el apply completo.
     SELECT id_estado INTO v_id_estado
-    FROM estado_vehiculo WHERE nombre = 'mantenimiento';
+    FROM estado_vehiculo WHERE nombre = 'en_mantenimiento';
 
     IF v_id_estado IS NULL THEN
-        RAISE EXCEPTION 'Estado vehiculo "_mantenimiento" no encontrado en catalogo';
+        RAISE EXCEPTION 'Estado vehiculo "en_mantenimiento" no encontrado en catalogo';
     END IF;
 
     -- Close current open historial row
