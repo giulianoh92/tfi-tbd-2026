@@ -1,6 +1,10 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import type { VehiculoConDetalles } from '@/app/page'
+import { formatARS } from '@/lib/format'
+import { Badge } from '@/components/ui/Badge'
+import { cn } from '@/lib/cn'
 
 interface VehiculoCardProps {
   vehiculo: VehiculoConDetalles
@@ -15,21 +19,27 @@ export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProp
   const detalleHref = `/vehiculos/${v.id_vehiculo}`
 
   return (
-    <div className="relative group bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md hover:border-gray-300 transition-all flex flex-col">
+    <div
+      className={cn(
+        'relative group bg-surface-raised rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col',
+        'transition-all duration-200 ease-out',
+        'hover:-translate-y-0.5 hover:shadow-md hover:border-brand-200'
+      )}
+    >
       {/* Overlay link cubre la card entera para que cualquier click vaya al detalle.
           El boton "Reservar" usa z-20 + relative para escapar este overlay. */}
       <Link
         href={detalleHref}
         aria-label={`Ver detalle de ${v.marca} ${v.modelo}`}
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 rounded-xl"
       />
 
-      <div className="relative h-48 bg-gray-100">
+      <div className="relative h-48 bg-slate-100">
         <Image
           src={imageSrc}
           alt={`${v.marca} ${v.modelo}`}
           fill
-          className="object-cover transition-transform group-hover:scale-[1.02]"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           priority={priority}
         />
@@ -38,20 +48,18 @@ export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProp
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="font-semibold text-gray-900 text-base leading-tight group-hover:text-blue-700 transition-colors">
+            <h2 className="font-display font-semibold text-slate-900 text-base leading-tight group-hover:text-brand-700 transition-colors">
               {v.marca} {v.modelo}
             </h2>
-            <p className="text-gray-500 text-sm">{v.anio}</p>
+            <p className="text-muted-fg text-sm">{v.anio}</p>
           </div>
           {v.tipo_vehiculo && (
-            <span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-              {v.tipo_vehiculo.nombre}
-            </span>
+            <Badge variant="brand">{v.tipo_vehiculo.nombre}</Badge>
           )}
         </div>
 
         {v.detalle_confort && (
-          <p className="text-gray-500 text-xs mt-2 line-clamp-2">
+          <p className="text-muted-fg text-xs mt-2 line-clamp-2">
             {v.detalle_confort}
           </p>
         )}
@@ -59,20 +67,21 @@ export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProp
         <div className="mt-auto pt-4 flex items-center justify-between">
           <div>
             {v.precio_por_dia != null ? (
-              <p className="font-bold text-gray-900 text-lg">
-                ${v.precio_por_dia.toLocaleString('es-AR')}
-                <span className="text-gray-400 text-sm font-normal">/día</span>
+              <p className="font-bold text-slate-900 text-lg tabular-nums">
+                {formatARS(v.precio_por_dia)}
+                <span className="text-muted-fg text-sm font-normal">/día</span>
               </p>
             ) : (
-              <p className="text-gray-400 text-sm">Tarifa no disponible</p>
+              <p className="text-muted-fg text-sm">Tarifa no disponible</p>
             )}
           </div>
 
           <Link
             href={`/reservar/${v.id_vehiculo}`}
-            className="relative z-20 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="relative z-20 inline-flex items-center gap-1 px-4 py-1.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
           >
-            Reservar →
+            Reservar
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       </div>

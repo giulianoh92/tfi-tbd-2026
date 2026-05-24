@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import { NuevoAlquilerForm } from '@/components/NuevoAlquilerForm'
 import type { Cliente, Vehiculo, Tarifa, Reserva } from '@/types/database'
 
@@ -71,9 +70,9 @@ export default async function NuevoAlquilerPage() {
   const errores = [reservasRes.error, clientesRes.error, vehiculosRes.error, tarifasRes.error].filter(Boolean)
   if (errores.length > 0) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6">
-        <p className="text-red-700 font-medium">Error al cargar datos</p>
-        <ul className="text-red-500 text-sm mt-1 list-disc list-inside">
+      <div role="alert" className="rounded-lg bg-danger-bg border border-danger-border p-6">
+        <p className="text-danger-fg font-medium">Error al cargar datos</p>
+        <ul className="text-danger-fg/80 text-sm mt-1 list-disc list-inside">
           {errores.map((e, i) => (
             <li key={i}>{e?.message ?? 'desconocido'}</li>
           ))}
@@ -95,19 +94,11 @@ export default async function NuevoAlquilerPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Registrar alquiler</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Con reserva previa o walk-in (sin reserva).
-          </p>
-        </div>
-        <Link
-          href="/admin/alquileres"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Volver
-        </Link>
+      <div className="mb-8">
+        <h1 className="font-display text-2xl font-bold text-slate-900">Registrar alquiler</h1>
+        <p className="text-muted-fg mt-1 text-sm">
+          Con reserva previa o walk-in (sin reserva).
+        </p>
       </div>
 
       <NuevoAlquilerForm

@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Densidad de tablas: el toggle del panel admin cambia body[data-density].
+   La regla acorta padding vertical en las celdas de tablas. */
+body[data-density='compact'] table td,
+body[data-density='compact'] table th {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}

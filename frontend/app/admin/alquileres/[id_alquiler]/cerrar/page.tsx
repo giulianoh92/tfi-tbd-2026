@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { CerrarAlquilerForm } from '@/components/CerrarAlquilerForm'
+import { Card } from '@/components/ui/Card'
+import { formatDateAR } from '@/lib/format'
 import type { Alquiler, Vehiculo, Cliente, Sucursal } from '@/types/database'
 
 type AlquilerCompleto = Alquiler & {
@@ -51,9 +52,9 @@ export default async function CerrarAlquilerPage({ params }: Props) {
 
   if (sucursalesRes.error) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6">
-        <p className="text-red-700 font-medium">Error al cargar sucursales</p>
-        <p className="text-red-500 text-sm mt-1">{sucursalesRes.error.message}</p>
+      <div role="alert" className="rounded-lg bg-danger-bg border border-danger-border p-6">
+        <p className="text-danger-fg font-medium">Error al cargar sucursales</p>
+        <p className="text-danger-fg/80 text-sm mt-1">{sucursalesRes.error.message}</p>
       </div>
     )
   }
@@ -61,77 +62,60 @@ export default async function CerrarAlquilerPage({ params }: Props) {
   const alquiler = alquilerRes.data as AlquilerCompleto
   const sucursales = (sucursalesRes.data ?? []) as Sucursal[]
 
-  const fechaInicio = new Date(alquiler.fecha_inicio).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-  const fechaFinPrevista = new Date(alquiler.fecha_fin_prevista).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-
   return (
     <div className="max-w-xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Cerrar alquiler #{alquiler.id_alquiler}</h1>
-        <Link
-          href="/admin/alquileres"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Volver
-        </Link>
-      </div>
+      <h1 className="font-display text-2xl font-bold text-slate-900 mb-8">
+        Cerrar alquiler #{alquiler.id_alquiler}
+      </h1>
 
       {/* Resumen del alquiler */}
-      <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+      <Card variant="flat" className="bg-slate-50 p-5 mb-6">
+        <h2 className="text-xs font-semibold text-muted-fg uppercase tracking-wider mb-3">
           Resumen
         </h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <div>
-            <dt className="text-gray-400 text-xs uppercase tracking-wide">Vehículo</dt>
-            <dd className="font-medium text-gray-900">
+            <dt className="text-muted-fg text-xs uppercase tracking-wider">Vehículo</dt>
+            <dd className="font-medium text-slate-900">
               {alquiler.vehiculo
                 ? `${alquiler.vehiculo.marca} ${alquiler.vehiculo.modelo}`
                 : `#${alquiler.id_vehiculo}`}
             </dd>
             {alquiler.vehiculo && (
-              <dd className="text-gray-500 text-xs">{alquiler.vehiculo.patente}</dd>
+              <dd className="text-muted-fg text-xs">{alquiler.vehiculo.patente}</dd>
             )}
           </div>
           <div>
-            <dt className="text-gray-400 text-xs uppercase tracking-wide">Cliente</dt>
-            <dd className="font-medium text-gray-900">
+            <dt className="text-muted-fg text-xs uppercase tracking-wider">Cliente</dt>
+            <dd className="font-medium text-slate-900">
               {alquiler.cliente
                 ? `${alquiler.cliente.nombre} ${alquiler.cliente.apellido}`
                 : `#${alquiler.id_cliente}`}
             </dd>
             {alquiler.cliente && (
-              <dd className="text-gray-500 text-xs">DNI {alquiler.cliente.dni}</dd>
+              <dd className="text-muted-fg text-xs">DNI {alquiler.cliente.dni}</dd>
             )}
           </div>
           <div>
-            <dt className="text-gray-400 text-xs uppercase tracking-wide">Inicio</dt>
-            <dd className="text-gray-700">{fechaInicio}</dd>
+            <dt className="text-muted-fg text-xs uppercase tracking-wider">Inicio</dt>
+            <dd className="text-slate-700 tabular-nums">{formatDateAR(alquiler.fecha_inicio)}</dd>
           </div>
           <div>
-            <dt className="text-gray-400 text-xs uppercase tracking-wide">Fin previsto</dt>
-            <dd className="text-gray-700">{fechaFinPrevista}</dd>
+            <dt className="text-muted-fg text-xs uppercase tracking-wider">Fin previsto</dt>
+            <dd className="text-slate-700 tabular-nums">{formatDateAR(alquiler.fecha_fin_prevista)}</dd>
           </div>
           <div>
-            <dt className="text-gray-400 text-xs uppercase tracking-wide">Km inicio</dt>
-            <dd className="text-gray-700">{alquiler.km_inicio.toLocaleString('es-AR')} km</dd>
+            <dt className="text-muted-fg text-xs uppercase tracking-wider">Km inicio</dt>
+            <dd className="text-slate-700 tabular-nums">{alquiler.km_inicio.toLocaleString('es-AR')} km</dd>
           </div>
           {alquiler.vehiculo && (
             <div>
-              <dt className="text-gray-400 text-xs uppercase tracking-wide">Km actuales (vehículo)</dt>
-              <dd className="text-gray-700">{alquiler.vehiculo.km_actuales.toLocaleString('es-AR')} km</dd>
+              <dt className="text-muted-fg text-xs uppercase tracking-wider">Km actuales (vehículo)</dt>
+              <dd className="text-slate-700 tabular-nums">{alquiler.vehiculo.km_actuales.toLocaleString('es-AR')} km</dd>
             </div>
           )}
         </dl>
-      </div>
+      </Card>
 
       {/* Form interactivo */}
       <CerrarAlquilerForm

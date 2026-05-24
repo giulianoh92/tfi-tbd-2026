@@ -3,16 +3,21 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Reserva, Vehiculo, TipoReserva } from '@/types/database'
 import { CancelarReservaButton } from '@/components/CancelarReservaButton'
+import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { formatDateAR, formatDateTimeAR } from '@/lib/format'
 
 type ReservaConDetalles = Reserva & {
   vehiculo: Pick<Vehiculo, 'marca' | 'modelo' | 'patente'> | null
   tipo_reserva: Pick<TipoReserva, 'nombre'> | null
 }
 
-const ESTADO_LABELS: Record<string, { label: string; class: string }> = {
-  pendiente: { label: 'Pendiente', class: 'bg-yellow-100 text-yellow-800' },
-  concretada: { label: 'Concretada', class: 'bg-green-100 text-green-800' },
-  cancelada: { label: 'Cancelada', class: 'bg-red-100 text-red-800' },
+type BadgeVariant = 'warning' | 'success' | 'danger' | 'muted'
+
+const ESTADO_LABELS: Record<string, { label: string; variant: BadgeVariant }> = {
+  pendiente: { label: 'Pendiente', variant: 'warning' },
+  concretada: { label: 'Concretada', variant: 'success' },
+  cancelada: { label: 'Cancelada', variant: 'danger' },
 }
 
 export default async function MisReservasPage() {
@@ -22,16 +27,10 @@ export default async function MisReservasPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // El middleware debería haber redirigido antes de llegar acá,
-  // pero lo verificamos de todas formas como defensa en profundidad.
   if (!user) {
     redirect('/login')
   }
 
-  // Resolvemos el id_cliente del usuario autenticado y filtramos explicito.
-  // RLS por si sola no alcanza: si el user tiene claim de staff, la policy
-  // reserva_staff_all abre todas las filas (OR con reserva_owner_crud).
-  // "Mis reservas" debe ser literal -> filtramos por cliente en el frontend.
   const { data: clienteRow } = await supabase
     .from('cliente')
     .select('id_cliente')
@@ -54,9 +53,9 @@ export default async function MisReservasPage() {
 
   if (error) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6">
-        <p className="text-red-700 font-medium">Error al cargar reservas</p>
-        <p className="text-red-500 text-sm mt-1">{error.message}</p>
+      <div role="alert" className="rounded-lg bg-danger-bg border border-danger-border p-6">
+        <p className="text-danger-fg font-medium">Error al cargar reservas</p>
+        <p className="text-danger-fg/80 text-sm mt-1">{error.message}</p>
       </div>
     )
   }
@@ -65,29 +64,21 @@ export default async function MisReservasPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mis reservas</h1>
-          <p className="text-gray-500 mt-1 text-sm">{user.email}</p>
-        </div>
-        <Link
-          href="/"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Ver vehículos
-        </Link>
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-slate-900">Mis reservas</h1>
+        <p className="text-muted-fg mt-1 text-sm">{user.email}</p>
       </div>
 
       {reservasTyped.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">Todavía no tenés reservas.</p>
+        <Card variant="raised" className="text-center py-16">
+          <p className="text-muted-fg text-lg">Todavía no tenés reservas.</p>
           <Link
             href="/"
-            className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="mt-4 inline-block px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
           >
             Buscar un vehículo
           </Link>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-4">
           {reservasTyped.map((r) => (
@@ -100,69 +91,50 @@ export default async function MisReservasPage() {
 }
 
 function ReservaRow({ reserva: r }: { reserva: ReservaConDetalles }) {
-  const estado = ESTADO_LABELS[r.estado] ?? { label: r.estado, class: 'bg-gray-100 text-gray-800' }
-
-  const fechaInicio = new Date(r.fecha_inicio).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-  const fechaFin = new Date(r.fecha_fin_prevista).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
+  const estado = ESTADO_LABELS[r.estado] ?? {
+    label: r.estado,
+    variant: 'muted' as BadgeVariant,
+  }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <Card variant="raised" className="p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-semibold text-gray-900">
+          <p className="font-display font-semibold text-slate-900">
             {r.vehiculo
               ? `${r.vehiculo.marca} ${r.vehiculo.modelo}`
               : `Vehículo #${r.id_vehiculo}`}
           </p>
           {r.vehiculo && (
-            <p className="text-gray-500 text-sm">{r.vehiculo.patente}</p>
+            <p className="text-muted-fg text-sm">{r.vehiculo.patente}</p>
           )}
         </div>
-        <span
-          className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium ${estado.class}`}
-        >
-          {estado.label}
-        </span>
+        <Badge variant={estado.variant}>{estado.label}</Badge>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm text-gray-600">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm text-slate-600">
         <div>
-          <span className="text-gray-400 text-xs uppercase tracking-wide">Desde</span>
-          <p>{fechaInicio}</p>
+          <span className="text-muted-fg text-xs uppercase tracking-wider">Desde</span>
+          <p className="tabular-nums">{formatDateAR(r.fecha_inicio)}</p>
         </div>
         <div>
-          <span className="text-gray-400 text-xs uppercase tracking-wide">Hasta</span>
-          <p>{fechaFin}</p>
+          <span className="text-muted-fg text-xs uppercase tracking-wider">Hasta</span>
+          <p className="tabular-nums">{formatDateAR(r.fecha_fin_prevista)}</p>
         </div>
         <div>
-          <span className="text-gray-400 text-xs uppercase tracking-wide">Tipo</span>
+          <span className="text-muted-fg text-xs uppercase tracking-wider">Tipo</span>
           <p className="capitalize">{r.tipo_reserva?.nombre ?? '—'}</p>
         </div>
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="text-gray-400 text-xs">
-          Creada el{' '}
-          {new Date(r.fecha_creacion).toLocaleDateString('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+        <p className="text-muted-fg text-xs tabular-nums">
+          Creada el {formatDateTimeAR(r.fecha_creacion)}
         </p>
         {r.estado === 'pendiente' && (
           <CancelarReservaButton idReserva={r.id_reserva} />
         )}
       </div>
-    </div>
+    </Card>
   )
 }

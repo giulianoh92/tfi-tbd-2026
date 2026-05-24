@@ -1,5 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import {
+  Car,
+  Receipt,
+  History,
+  Wrench,
+  AlarmClock,
+  Plus,
+  ArrowRight,
+  type LucideIcon,
+} from 'lucide-react'
+import { Card } from '@/components/ui/Card'
+import { cn } from '@/lib/cn'
 
 /**
  * Landing del panel staff.
@@ -44,148 +56,137 @@ export default async function AdminPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Panel de administración</h1>
-        <p className="text-gray-500 mt-1">
-          Gestioná alquileres, facturas y flota desde acá.
+        <h1 className="font-display text-3xl font-bold text-slate-900">
+          Panel de administracion
+        </h1>
+        <p className="text-muted-fg mt-1">
+          Gestiona alquileres, facturas y flota desde aca.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Card: Alquileres activos */}
-        <Link
+        <AdminCard
           href="/admin/alquileres"
-          className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-blue-300 transition-all flex flex-col gap-4"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                Alquileres activos
-              </p>
-              <p className="text-4xl font-bold text-gray-900 mt-1">{totalActivos}</p>
-            </div>
-            <span className="text-3xl">🚗</span>
-          </div>
-          <p className="text-sm text-gray-500">
-            Cerrá alquileres en curso y registrá la devolución del vehículo.
-          </p>
-          <span className="mt-auto text-sm font-medium text-blue-600 group-hover:text-blue-800 transition-colors">
-            Ver alquileres →
-          </span>
-        </Link>
-
-        {/* Card: Facturas emitidas */}
-        <Link
+          icon={Car}
+          eyebrow="Alquileres activos"
+          metric={totalActivos.toString()}
+          description="Cerra alquileres en curso y registra la devolucion del vehiculo."
+          cta="Ver alquileres"
+        />
+        <AdminCard
           href="/admin/facturas"
-          className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-blue-300 transition-all flex flex-col gap-4"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                Facturas emitidas
-              </p>
-              <p className="text-4xl font-bold text-gray-900 mt-1">{totalFacturas}</p>
-            </div>
-            <span className="text-3xl">🧾</span>
-          </div>
-          <p className="text-sm text-gray-500">
-            Consultá el historial de facturas y su desglose de costos.
-          </p>
-          <span className="mt-auto text-sm font-medium text-blue-600 group-hover:text-blue-800 transition-colors">
-            Ver facturas →
-          </span>
-        </Link>
-
-        {/* Card: Auditoría */}
-        <Link
+          icon={Receipt}
+          eyebrow="Facturas emitidas"
+          metric={totalFacturas.toString()}
+          description="Consulta el historial de facturas y su desglose de costos."
+          cta="Ver facturas"
+        />
+        <AdminCard
           href="/admin/auditoria"
-          className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-blue-300 transition-all flex flex-col gap-4"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                Auditoría
-              </p>
-              <p className="text-4xl font-bold text-gray-900 mt-1">{totalAuditoria}</p>
-            </div>
-            <span className="text-3xl">🗂️</span>
-          </div>
-          <p className="text-sm text-gray-500">
-            Consultá el log completo de cambios sobre las tablas principales.
-          </p>
-          <span className="mt-auto text-sm font-medium text-blue-600 group-hover:text-blue-800 transition-colors">
-            Ver auditoría →
-          </span>
-        </Link>
-
-        {/* Card: Flota (Sprint 3) */}
-        <Link
+          icon={History}
+          eyebrow="Auditoria"
+          metric={totalAuditoria.toString()}
+          description="Consulta el log completo de cambios sobre las tablas principales."
+          cta="Ver auditoria"
+        />
+        <AdminCard
           href="/admin/vehiculos"
-          className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-blue-300 transition-all flex flex-col gap-4"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                Flota
-              </p>
-              <p className="text-4xl font-bold text-gray-900 mt-1">{totalVehiculos}</p>
-            </div>
-            <span className="text-3xl">🔧</span>
-          </div>
-          <p className="text-sm text-gray-500">
-            Gestion de vehiculos: alta, edicion y baja via stored procedures.
-          </p>
-          <span className="mt-auto text-sm font-medium text-blue-600 group-hover:text-blue-800 transition-colors">
-            Ver flota →
-          </span>
-        </Link>
-
-        {/* Card: Devoluciones vencidas (Sprint 4 - R9) */}
-        <Link
+          icon={Wrench}
+          eyebrow="Flota"
+          metric={totalVehiculos.toString()}
+          description="Gestiona altas, ediciones y bajas de la flota."
+          cta="Ver flota"
+        />
+        <AdminCard
           href="/admin/devoluciones-vencidas"
-          className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-blue-300 transition-all flex flex-col gap-4"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                Devoluciones vencidas
-              </p>
-              <p className="text-4xl font-bold text-gray-900 mt-1">
-                {totalVencidasPendientes}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">pendientes de notificar</p>
-            </div>
-            <span className="text-3xl">⏰</span>
-          </div>
-          <p className="text-sm text-gray-500">
-            Detectadas automáticamente cada 6 horas por el job pg_cron.
-          </p>
-          <span className="mt-auto text-sm font-medium text-blue-600 group-hover:text-blue-800 transition-colors">
-            Ver listado →
-          </span>
-        </Link>
-
-        {/* Card: Nuevo alquiler (Sprint 3) */}
-        <Link
+          icon={AlarmClock}
+          eyebrow="Devoluciones vencidas"
+          metric={totalVencidasPendientes.toString()}
+          metricSubtitle="pendientes de notificar"
+          description="Detectadas automaticamente cada 6 horas por el job pg_cron."
+          cta="Ver listado"
+          accent={totalVencidasPendientes > 0 ? 'warning' : 'neutral'}
+        />
+        <AdminCard
           href="/admin/alquileres/nuevo"
-          className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-blue-300 transition-all flex flex-col gap-4"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                Nuevo alquiler
-              </p>
-              <p className="text-lg font-semibold text-gray-900 mt-1">Registrar</p>
-            </div>
-            <span className="text-3xl">➕</span>
-          </div>
-          <p className="text-sm text-gray-500">
-            Da de alta un alquiler con reserva previa o walk-in (sin reserva).
-          </p>
-          <span className="mt-auto text-sm font-medium text-blue-600 group-hover:text-blue-800 transition-colors">
-            Registrar alquiler →
-          </span>
-        </Link>
+          icon={Plus}
+          eyebrow="Nuevo alquiler"
+          metric="Registrar"
+          metricSize="text-lg"
+          description="Da de alta un alquiler con reserva previa o walk-in (sin reserva)."
+          cta="Registrar alquiler"
+        />
       </div>
     </div>
+  )
+}
+
+function AdminCard({
+  href,
+  icon: Icon,
+  eyebrow,
+  metric,
+  metricSize,
+  metricSubtitle,
+  description,
+  cta,
+  accent = 'neutral',
+}: {
+  href: string
+  icon: LucideIcon
+  eyebrow: string
+  metric: string
+  metricSize?: string
+  metricSubtitle?: string
+  description: string
+  cta: string
+  accent?: 'neutral' | 'warning'
+}) {
+  return (
+    <Link href={href} className="group focus-visible:outline-none">
+      <Card
+        variant="raised"
+        className={cn(
+          'h-full p-6 flex flex-col gap-4',
+          'transition-all duration-200 ease-out',
+          'group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-brand-200',
+          'group-focus-visible:ring-2 group-focus-visible:ring-brand-500 group-focus-visible:ring-offset-2'
+        )}
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">
+              {eyebrow}
+            </p>
+            <p
+              className={cn(
+                'font-display font-bold text-slate-900 mt-1 tabular-nums',
+                metricSize ?? 'text-4xl'
+              )}
+            >
+              {metric}
+            </p>
+            {metricSubtitle && (
+              <p className="text-xs text-muted-fg mt-0.5">{metricSubtitle}</p>
+            )}
+          </div>
+          <div
+            className={cn(
+              'flex items-center justify-center w-10 h-10 rounded-lg',
+              accent === 'warning'
+                ? 'bg-warning-bg text-warning-fg'
+                : 'bg-brand-50 text-brand-700'
+            )}
+          >
+            <Icon className="w-5 h-5" aria-hidden="true" />
+          </div>
+        </div>
+        <p className="text-sm text-muted-fg">{description}</p>
+        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-brand-700 group-hover:gap-2 transition-all">
+          {cta}
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+        </span>
+      </Card>
+    </Link>
   )
 }

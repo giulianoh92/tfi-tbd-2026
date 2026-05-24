@@ -19,7 +19,7 @@ export function VehiculoGallery({ alt, images }: VehiculoGalleryProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-[16/10] bg-gray-100 rounded-xl overflow-hidden">
+      <div className="relative aspect-[16/10] bg-slate-100 rounded-xl overflow-hidden">
         <Image
           src={current.url_imagen}
           alt={alt}
@@ -37,10 +37,10 @@ export function VehiculoGallery({ alt, images }: VehiculoGalleryProps) {
               key={`${img.url_imagen}-${idx}`}
               type="button"
               onClick={() => setActive(idx)}
-              className={`relative aspect-[16/10] rounded-lg overflow-hidden border-2 transition-all ${
+              className={`relative aspect-[16/10] rounded-lg overflow-hidden border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
                 idx === active
-                  ? 'border-blue-600 ring-2 ring-blue-200'
-                  : 'border-transparent hover:border-gray-300'
+                  ? 'border-brand-600 ring-2 ring-brand-200'
+                  : 'border-transparent hover:border-slate-300'
               }`}
               aria-label={`Ver imagen ${idx + 1}`}
             >

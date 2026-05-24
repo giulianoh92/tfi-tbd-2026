@@ -3,6 +3,18 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Trash2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Textarea'
 
 interface Props {
   idVehiculo: number
@@ -54,69 +66,64 @@ export function BajaVehiculoButton({ idVehiculo, patente }: Props) {
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-xs font-medium text-red-600 hover:text-red-800 hover:underline"
+    <Dialog open={open} onOpenChange={(o) => !loading && setOpen(o)}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="text-danger-fg hover:text-red-800 hover:bg-danger-bg">
+          <Trash2 className="w-4 h-4" aria-hidden="true" />
+          Dar de baja
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent
+        onPointerDownOutside={(e) => loading && e.preventDefault()}
+        onEscapeKeyDown={(e) => loading && e.preventDefault()}
       >
-        Dar de baja
-      </button>
+        <DialogHeader>
+          <DialogTitle>Dar de baja vehiculo {patente}</DialogTitle>
+          <DialogDescription>
+            Esta accion transiciona el vehiculo al estado &quot;baja&quot;. No se puede
+            ejecutar si hay alquileres activos o reservas pendientes.
+          </DialogDescription>
+        </DialogHeader>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={() => !loading && setOpen(false)}
-        >
+        <Textarea
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          placeholder="Motivo de la baja..."
+          rows={4}
+          maxLength={180}
+          disabled={loading}
+          aria-label="Motivo de la baja"
+        />
+
+        {error && (
           <div
-            className="w-full max-w-md rounded-xl bg-white shadow-xl p-6"
-            onClick={(e) => e.stopPropagation()}
+            role="alert"
+            className="rounded-lg bg-danger-bg border border-danger-border px-3 py-2"
           >
-            <h2 className="text-lg font-semibold text-gray-900">
-              Dar de baja vehiculo {patente}
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Esta accion transiciona el vehiculo al estado "baja". No se puede
-              ejecutar si hay alquileres activos o reservas pendientes.
-            </p>
-
-            <textarea
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Motivo de la baja..."
-              rows={4}
-              maxLength={180}
-              className="mt-4 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-              disabled={loading}
-            />
-
-            {error && (
-              <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
-                <p className="text-red-700 text-xs">{error}</p>
-              </div>
-            )}
-
-            <div className="mt-5 flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={handleBaja}
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {loading ? 'Procesando...' : 'Confirmar baja'}
-              </button>
-            </div>
+            <p className="text-danger-fg text-xs">{error}</p>
           </div>
-        </div>
-      )}
-    </>
+        )}
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setOpen(false)}
+            disabled={loading}
+          >
+            Volver
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleBaja}
+            loading={loading}
+          >
+            {loading ? 'Procesando...' : 'Confirmar baja'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

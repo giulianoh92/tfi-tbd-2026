@@ -4,6 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { TipoReserva } from '@/types/database'
+import { isoLocal } from '@/lib/format'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Label } from '@/components/ui/Label'
+import { Card } from '@/components/ui/Card'
 
 interface ReservaFormProps {
   idVehiculo: number
@@ -22,8 +28,10 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
   const supabase = createClient()
   const router = useRouter()
 
-  const today = new Date().toISOString().split('T')[0]
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  // Fechas en zona LOCAL del cliente para que el min del input no se corra
+  // un dia por offset UTC (bug clasico Argentina UTC-3 despues de las 21:00).
+  const today = isoLocal(new Date())
+  const tomorrow = isoLocal(new Date(Date.now() + 86_400_000))
 
   const [fechaInicio, setFechaInicio] = useState(today)
   const [fechaFin, setFechaFin] = useState(tomorrow)
@@ -32,17 +40,19 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<{ fechaInicio?: string; fechaFin?: string }>({})
   const [toast, setToast] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setFieldErrors({})
     setToast(null)
 
     // Validación de UX (la DB la repite con fn_validar_periodo).
     if (new Date(fechaFin) <= new Date(fechaInicio)) {
-      setError('La fecha de fin debe ser posterior a la fecha de inicio.')
+      setFieldErrors({ fechaFin: 'Debe ser posterior a la fecha de inicio.' })
       setLoading(false)
       return
     }
@@ -107,56 +117,70 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <Card variant="raised" className="p-6">
       {toast && (
-        <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3">
-          <p className="text-yellow-800 text-sm font-medium">{toast}</p>
+        <div
+          role="status"
+          className="mb-4 rounded-lg bg-warning-bg border border-warning-border px-4 py-3"
+        >
+          <p className="text-warning-fg text-sm font-medium">{toast}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="fecha_inicio" className="block text-sm font-medium text-gray-700 mb-1">
+            <Label htmlFor="fecha_inicio" required>
               Fecha de inicio
-            </label>
-            <input
+            </Label>
+            <Input
               id="fecha_inicio"
               type="date"
               required
               min={today}
               value={fechaInicio}
               onChange={(e) => setFechaInicio(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              aria-invalid={fieldErrors.fechaInicio ? true : undefined}
+              aria-describedby={fieldErrors.fechaInicio ? 'fecha_inicio-error' : undefined}
             />
+            {fieldErrors.fechaInicio && (
+              <p id="fecha_inicio-error" className="mt-1 text-xs text-danger-fg">
+                {fieldErrors.fechaInicio}
+              </p>
+            )}
           </div>
 
           <div>
-            <label htmlFor="fecha_fin" className="block text-sm font-medium text-gray-700 mb-1">
+            <Label htmlFor="fecha_fin" required>
               Fecha de fin prevista
-            </label>
-            <input
+            </Label>
+            <Input
               id="fecha_fin"
               type="date"
               required
               min={fechaInicio}
               value={fechaFin}
               onChange={(e) => setFechaFin(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              aria-invalid={fieldErrors.fechaFin ? true : undefined}
+              aria-describedby={fieldErrors.fechaFin ? 'fecha_fin-error' : undefined}
             />
+            {fieldErrors.fechaFin && (
+              <p id="fecha_fin-error" className="mt-1 text-xs text-danger-fg">
+                {fieldErrors.fechaFin}
+              </p>
+            )}
           </div>
         </div>
 
         <div>
-          <label htmlFor="tipo_reserva" className="block text-sm font-medium text-gray-700 mb-1">
+          <Label htmlFor="tipo_reserva" required>
             Tipo de reserva
-          </label>
-          <select
+          </Label>
+          <Select
             id="tipo_reserva"
             required
             value={idTipoReserva}
             onChange={(e) => setIdTipoReserva(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
           >
             {tiposReserva.map((t) => (
               <option key={t.id_tipo_reserva} value={t.id_tipo_reserva}>
@@ -165,37 +189,42 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
                 {t.descripcion ? ` — ${t.descripcion}` : ''}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div
+            role="alert"
+            className="rounded-lg bg-danger-bg border border-danger-border px-4 py-3"
+          >
+            <p className="text-danger-fg text-sm">{error}</p>
           </div>
         )}
 
         <div className="flex gap-3 pt-2">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            className="flex-1"
             onClick={() => router.back()}
-            className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            disabled={loading}
-            className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="primary"
+            className="flex-1"
+            loading={loading}
           >
             {loading ? 'Reservando...' : 'Confirmar reserva'}
-          </button>
+          </Button>
         </div>
       </form>
 
-      <p className="text-gray-400 text-xs mt-4">
-        Vehículo: <span className="font-medium text-gray-600">{vehiculoNombre}</span>
+      <p className="text-muted-fg text-xs mt-4">
+        Vehículo: <span className="font-medium text-slate-700">{vehiculoNombre}</span>
       </p>
-    </div>
+    </Card>
   )
 }
 

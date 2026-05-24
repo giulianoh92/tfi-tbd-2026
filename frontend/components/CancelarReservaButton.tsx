@@ -3,6 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Textarea'
 
 interface Props {
   idReserva: number
@@ -17,9 +28,6 @@ interface Props {
  *   INOUT p_motivo     TEXT  (se devuelve enriquecido con timestamp + uuid)
  *   OUT   p_estado     TEXT  ('OK' | 'ERROR_ESTADO' | 'ERROR_REFERENCIAL' | ...)
  *   OUT   p_mensaje    TEXT
- *
- * Solo se muestra cuando la reserva esta en estado 'pendiente' (el
- * server-side decide eso).
  */
 export function CancelarReservaButton({ idReserva }: Props) {
   const supabase = createClient()
@@ -61,67 +69,65 @@ export function CancelarReservaButton({ idReserva }: Props) {
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-xs font-medium text-red-600 hover:text-red-800 underline-offset-2 hover:underline"
-      >
-        Cancelar reserva
-      </button>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={() => !loading && setOpen(false)}
+    <Dialog open={open} onOpenChange={(o) => !loading && setOpen(o)}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="text-xs font-medium text-danger-fg hover:text-red-800 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
         >
+          Cancelar reserva
+        </button>
+      </DialogTrigger>
+
+      <DialogContent
+        onPointerDownOutside={(e) => loading && e.preventDefault()}
+        onEscapeKeyDown={(e) => loading && e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle>Cancelar reserva</DialogTitle>
+          <DialogDescription>
+            Esta acción no puede deshacerse. Contanos por qué la cancelás (opcional).
+          </DialogDescription>
+        </DialogHeader>
+
+        <Textarea
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          placeholder="Motivo de la cancelación..."
+          rows={4}
+          maxLength={500}
+          disabled={loading}
+          aria-label="Motivo de la cancelación"
+        />
+
+        {error && (
           <div
-            className="w-full max-w-md rounded-xl bg-white shadow-xl p-6"
-            onClick={(e) => e.stopPropagation()}
+            role="alert"
+            className="rounded-lg bg-danger-bg border border-danger-border px-3 py-2"
           >
-            <h2 className="text-lg font-semibold text-gray-900">Cancelar reserva</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Esta acción no puede deshacerse. Contanos por qué la cancelas
-              (opcional).
-            </p>
-
-            <textarea
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Motivo de la cancelación..."
-              rows={4}
-              maxLength={500}
-              className="mt-4 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-              disabled={loading}
-            />
-
-            {error && (
-              <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
-                <p className="text-red-700 text-xs">{error}</p>
-              </div>
-            )}
-
-            <div className="mt-5 flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelar}
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {loading ? 'Cancelando...' : 'Confirmar cancelación'}
-              </button>
-            </div>
+            <p className="text-danger-fg text-xs">{error}</p>
           </div>
-        </div>
-      )}
-    </>
+        )}
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setOpen(false)}
+            disabled={loading}
+          >
+            Volver
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleCancelar}
+            loading={loading}
+          >
+            {loading ? 'Cancelando...' : 'Confirmar cancelación'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

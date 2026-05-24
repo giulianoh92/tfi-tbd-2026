@@ -1,12 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { AuditLog, Json } from '@/types/database'
+import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { formatDateTimeAR } from '@/lib/format'
 
-const TIPO_OP_LABEL: Record<string, { label: string; clase: string }> = {
-  I: { label: 'INSERT', clase: 'bg-green-50 text-green-700 border-green-200' },
-  U: { label: 'UPDATE', clase: 'bg-blue-50 text-blue-700 border-blue-200' },
-  D: { label: 'DELETE', clase: 'bg-red-50 text-red-700 border-red-200' },
+type BadgeVariant = 'success' | 'info' | 'danger' | 'muted'
+
+const TIPO_OP_LABEL: Record<string, { label: string; variant: BadgeVariant }> = {
+  I: { label: 'INSERT', variant: 'success' },
+  U: { label: 'UPDATE', variant: 'info' },
+  D: { label: 'DELETE', variant: 'danger' },
 }
 
 /**
@@ -32,9 +36,9 @@ export default async function AuditoriaDetallePage({
 
   if (error) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6">
-        <p className="text-red-700 font-medium">Error al cargar el registro</p>
-        <p className="text-red-500 text-sm mt-1">{error.message}</p>
+      <div role="alert" className="rounded-lg bg-danger-bg border border-danger-border p-6">
+        <p className="text-danger-fg font-medium">Error al cargar el registro</p>
+        <p className="text-danger-fg/80 text-sm mt-1">{error.message}</p>
       </div>
     )
   }
@@ -46,16 +50,9 @@ export default async function AuditoriaDetallePage({
   const row = data as AuditLog
   const op = TIPO_OP_LABEL[row.tipo_op] ?? {
     label: row.tipo_op,
-    clase: 'bg-gray-50 text-gray-700 border-gray-200',
+    variant: 'muted' as BadgeVariant,
   }
-  const fecha = new Date(row.fecha_hora).toLocaleString('es-AR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  const fecha = formatDateTimeAR(row.fecha_hora)
 
   const anterior = (row.valores_anteriores ?? {}) as Record<string, Json>
   const nuevo = (row.valores_nuevos ?? {}) as Record<string, Json>
@@ -72,97 +69,70 @@ export default async function AuditoriaDetallePage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Auditoría #{row.id_audit}</h1>
-          <p className="text-gray-500 mt-1 text-sm">Detalle del cambio registrado</p>
-        </div>
-        <Link
-          href="/admin/auditoria"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Volver al log
-        </Link>
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold text-slate-900">Auditoría #{row.id_audit}</h1>
+        <p className="text-muted-fg mt-1 text-sm">Detalle del cambio registrado</p>
       </div>
 
       {/* Cabecera */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <Card variant="raised" className="p-5 mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Operación</p>
-          <span
-            className={`mt-1 inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${op.clase}`}
-          >
-            {op.label}
-          </span>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Operación</p>
+          <div className="mt-1">
+            <Badge variant={op.variant}>{op.label}</Badge>
+          </div>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Tabla</p>
-          <p className="text-sm text-gray-900 font-medium mt-1">{row.tabla}</p>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Tabla</p>
+          <p className="text-sm text-slate-900 font-medium mt-1">{row.tabla}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Id registro
-          </p>
-          <p className="text-sm text-gray-900 font-mono mt-1">{row.id_registro ?? '—'}</p>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Id registro</p>
+          <p className="text-sm text-slate-900 font-mono mt-1">{row.id_registro ?? '—'}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Fecha</p>
-          <p className="text-sm text-gray-700 mt-1">{fecha}</p>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Fecha</p>
+          <p className="text-sm text-slate-700 mt-1 tabular-nums">{fecha}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Usuario DB</p>
-          <p className="text-sm text-gray-700 font-mono mt-1">{row.usuario_db}</p>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Usuario DB</p>
+          <p className="text-sm text-slate-700 font-mono mt-1">{row.usuario_db}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            Usuario app
-          </p>
-          <p className="text-xs text-gray-700 font-mono mt-1 break-all">
-            {row.usuario_app ?? '—'}
-          </p>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Usuario app</p>
+          <p className="text-xs text-slate-700 font-mono mt-1 break-all">{row.usuario_app ?? '—'}</p>
         </div>
-      </div>
+      </Card>
 
       {/* Diff */}
       {row.tipo_op === 'U' ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <Card variant="raised" className="overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Columna
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Valor anterior
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Valor nuevo
-                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wider">Columna</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wider">Valor anterior</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wider">Valor nuevo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {claves.map((k) => {
                   const a = stringify(anterior[k])
                   const n = stringify(nuevo[k])
                   const cambio = a !== n
                   return (
-                    <tr
-                      key={k}
-                      className={cambio ? 'bg-amber-50' : ''}
-                    >
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 align-top whitespace-nowrap">
+                    <tr key={k} className={cambio ? 'bg-warning-bg/50' : ''}>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-900 align-top whitespace-nowrap">
                         {k}
                         {cambio && (
-                          <span className="ml-2 inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-200 text-amber-900">
-                            cambió
-                          </span>
+                          <Badge variant="warning" className="ml-2">cambió</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-700 font-mono align-top">
+                      <td className="px-4 py-3 text-xs text-slate-700 font-mono align-top">
                         <pre className="whitespace-pre-wrap break-all">{a}</pre>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-700 font-mono align-top">
+                      <td className="px-4 py-3 text-xs text-slate-700 font-mono align-top">
                         <pre className="whitespace-pre-wrap break-all">{n}</pre>
                       </td>
                     </tr>
@@ -171,35 +141,29 @@ export default async function AuditoriaDetallePage({
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Anterior */}
           {row.tipo_op === 'D' && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="bg-red-50 border-b border-red-100 px-4 py-2">
-                <h2 className="text-sm font-semibold text-red-700">
-                  Valores anteriores (eliminado)
-                </h2>
+            <Card variant="raised" className="overflow-hidden p-0">
+              <div className="bg-danger-bg border-b border-danger-border px-4 py-2">
+                <h2 className="text-sm font-semibold text-danger-fg">Valores anteriores (eliminado)</h2>
               </div>
-              <pre className="p-4 text-xs text-gray-700 font-mono whitespace-pre-wrap break-all overflow-x-auto">
+              <pre className="p-4 text-xs text-slate-700 font-mono whitespace-pre-wrap break-all overflow-x-auto">
                 {JSON.stringify(row.valores_anteriores, null, 2)}
               </pre>
-            </div>
+            </Card>
           )}
 
-          {/* Nuevo */}
           {row.tipo_op === 'I' && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="bg-green-50 border-b border-green-100 px-4 py-2">
-                <h2 className="text-sm font-semibold text-green-700">
-                  Valores nuevos (insertado)
-                </h2>
+            <Card variant="raised" className="overflow-hidden p-0">
+              <div className="bg-success-bg border-b border-success-border px-4 py-2">
+                <h2 className="text-sm font-semibold text-success-fg">Valores nuevos (insertado)</h2>
               </div>
-              <pre className="p-4 text-xs text-gray-700 font-mono whitespace-pre-wrap break-all overflow-x-auto">
+              <pre className="p-4 text-xs text-slate-700 font-mono whitespace-pre-wrap break-all overflow-x-auto">
                 {JSON.stringify(row.valores_nuevos, null, 2)}
               </pre>
-            </div>
+            </Card>
           )}
         </div>
       )}

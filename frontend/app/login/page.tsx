@@ -3,6 +3,11 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/Label'
+import { Card, CardContent } from '@/components/ui/Card'
+import { cn } from '@/lib/cn'
 
 type Tab = 'ingresar' | 'registrarse'
 
@@ -49,91 +54,145 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto mt-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+      <h1 className="font-display text-3xl font-bold text-slate-900 mb-1 text-center">
         {tab === 'ingresar' ? 'Ingresá a tu cuenta' : 'Creá tu cuenta'}
       </h1>
+      <p className="text-sm text-muted-fg text-center mb-8">
+        {tab === 'ingresar'
+          ? 'Accedé a tus reservas y alquileres en curso.'
+          : 'En menos de un minuto tenés tu cuenta lista.'}
+      </p>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-6">
-        <button
-          className={`flex-1 py-2 text-sm font-medium transition-colors ${
-            tab === 'ingresar'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-          onClick={() => { setTab('ingresar'); setError(null); setMessage(null) }}
-        >
-          Ingresar
-        </button>
-        <button
-          className={`flex-1 py-2 text-sm font-medium transition-colors ${
-            tab === 'registrarse'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-          onClick={() => { setTab('registrarse'); setError(null); setMessage(null) }}
-        >
-          Crear cuenta
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="vos@ejemplo.com"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Contraseña
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Mínimo 6 caracteres"
-          />
-        </div>
-
-        {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
-            <p className="text-red-700 text-sm">{error}</p>
+      <Card variant="raised">
+        <CardContent className="p-6 pt-6">
+          {/* Tabs */}
+          <div
+            className="flex border-b border-slate-200 mb-6"
+            role="tablist"
+            aria-label="Tipo de acción"
+          >
+            <TabButton
+              active={tab === 'ingresar'}
+              onClick={() => {
+                setTab('ingresar')
+                setError(null)
+                setMessage(null)
+              }}
+            >
+              Ingresar
+            </TabButton>
+            <TabButton
+              active={tab === 'registrarse'}
+              onClick={() => {
+                setTab('registrarse')
+                setError(null)
+                setMessage(null)
+              }}
+            >
+              Crear cuenta
+            </TabButton>
           </div>
-        )}
 
-        {message && (
-          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3">
-            <p className="text-green-700 text-sm">{message}</p>
-          </div>
-        )}
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div>
+              <Label htmlFor="email" required>
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="vos@ejemplo.com"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? 'login-error' : undefined}
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading
-            ? 'Procesando...'
-            : tab === 'ingresar'
-            ? 'Ingresar'
-            : 'Crear cuenta'}
-        </button>
-      </form>
+            <div>
+              <Label htmlFor="password" required>
+                Contraseña
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                autoComplete={tab === 'ingresar' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? 'login-error' : undefined}
+              />
+            </div>
+
+            {error && (
+              <div
+                id="login-error"
+                role="alert"
+                className="rounded-lg bg-danger-bg border border-danger-border px-4 py-3"
+              >
+                <p className="text-danger-fg text-sm">{error}</p>
+              </div>
+            )}
+
+            {message && (
+              <div
+                role="status"
+                className="rounded-lg bg-success-bg border border-success-border px-4 py-3"
+              >
+                <p className="text-success-fg text-sm">{message}</p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              loading={loading}
+            >
+              {loading
+                ? 'Procesando...'
+                : tab === 'ingresar'
+                ? 'Ingresar'
+                : 'Crear cuenta'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'flex-1 py-2 text-sm font-medium transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 rounded-t',
+        active
+          ? 'text-brand-700 border-b-2 border-brand-600'
+          : 'text-slate-500 hover:text-slate-700 border-b-2 border-transparent'
+      )}
+    >
+      {children}
+    </button>
   )
 }
 
