@@ -163,12 +163,12 @@
 
 ## Validacion final
 
-- [ ] V1. `cd frontend && bun install && bun run build` sin errores nuevos (TS warnings tolerados como antes).
-- [ ] V2. `bun run dev` y verificar manualmente flujo cliente (home → detalle → reservar → mis-reservas).
-- [ ] V3. Flujo staff: login → admin → crear vehiculo → crear alquiler walk-in → finalizar → ver factura.
-- [ ] V4. Lighthouse Accessibility >= 90 en `/`, `/admin`, `/login`.
-- [ ] V5. Verificar lector de pantalla manualmente sobre modales (Mac VoiceOver / NVDA en Win): anuncia dialog, lee titulo, focus correcto.
-- [ ] V6. Vercel preview verde con todos los cambios.
+- [x] V1. `cd frontend && bun install && bun run build` sin errores nuevos (TS warnings tolerados como antes).
+- [ ] V2. `bun run dev` y verificar manualmente flujo cliente (home → detalle → reservar → mis-reservas). _Pendiente verificacion humana en browser._
+- [ ] V3. Flujo staff: login → admin → crear vehiculo → crear alquiler walk-in → finalizar → ver factura. _Pendiente verificacion humana._
+- [ ] V4. Lighthouse Accessibility >= 90 en `/`, `/admin`, `/login`. _Pendiente Lighthouse manual del user._
+- [ ] V5. Verificar lector de pantalla manualmente sobre modales (Mac VoiceOver / NVDA en Win): anuncia dialog, lee titulo, focus correcto. _Pendiente verificacion humana — el wrapper Radix Dialog provee semantica correcta por default._
+- [ ] V6. Vercel preview verde con todos los cambios. _Pendiente push + preview deploy._
 
 ---
 
