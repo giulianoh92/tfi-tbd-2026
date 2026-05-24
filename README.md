@@ -129,7 +129,7 @@ schema/
 ├── 01_tables/            # CREATE TABLE (un archivo por tabla)
 ├── 02_constraints/       # Foreign keys y constraints multi-columna (FK + EXCLUDE)
 ├── 03_indexes/           # Indices
-├── 04_functions/         # Funciones, procedures, vistas
+├── 04_functions/         # Funciones, stored procedures (pa_*), vistas
 ├── 05_seeds/             # Datos de prueba (INSERT INTO)
 ├── 06_permissions/       # Roles, RLS policies, GRANT, REVOKE
 └── 07_triggers/          # Triggers de auditoria y append-only del log
@@ -142,6 +142,10 @@ da una EXCLUDE constraint con `btree_gist` (ver
 `schema/02_constraints/14_exclude_alquiler_reserva.sql`), NO un trigger.
 El trigger `fn_check_vehiculo_overlap` se conserva como camino feliz
 (mensajes legibles antes de que dispare el indice GiST).
+
+> Nota: aunque convencionalmente nombramos `pa_*` (procedimiento almacenado),
+> la implementacion fisica usa `CREATE FUNCTION ... RETURNS RECORD` para que
+> PostgREST las exponga via RPC. Detalle en JUSTIFICACION.md §R11.
 
 **Convencion de comentarios in-line**: cada decision Postgres-especifica
 (EXCLUDE, SECURITY DEFINER, RLS `(SELECT helper())`, `session_user` vs

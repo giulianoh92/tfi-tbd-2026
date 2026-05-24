@@ -64,9 +64,11 @@ Esta postura se sostiene en tres argumentos:
 | R8 | Cancelación/baja de reservas con validaciones | Literal | `pa_cancelar_reserva` con validación de estado |
 | R9 | Job programado para devoluciones vencidas + tabla histórica | Literal | `pg_cron` + `pa_detectar_devoluciones_vencidas` + tabla `devolucion_vencida` |
 | R10 | Finalización de alquiler por triggers + PL/SQL | Literal | Ya implementado: `pa_finalizar_alquiler` + triggers + `fn_calcular_factura` |
+| R11 | Exposición de SPs vía PostgREST RPC | Decisión técnica | `CREATE FUNCTION ... RETURNS RECORD` en lugar de `CREATE PROCEDURE` (PostgREST solo enruta `prokind='f'`) |
 
 **Lectura:** 7 requisitos cumplen literalmente, 3 cumplen por espíritu con
-justificación explícita.
+justificación explícita. R11 documenta una decisión de implementación forzada
+por el runtime (PostgREST).
 
 ---
 
@@ -500,6 +502,42 @@ migración esbozado.
 `numero_factura` sigue siendo `UNIQUE` (no se repite jamás) y
 `monotónicamente creciente` (orden temporal preservado); solo no es
 **denso**.
+
+---
+
+### R11 — Procedimientos almacenados como FUNCTIONs
+
+Decision de diseño: todas las rutinas de negocio `pa_*` (procedimiento
+almacenado en convencion del proyecto) se declaran con `CREATE FUNCTION
+... RETURNS RECORD` y no con `CREATE PROCEDURE`. Razon:
+
+- **Limitacion del runtime**: PostgREST (capa que expone Supabase como
+  REST API) solo enrutea via RPC objetos con `prokind = 'f'` (function).
+  Las `prokind = 'p'` (procedure) no son visibles en `/rest/v1/rpc/<name>`
+  y devuelven 404 "Could not find the function ... in the schema cache".
+
+- **Equivalencia semantica**: el requisito academico de "procedimiento
+  almacenado con control transaccional" (Etapa 2, PDF de catedra) se
+  cumple integramente con FUNCTIONs porque (1) cada FUNCTION corre dentro
+  de su propio bloque transaccional con rollback automatico ante excepcion
+  no capturada y (2) los bloques `BEGIN ... EXCEPTION WHEN ... THEN`
+  crean un savepoint implicito que permite capturar errores y devolver
+  estado al caller sin abortar la transaccion externa. El patron usado
+  en todos los `pa_*` —`p_estado IN ('OK', 'ERROR_*')` + `p_mensaje`—
+  es equivalente al COMMIT/ROLLBACK explicito que se haria en un
+  PROCEDURE Oracle.
+
+- **Excepcion**: `pa_detectar_devoluciones_vencidas` se mantiene como
+  PROCEDURE porque solo se invoca via `pg_cron` (que soporta CALL) y
+  permite el patron de transacciones por iteracion del job (no expuesto
+  via REST).
+
+- **Convencion de nombre `pa_`**: se preserva por consistencia con la
+  literatura de procedimientos almacenados, aun cuando la implementacion
+  fisica use `CREATE FUNCTION`. El sufijo no obliga a la sintaxis Postgres
+  PROCEDURE.
+
+Referencias: PostgREST docs §"Stored Procedures" (https://docs.postgrest.org/en/v12/references/api/stored_procedures.html).
 
 ---
 
