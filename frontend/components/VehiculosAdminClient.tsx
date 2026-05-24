@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Pencil, Plus } from 'lucide-react'
 import type {
   Vehiculo,
   Sucursal,
@@ -9,12 +10,17 @@ import type {
 } from '@/types/database'
 import { VehiculoFormModal } from './VehiculoFormModal'
 import { BajaVehiculoButton } from './BajaVehiculoButton'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Card } from '@/components/ui/Card'
 
 type VehiculoConRefs = Vehiculo & {
   estado_vehiculo: Pick<EstadoVehiculo, 'nombre'> | null
   tipo_vehiculo: Pick<TipoVehiculo, 'nombre'> | null
   sucursal: Pick<Sucursal, 'nombre'> | null
 }
+
+type BadgeVariant = 'success' | 'info' | 'warning' | 'brand' | 'danger' | 'muted'
 
 interface Props {
   vehiculos: VehiculoConRefs[]
@@ -37,88 +43,72 @@ export function VehiculosAdminClient({
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <p className="text-gray-500 text-sm">
+        <p className="text-muted-fg text-sm">
           {vehiculos.length} vehiculo{vehiculos.length !== 1 ? 's' : ''} en flota
         </p>
-        <button
+        <Button
           type="button"
+          variant="primary"
           onClick={() => setModalCrear(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
         >
-          + Nuevo vehiculo
-        </button>
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          Nuevo vehiculo
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <Card variant="raised" className="overflow-hidden p-0">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Patente
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Marca / Modelo
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Año
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Tipo
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Sucursal
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Km
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Estado
-                </th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Acciones
-                </th>
+                <Th>Patente</Th>
+                <Th>Marca / Modelo</Th>
+                <Th>Año</Th>
+                <Th>Tipo</Th>
+                <Th>Sucursal</Th>
+                <Th>Km</Th>
+                <Th>Estado</Th>
+                <Th align="right">Acciones</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {vehiculos.map((v) => {
                 const estado = v.estado_vehiculo?.nombre ?? '?'
                 const esBaja = estado === 'baja'
                 return (
-                  <tr key={v.id_vehiculo} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-gray-900 text-sm">
+                  <tr key={v.id_vehiculo} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3 font-medium text-slate-900 text-sm">
                       {v.patente}
                     </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
+                    <td className="px-5 py-3 text-sm text-slate-700">
                       {v.marca} {v.modelo}
                     </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">{v.anio}</td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
+                    <td className="px-5 py-3 text-sm text-slate-700">{v.anio}</td>
+                    <td className="px-5 py-3 text-sm text-slate-700">
                       {v.tipo_vehiculo?.nombre ?? '-'}
                     </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
+                    <td className="px-5 py-3 text-sm text-slate-700">
                       {v.sucursal?.nombre ?? '-'}
                     </td>
-                    <td className="px-5 py-3 text-sm text-gray-700">
+                    <td className="px-5 py-3 text-sm text-slate-700 tabular-nums">
                       {v.km_actuales.toLocaleString('es-AR')}
                     </td>
                     <td className="px-5 py-3 text-sm">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${badgeClass(estado)}`}
-                      >
-                        {estado}
-                      </span>
+                      <Badge variant={badgeVariant(estado)}>{estado}</Badge>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-3">
-                        <button
+                      <div className="flex justify-end gap-1">
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setVehiculoEditar(v)}
                           disabled={esBaja}
-                          className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
+                          aria-label={`Editar vehiculo ${v.patente}`}
                         >
+                          <Pencil className="w-4 h-4" aria-hidden="true" />
                           Editar
-                        </button>
+                        </Button>
                         {!esBaja && (
                           <BajaVehiculoButton
                             idVehiculo={v.id_vehiculo}
@@ -133,7 +123,7 @@ export function VehiculosAdminClient({
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       <VehiculoFormModal
         modo="crear"
@@ -157,19 +147,31 @@ export function VehiculosAdminClient({
   )
 }
 
-function badgeClass(estado: string): string {
+function Th({
+  children,
+  align = 'left',
+}: {
+  children: React.ReactNode
+  align?: 'left' | 'right'
+}) {
+  return (
+    <th
+      className={`px-5 py-3 text-xs font-semibold text-muted-fg uppercase tracking-wider ${
+        align === 'right' ? 'text-right' : 'text-left'
+      }`}
+    >
+      {children}
+    </th>
+  )
+}
+
+function badgeVariant(estado: string): BadgeVariant {
   switch (estado) {
-    case 'disponible':
-      return 'bg-green-50 text-green-700 border-green-200'
-    case 'alquilado':
-      return 'bg-blue-50 text-blue-700 border-blue-200'
-    case 'en_mantenimiento':
-      return 'bg-yellow-50 text-yellow-700 border-yellow-200'
-    case 'en_traslado':
-      return 'bg-purple-50 text-purple-700 border-purple-200'
-    case 'baja':
-      return 'bg-red-50 text-red-700 border-red-200'
-    default:
-      return 'bg-gray-50 text-gray-600 border-gray-200'
+    case 'disponible':       return 'success'
+    case 'alquilado':        return 'info'
+    case 'en_mantenimiento': return 'warning'
+    case 'en_traslado':      return 'brand'
+    case 'baja':             return 'danger'
+    default:                 return 'muted'
   }
 }
