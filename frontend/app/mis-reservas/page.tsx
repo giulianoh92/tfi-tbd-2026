@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Reserva, Vehiculo, TipoReserva } from '@/types/database'
+import { CancelarReservaButton } from '@/components/CancelarReservaButton'
 
 type ReservaConDetalles = Reserva & {
   vehiculo: Pick<Vehiculo, 'marca' | 'modelo' | 'patente'> | null
@@ -147,16 +148,21 @@ function ReservaRow({ reserva: r }: { reserva: ReservaConDetalles }) {
         </div>
       </div>
 
-      <p className="text-gray-400 text-xs mt-3">
-        Creada el{' '}
-        {new Date(r.fecha_creacion).toLocaleDateString('es-AR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </p>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-gray-400 text-xs">
+          Creada el{' '}
+          {new Date(r.fecha_creacion).toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </p>
+        {r.estado === 'pendiente' && (
+          <CancelarReservaButton idReserva={r.id_reserva} />
+        )}
+      </div>
     </div>
   )
 }

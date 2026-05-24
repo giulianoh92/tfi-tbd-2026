@@ -46,12 +46,20 @@ export default async function AlquileresPage() {
             {filas.length} alquiler{filas.length !== 1 ? 'es' : ''} en curso
           </p>
         </div>
-        <Link
-          href="/admin"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Panel
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/alquileres/nuevo"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Nuevo alquiler
+          </Link>
+          <Link
+            href="/admin"
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ← Panel
+          </Link>
+        </div>
       </div>
 
       {filas.length === 0 ? (

@@ -13,9 +13,10 @@ interface ReservaFormProps {
 
 /**
  * Formulario para crear una reserva.
- * Implementa el flujo §6.1 del documento de arquitectura:
- * INSERT en `reserva` via PostgREST con JWT en header (lo maneja supabase-js).
- * El trigger `trg_reserva_no_overlap` devuelve 409 si hay solapamiento.
+ * Sprint 2 (R7): invoca `pa_registrar_reserva` vía RPC. El procedure
+ * devuelve `{ p_estado, p_mensaje, p_id_generado }`. Se mapea por estado:
+ * 'OK' redirige a /mis-reservas; cualquier otro código se muestra al
+ * usuario con el mensaje legible que viene del SP.
  */
 export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: ReservaFormProps) {
   const supabase = createClient()
@@ -39,18 +40,16 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
     setError(null)
     setToast(null)
 
-    // Validación básica de fechas (el constraint chk_reserva_fechas también lo valida en DB)
+    // Validación de UX (la DB la repite con fn_validar_periodo).
     if (new Date(fechaFin) <= new Date(fechaInicio)) {
       setError('La fecha de fin debe ser posterior a la fecha de inicio.')
       setLoading(false)
       return
     }
 
-    // Resolver id_cliente del usuario autenticado. La RLS policy
-    // reserva_owner_crud exige WITH CHECK id_cliente = fn_cliente_del_usuario().
-    // Aunque la policy podria inferirlo, PostgREST necesita el valor explicito
-    // en el INSERT (no lo deduce). SELECT contra cliente filtra por RLS:
-    // solo retorna la fila del propio usuario via cliente_self_read.
+    // Resolver id_cliente del usuario autenticado. El procedure exige
+    // id_cliente explicito (parametro IN). La policy cliente_self_read
+    // restringe el SELECT a la propia fila del usuario.
     const { data: clienteRow, error: clienteError } = await supabase
       .from('cliente')
       .select('id_cliente')
@@ -65,22 +64,39 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
       return
     }
 
-    const { error: insertError } = await supabase.from('reserva').insert({
-      id_cliente: clienteRow.id_cliente,
-      id_vehiculo: idVehiculo,
-      id_tipo_reserva: idTipoReserva,
-      fecha_inicio: `${fechaInicio}T00:00:00`,
-      fecha_fin_prevista: `${fechaFin}T23:59:59`,
+    // RPC al procedure de Sprint 2. PostgREST serializa los OUT como
+    // objeto JSON con las claves p_estado, p_mensaje, p_id_generado.
+    const { data, error: rpcError } = await supabase.rpc('pa_registrar_reserva', {
+      p_id_cliente: clienteRow.id_cliente,
+      p_id_vehiculo: idVehiculo,
+      p_id_tipo_reserva: idTipoReserva,
+      p_fecha_inicio: `${fechaInicio}T00:00:00`,
+      p_fecha_fin: `${fechaFin}T23:59:59`,
     })
 
-    if (insertError) {
-      if (insertError.code === '23P01' || insertError.message?.includes('overlap')) {
-        // trg_reserva_no_overlap devuelve exclusion constraint violation
+    if (rpcError) {
+      // Error de transporte / RLS: el SP ni siquiera se ejecuto. No deberia
+      // pasar porque authenticated tiene EXECUTE, pero defensa en profundidad.
+      setError(rpcError.message)
+      setLoading(false)
+      return
+    }
+
+    const result = data as
+      | { p_estado: string; p_mensaje: string; p_id_generado: number | null }
+      | null
+
+    if (!result || result.p_estado !== 'OK') {
+      const mensaje = result?.p_mensaje ?? 'No se pudo registrar la reserva.'
+      // ERROR_VALIDACION + mensaje de superposicion -> toast amigable;
+      // resto -> error principal.
+      if (
+        result?.p_estado === 'ERROR_VALIDACION' &&
+        /superpone|overlap/i.test(mensaje)
+      ) {
         setToast('El vehículo ya está reservado en esas fechas. Probá con otras fechas.')
-      } else if (insertError.message?.includes('409') || insertError.code === 'PGRST') {
-        setToast('Conflicto de fechas. El vehículo ya está reservado en ese periodo.')
       } else {
-        setError(insertError.message)
+        setError(mensaje)
       }
       setLoading(false)
       return

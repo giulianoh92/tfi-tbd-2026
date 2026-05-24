@@ -43,15 +43,18 @@ export function CerrarAlquilerForm({ idAlquiler, kmInicio, sucursales }: Props) 
 
     setLoading(true)
 
-    // Llama al stored procedure que cierra el alquiler y emite la factura
-    const { error: rpcError } = await supabase.rpc('pa_finalizar_alquiler', {
+    // Llama al stored procedure que cierra el alquiler y emite la factura.
+    // Sprint 5 (R2): el procedure ahora devuelve { p_estado, p_mensaje,
+    // p_id_factura } via OUT params. Solo lanza error HTTP si hay un fallo
+    // de transporte / RLS; las violaciones de regla de negocio vienen como
+    // p_estado != 'OK' con p_mensaje legible.
+    const { data: rpcData, error: rpcError } = await supabase.rpc('pa_finalizar_alquiler', {
       p_id_alquiler: idAlquiler,
       p_km_fin: kmFinNum,
       p_id_sucursal_devolucion: sucursalNum,
     })
 
     if (rpcError) {
-      // RLS violation o error de negocio del procedure
       let msg = rpcError.message
       if (msg.includes('row-level security')) {
         msg = 'No tenés permisos para cerrar este alquiler (RLS). Verificá que tu usuario tenga rol staff.'
@@ -61,7 +64,21 @@ export function CerrarAlquilerForm({ idAlquiler, kmInicio, sucursales }: Props) 
       return
     }
 
-    // El procedure generó la factura vía trigger; la buscamos por id_alquiler
+    if (rpcData && rpcData.p_estado !== 'OK') {
+      setErrorMsg(rpcData.p_mensaje ?? 'No se pudo cerrar el alquiler.')
+      setLoading(false)
+      return
+    }
+
+    // p_id_factura viene del procedure (fn_calcular_factura). Si por algun
+    // motivo viniera nulo, fallback a buscarla por id_alquiler.
+    const idFactura = rpcData?.p_id_factura ?? null
+
+    if (idFactura) {
+      router.push(`/admin/facturas/${idFactura}`)
+      return
+    }
+
     const { data: facturaData, error: facturaError } = await supabase
       .from('factura')
       .select('id_factura')
@@ -71,7 +88,6 @@ export function CerrarAlquilerForm({ idAlquiler, kmInicio, sucursales }: Props) 
       .single()
 
     if (facturaError || !facturaData) {
-      // El cierre funcionó pero no pudimos encontrar la factura → igual redirigimos a la lista
       router.push('/admin/facturas')
       return
     }
