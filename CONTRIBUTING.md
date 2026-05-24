@@ -13,7 +13,8 @@ Reglas tecnicas para el contenido del repo. Si lo que necesitas saber es **como 
 | `schema/03_indexes/` | Indices | `01_idx_clientes_email.sql` |
 | `schema/04_functions/` | Funciones, triggers, vistas | `01_fn_calcular_total.sql`, `02_vw_listado_xxx.sql` |
 | `schema/05_seeds/` | Datos de prueba (`INSERT INTO`) | `01_clientes.sql`, `02_pedidos.sql` |
-| `schema/06_permissions/` | Roles, GRANT, REVOKE | `01_roles.sql`, `02_grants.sql` |
+| `schema/06_permissions/` | Roles, RLS policies, GRANT, REVOKE | `01_roles.sql`, `02_rls_helpers.sql`, `04_rls_policies.sql` |
+| `schema/07_triggers/` | Triggers de auditoria y append-only | `01_audit_cliente.sql`, `08_trg_audit_log_append_only.sql` |
 
 > [!important]
 > **Prefijos numericos obligatorios.** Tanto las carpetas (`01_tables/`, `02_constraints/`, ...) como los archivos `.sql` dentro de ellas arrancan con dos digitos. La carpeta define el orden entre etapas; el prefijo del archivo, el orden dentro de la etapa. Sin el prefijo, el deploy puede romper por dependencias resueltas en orden incorrecto.
@@ -31,6 +32,15 @@ Reglas tecnicas para el contenido del repo. Si lo que necesitas saber es **como 
 4. **Seeds usan `INSERT INTO ... VALUES` simple.** Sin `ON CONFLICT` ni `UPSERT` — la base esta siempre fresca.
 
 5. **Deja huecos en los prefijos** (ej: `01_`, `05_`, `10_` en vez de `01_`, `02_`, `03_`). Asi podes insertar archivos despues sin renumerar todo.
+
+6. **Decision Postgres-especifica -> comentario in-line.** Si usas una
+   feature propia de Postgres (EXCLUDE constraints con `btree_gist`,
+   `SECURITY DEFINER`, RLS policies envueltas en `(SELECT helper())`,
+   `session_user` vs `current_user`, denormalizaciones controladas
+   tipo snapshot historico, secuencias que admiten huecos, etc) deja
+   un comentario que explique el porque en el archivo SQL. El TFI se
+   defiende verbalmente: cada linea tiene que ser explicable sin tener
+   que abrir Stack Overflow durante la presentacion.
 
 ---
 

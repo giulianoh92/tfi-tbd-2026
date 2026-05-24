@@ -125,16 +125,30 @@ Si rompiste algo, te enteras enseguida y sabes exactamente que.
 
 ```
 schema/
-├── 00_extensions.sql     # Extensiones de PostgreSQL
+├── 00_extensions.sql     # Extensiones de PostgreSQL (pgcrypto, btree_gist, pg_cron)
 ├── 01_tables/            # CREATE TABLE (un archivo por tabla)
-├── 02_constraints/       # Foreign keys y constraints multi-columna
+├── 02_constraints/       # Foreign keys y constraints multi-columna (FK + EXCLUDE)
 ├── 03_indexes/           # Indices
-├── 04_functions/         # Funciones, triggers, vistas
+├── 04_functions/         # Funciones, procedures, vistas
 ├── 05_seeds/             # Datos de prueba (INSERT INTO)
-└── 06_permissions/       # Roles, GRANT, REVOKE
+├── 06_permissions/       # Roles, RLS policies, GRANT, REVOKE
+└── 07_triggers/          # Triggers de auditoria y append-only del log
 ```
 
-Las carpetas se aplican en orden numerico (`00_` → `06_`). Los archivos dentro de cada carpeta tambien arrancan con dos digitos (`01_`, `02_`, ...) y se aplican en ese orden alfabetico.
+Las carpetas se aplican en orden numerico (`00_` → `07_`). Los archivos dentro de cada carpeta tambien arrancan con dos digitos (`01_`, `02_`, ...) y se aplican en ese orden alfabetico.
+
+La garantia de no-superposicion temporal entre alquileres / reservas la
+da una EXCLUDE constraint con `btree_gist` (ver
+`schema/02_constraints/14_exclude_alquiler_reserva.sql`), NO un trigger.
+El trigger `fn_check_vehiculo_overlap` se conserva como camino feliz
+(mensajes legibles antes de que dispare el indice GiST).
+
+**Convencion de comentarios in-line**: cada decision Postgres-especifica
+(EXCLUDE, SECURITY DEFINER, RLS `(SELECT helper())`, `session_user` vs
+`current_user`, denormalizaciones intencionales) lleva un comentario en
+el archivo SQL que explica el porque. Objetivo: que cualquier linea sea
+defendible verbalmente en la presentacion academica sin abrir Stack
+Overflow ni la documentacion oficial.
 
 > Reglas detalladas (que va en cada carpeta, como nombrar archivos, convenciones de SQL): [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 

@@ -297,9 +297,9 @@ Reglas operativas que se derivan:
 
 ## Bloque B9 — Sincronizar README con la estructura real
 
-- [ ] B9.1 **Editar** `README.md` seccion "Estructura del schema": agregar `07_triggers/` a la tabla con descripcion ("Triggers de auditoria y append-only del log."). El folder existe desde Sprint 1 y `apply.sh` ya lo aplica; el README esta desincronizado.
-- [ ] B9.2 Si en B1.5 sobrevive `fn_check_vehiculo_overlap`, mencionar en el README que la garantia de unicidad temporal es por EXCLUDE constraint, no por trigger.
-- [ ] B9.3 Agregar referencia rapida en `README.md` (o `CONTRIBUTING.md`) al criterio "decision Postgres-especifica -> comentario in-line" para futuros aportes del equipo.
+- [x] B9.1 **Editar** `README.md` seccion "Estructura del schema": agregar `07_triggers/` a la tabla con descripcion ("Triggers de auditoria y append-only del log."). El folder existe desde Sprint 1 y `apply.sh` ya lo aplica; el README esta desincronizado.
+- [x] B9.2 Si en B1.5 sobrevive `fn_check_vehiculo_overlap`, mencionar en el README que la garantia de unicidad temporal es por EXCLUDE constraint, no por trigger.
+- [x] B9.3 Agregar referencia rapida en `README.md` (o `CONTRIBUTING.md`) al criterio "decision Postgres-especifica -> comentario in-line" para futuros aportes del equipo.
 
 **Commit**: `docs(readme): sincronizar estructura del schema (07_triggers) y criterio de comentarios defensables`
 
