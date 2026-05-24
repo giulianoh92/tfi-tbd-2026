@@ -1,8 +1,21 @@
--- pa_finalizar_alquiler(...) - Orquestador transaccional del CU-06.
+-- pa_finalizar_alquiler(...) — Orquestador transaccional del CU-06 (R10).
 --
 -- Cierra un alquiler activo, dispara los triggers de ciclo de vida del vehiculo
 -- (ubicacion + historial + estado en el catalogo), emite la factura y opcionalmente
 -- envia el vehiculo a mantenimiento.
+--
+-- Sprint 5 (R2) — refactor:
+--   * Se envuelve el cuerpo en BEGIN ... EXCEPTION WHEN ... THEN ... END para
+--     cumplir el contrato del PDF (manejo de excepciones + COMMIT/ROLLBACK por
+--     espiritu). En Postgres el BEGIN del procedure asocia un savepoint
+--     implicito: si una excepcion se captura, se hace rollback al savepoint;
+--     si el bloque termina sin excepcion, la transaccion del caller se
+--     compromete normalmente.
+--   * Se agregan los OUT parameters estandarizados (p_estado, p_mensaje,
+--     p_id_factura) para que el frontend pueda mostrar mensajes legibles en
+--     lugar de error 500. Mismo contrato que pa_registrar_reserva / etc.
+--   * El parametro de entrada antes llamado p_estado_final_vehiculo se renombro
+--     a p_estado_destino_vehiculo para no colisionar con el OUT p_estado.
 --
 -- Aporte original: Marcia Viera (commit 257d86f del 2026-05-16,
 -- "funcionalidad finalizar alquiler"). Adaptaciones al schema reescrito:
@@ -15,25 +28,54 @@
 --     vehiculo via catalogo. La secuencia produce dos transiciones en historial
 --     (alquilado -> disponible -> en_mantenimiento), correctas para auditoria.
 --   * Valida estado destino contra el catalogo (no hardcoded VARCHAR).
+--
+-- IMPORTANTE — firma vs. GRANTs: cambiar OUT parameters altera la identidad
+-- del procedure en pg_proc. Por eso primero hacemos DROP PROCEDURE de la
+-- firma vieja explicita (que solo tenia IN params) antes del CREATE OR
+-- REPLACE. Si no se hiciera, el CREATE fallaria con "cannot change name of
+-- input parameter" o quedarian dos procedures con el mismo nombre y
+-- distinta firma. Cualquier GRANT EXECUTE explicito sobre la firma vieja
+-- queda invalidado; el bloque DO al final de 04_rls_policies.sql vuelve a
+-- otorgar EXECUTE a todos los procedures.
+
+DROP PROCEDURE IF EXISTS pa_finalizar_alquiler(
+    BIGINT, INTEGER, BIGINT, VARCHAR, BIGINT, TEXT
+) CASCADE;
+
+-- Nota Sprint 5 / deploy fix: Postgres no permite OUT parameters despues
+-- de IN con DEFAULT. Por eso los 3 IN opcionales quedaron sin DEFAULT y el
+-- caller debe pasarlos explicitamente (NULL cuando no aplique). Si se quisiera
+-- recuperar el comportamiento "opcional", la unica via es invocar el procedure
+-- con notacion nombrada: CALL pa_finalizar_alquiler(p_id_alquiler => ..., ...).
 CREATE OR REPLACE PROCEDURE pa_finalizar_alquiler(
-    p_id_alquiler            BIGINT,
-    p_km_fin                 INTEGER,
-    p_id_sucursal_devolucion BIGINT,
-    p_estado_final_vehiculo  VARCHAR DEFAULT 'disponible',
-    p_id_taller              BIGINT  DEFAULT NULL,
-    p_observaciones          TEXT    DEFAULT NULL
+    IN  p_id_alquiler              BIGINT,
+    IN  p_km_fin                   INTEGER,
+    IN  p_id_sucursal_devolucion   BIGINT,
+    IN  p_estado_destino_vehiculo  VARCHAR,
+    IN  p_id_taller                BIGINT,
+    IN  p_observaciones            TEXT,
+    OUT p_estado                   TEXT,
+    OUT p_mensaje                  TEXT,
+    OUT p_id_factura               BIGINT
 )
 LANGUAGE plpgsql
 AS $$
 DECLARE
     v_id_vehiculo      BIGINT;
     v_km_inicio        INTEGER;
-    v_id_factura       BIGINT;
     v_estado_limpio    VARCHAR(50);
     v_motivo_mantto    VARCHAR(255);
     v_estado_existe    BOOLEAN;
 BEGIN
-    v_estado_limpio := lower(p_estado_final_vehiculo);
+    -- Inicializacion defensiva por si alguna rama no asigna explicitamente.
+    p_estado     := 'ERROR';
+    p_mensaje    := NULL;
+    p_id_factura := NULL;
+
+    -- Si el caller no especifica estado destino, asumimos 'disponible' (default
+     -- de negocio). Antes era un DEFAULT del IN; se movio aca para respetar la
+     -- regla de Postgres "no DEFAULT antes de OUT".
+    v_estado_limpio := lower(COALESCE(p_estado_destino_vehiculo, 'disponible'));
 
     -- 1. Precondiciones
     SELECT id_vehiculo, km_inicio INTO v_id_vehiculo, v_km_inicio
@@ -41,29 +83,44 @@ BEGIN
     WHERE id_alquiler = p_id_alquiler AND estado = 'activo';
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'pa_finalizar_alquiler: alquiler % no existe o ya esta cerrado', p_id_alquiler;
+        p_estado  := 'ERROR_ESTADO';
+        p_mensaje := format('pa_finalizar_alquiler: alquiler %s no existe o ya esta cerrado', p_id_alquiler);
+        RETURN;
     END IF;
 
     IF p_km_fin < v_km_inicio THEN
-        RAISE EXCEPTION 'pa_finalizar_alquiler: km_fin (%) menor a km_inicio (%)', p_km_fin, v_km_inicio;
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := format('pa_finalizar_alquiler: km_fin (%s) menor a km_inicio (%s)', p_km_fin, v_km_inicio);
+        RETURN;
     END IF;
 
     IF p_id_sucursal_devolucion IS NULL THEN
-        RAISE EXCEPTION 'pa_finalizar_alquiler: id_sucursal_devolucion es obligatorio';
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := 'pa_finalizar_alquiler: id_sucursal_devolucion es obligatorio';
+        RETURN;
     END IF;
 
     IF v_estado_limpio NOT IN ('disponible', 'en_mantenimiento') THEN
-        RAISE EXCEPTION 'pa_finalizar_alquiler: estado destino "%" invalido (use disponible o en_mantenimiento)',
-            p_estado_final_vehiculo;
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := format(
+            'pa_finalizar_alquiler: estado destino "%s" invalido (use disponible o en_mantenimiento)',
+            p_estado_destino_vehiculo
+        );
+        RETURN;
     END IF;
 
-    SELECT EXISTS(SELECT 1 FROM estado_vehiculo WHERE nombre = v_estado_limpio) INTO v_estado_existe;
+    SELECT EXISTS(SELECT 1 FROM estado_vehiculo WHERE nombre = v_estado_limpio)
+        INTO v_estado_existe;
     IF NOT v_estado_existe THEN
-        RAISE EXCEPTION 'pa_finalizar_alquiler: estado "%" no existe en catalogo estado_vehiculo', v_estado_limpio;
+        p_estado  := 'ERROR_REFERENCIAL';
+        p_mensaje := format('pa_finalizar_alquiler: estado "%s" no existe en catalogo estado_vehiculo', v_estado_limpio);
+        RETURN;
     END IF;
 
     IF v_estado_limpio = 'en_mantenimiento' AND p_id_taller IS NULL THEN
-        RAISE EXCEPTION 'pa_finalizar_alquiler: si el destino es en_mantenimiento, p_id_taller es obligatorio';
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := 'pa_finalizar_alquiler: si el destino es en_mantenimiento, p_id_taller es obligatorio';
+        RETURN;
     END IF;
 
     -- 2. Cierre del alquiler. Triggers asociados:
@@ -90,9 +147,30 @@ BEGIN
     END IF;
 
     -- 4. Emision de factura
-    v_id_factura := fn_calcular_factura(p_id_alquiler);
+    p_id_factura := fn_calcular_factura(p_id_alquiler);
 
-    RAISE NOTICE 'pa_finalizar_alquiler: alquiler % cerrado, vehiculo % en estado "%", factura % emitida',
-                 p_id_alquiler, v_id_vehiculo, v_estado_limpio, v_id_factura;
+    p_estado  := 'OK';
+    p_mensaje := format(
+        'Alquiler %s cerrado, vehiculo %s en estado "%s", factura %s emitida.',
+        p_id_alquiler, v_id_vehiculo, v_estado_limpio, p_id_factura
+    );
+
+EXCEPTION
+    WHEN unique_violation THEN
+        p_estado     := 'ERROR_DUPLICADO';
+        p_mensaje    := SQLERRM;
+        p_id_factura := NULL;
+    WHEN foreign_key_violation THEN
+        p_estado     := 'ERROR_REFERENCIAL';
+        p_mensaje    := SQLERRM;
+        p_id_factura := NULL;
+    WHEN check_violation THEN
+        p_estado     := 'ERROR_VALIDACION';
+        p_mensaje    := SQLERRM;
+        p_id_factura := NULL;
+    WHEN OTHERS THEN
+        p_estado     := 'ERROR';
+        p_mensaje    := SQLERRM;
+        p_id_factura := NULL;
 END;
 $$;

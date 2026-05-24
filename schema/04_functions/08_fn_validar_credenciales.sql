@@ -1,5 +1,5 @@
 -- FUNCIÓN: fn_validar_credenciales
--- OBJETIVO: Encapsular y reutilizar las reglas de formato de usuario, email 
+-- OBJETIVO: Encapsular y reutilizar las reglas de formato de usuario, email
 --           y contraseñas en procesos de Alta, Modificación y Autenticación.
 
 CREATE OR REPLACE FUNCTION fn_validar_credenciales(

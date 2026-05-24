@@ -246,3 +246,11 @@ cp .env.example .env
 docker compose up -d
 ./scripts/deploy.sh
 ```
+
+---
+
+## Política transaccional
+
+Todos los procedimientos de negocio (`pa_registrar_reserva`, `pa_cancelar_reserva`, `pa_registrar_alquiler`, `pa_finalizar_alquiler`, `pa_enviar_mantenimiento_programado`, `pa_registrar_devolucion_mantenimiento`, `pa_registrar_cliente_con_usuario`, `pa_crud_vehiculo`, etc.) envuelven su cuerpo en un bloque `BEGIN ... EXCEPTION WHEN unique_violation | foreign_key_violation | check_violation | OTHERS THEN ... END`. Esto es el mecanismo **idiomatico** de PostgreSQL para control transaccional con rollback ante error: cada `BEGIN` asocia un savepoint implicito y, si una excepcion se captura, se hace rollback al savepoint mientras la transaccion del caller sigue viva. Los procedimientos retornan siempre `(p_estado, p_mensaje [, p_id_generado])` para que el frontend muestre mensajes legibles en vez de errores 500.
+
+El `COMMIT` / `ROLLBACK` literal estilo Oracle **solo** se puede ejecutar dentro de un `PROCEDURE` cuando el caller no abrio una transaccion previa. Supabase / PostgREST abre una transaccion HTTP antes de cada `CALL`, asi que un `COMMIT;` explicito en produccion dispara `2D000 invalid_transaction_termination`. Para demostrar competencia con la sintaxis literal del PDF de la catedra hay un script aparte: `tests/transacciones_explicitas.sql` define `pa_demo_transaccional()` con `COMMIT;` y `ROLLBACK;` reales y se ejecuta via `scripts/demo-transaccional.sh` (que invoca `psql -f`, fuera de RPC). El fundamento completo de esta decision esta en [`docs/requisitos/JUSTIFICACION.md`](docs/requisitos/JUSTIFICACION.md) §R2.
