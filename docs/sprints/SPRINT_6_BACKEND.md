@@ -198,7 +198,7 @@ Reglas operativas que se derivan:
   -- pero NULL IS DISTINCT FROM 5 = TRUE). Mas limpio que sentinels (-1)
   -- que podrian colisionar con IDs reales en otro contexto.
   ```
-- [ ] B5.6 Renumerar `schema/04_functions/` si quedo el hueco del `04_*.sql` faltante para que el orden alfabetico de apply.sh sea legible. NO crear archivo dummy; renombrar lo siguiente.
+- [x] B5.6 Renumerar `schema/04_functions/` si quedo el hueco del `04_*.sql` faltante para que el orden alfabetico de apply.sh sea legible. NO crear archivo dummy; renombrar lo siguiente. **DECISION (agente, propio criterio)**: NO se renumeran archivos. Tras B6 (borrar `08_fn_validar_credenciales.sql`) hay huecos en 04 y 08, pero `apply.sh` los aplica en orden alfabetico sin problema. Renumerar 13 archivos rompiendo el blame de git por puro orden estetico es un costo > beneficio para este Sprint. CONTRIBUTING.md ya recomienda "dejar huecos en los prefijos" (regla 5), asi que es practica conocida del equipo.
 
 **Commit**: `chore(schema): housekeeping (huerfanos, extensions no usadas, lookups consistentes)`
 
