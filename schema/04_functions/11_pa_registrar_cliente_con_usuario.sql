@@ -1,22 +1,33 @@
--- pa_registrar_cliente_con_usuario(...) — Alta atomica de credenciales
--- (tabla usuario) + perfil de cliente (tabla cliente). Reusa
--- fn_validar_credenciales para reglas de formato (username, email,
--- password_hash).
+-- pa_registrar_cliente_con_usuario(...) — Alta atomica de bridge usuario +
+-- perfil de cliente.
 --
--- Sprint 5 (R2) — refactor:
---   * Cuerpo envuelto en BEGIN ... EXCEPTION WHEN ... THEN ... END.
---   * Agregados OUT p_estado / p_mensaje y OUT p_id_generado (id_usuario
---     creado). Contrato estandar JUSTIFICACION.md §R4.
+-- Sprint 6 (B6) — refactor profundo:
+--   * Se elimino el parametro p_password_hash. La unica fuente de verdad
+--     para credenciales es Supabase Auth (auth.users). El flujo real de
+--     signup pasa por GoTrue + el trigger fn_handle_new_auth_user, que
+--     crea automaticamente la fila cliente vinculada por auth_user_id.
+--   * Este procedure persiste para casos de carga manual / scripting
+--     (seeds, tests), donde se necesita crear el bridge usuario + cliente
+--     sin pasar por Auth. NO autentica: si se llama desde la API publica
+--     el cliente resultante no podra loguearse hasta vincularse a un
+--     auth.users via auth_user_id.
+--   * Se elimino la dependencia con fn_validar_credenciales (borrada en
+--     B6.2). Las validaciones de formato basicas quedan inline:
+--     username/email no vacios, email con '@'.
 --
--- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
+-- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita
+-- para evitar conflicto al re-aplicar (la firma vieja incluia
+-- p_password_hash).
 
 DROP PROCEDURE IF EXISTS pa_registrar_cliente_con_usuario(
     VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
 ) CASCADE;
+DROP PROCEDURE IF EXISTS pa_registrar_cliente_con_usuario(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
+) CASCADE;
 
 CREATE OR REPLACE PROCEDURE pa_registrar_cliente_con_usuario(
     IN  p_username      VARCHAR,
-    IN  p_password_hash VARCHAR,
     IN  p_email         VARCHAR,
     IN  p_nombre        VARCHAR,
     IN  p_apellido      VARCHAR,
@@ -29,33 +40,39 @@ CREATE OR REPLACE PROCEDURE pa_registrar_cliente_con_usuario(
 )
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_username_limpio     VARCHAR(50);
-    v_email_limpio        VARCHAR(150);
-    v_dni_limpio          VARCHAR(20);
+    v_username_limpio  VARCHAR(50);
+    v_email_limpio     VARCHAR(150);
+    v_dni_limpio       VARCHAR(20);
 BEGIN
     p_estado      := 'ERROR';
     p_mensaje     := NULL;
     p_id_generado := NULL;
 
-    -- 1. ESTANDARIZACION Y LIMPIEZA DE DATOS CRITICOS
+    -- 1. Limpieza basica.
     v_username_limpio := lower(trim(p_username));
     v_email_limpio    := lower(trim(p_email));
     v_dni_limpio      := trim(p_dni);
 
-    -- 2. REUTILIZACION DE CODIGO: VALIDACION DE FORMATOS (Capa de Software)
-    -- fn_validar_credenciales lanza EXCEPTION si algun formato es invalido;
-    -- la captura en el bloque EXCEPTION OTHERS la mapea a ERROR_VALIDACION
-    -- via SQLERRM (no expone SQLSTATE especifico).
-    PERFORM fn_validar_credenciales(v_username_limpio, v_email_limpio, p_password_hash);
+    -- 2. Validaciones inline (antes vivian en fn_validar_credenciales).
+    IF length(v_username_limpio) < 4 THEN
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := 'El username debe tener al menos 4 caracteres.';
+        RETURN;
+    END IF;
 
-    -- Validaciones de strings vacios obligatorios para la tabla cliente
+    IF v_email_limpio IS NULL OR v_email_limpio NOT LIKE '%@%.%' THEN
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := 'El email no tiene un formato valido.';
+        RETURN;
+    END IF;
+
     IF length(trim(p_nombre)) = 0 OR length(trim(p_apellido)) = 0 OR length(v_dni_limpio) = 0 THEN
         p_estado  := 'ERROR_VALIDACION';
         p_mensaje := 'El nombre, apellido y DNI son campos obligatorios y no pueden estar vacios.';
         RETURN;
     END IF;
 
-    -- 3. CONTROL DE PRECONDICIONES (INTEGRIDAD CONTRA REGISTROS EXISTENTES)
+    -- 3. Precondiciones de unicidad (mensajes amigables antes que el INSERT).
     IF EXISTS (SELECT 1 FROM usuario WHERE username = v_username_limpio) THEN
         p_estado  := 'ERROR_DUPLICADO';
         p_mensaje := format('El nombre de usuario "%s" ya se encuentra registrado.', v_username_limpio);
@@ -74,19 +91,18 @@ BEGIN
         RETURN;
     END IF;
 
-    -- 4. INSERCION OPERATIVA (ATOMICIDAD DE TRANSACCION)
-    -- Paso A: Crear las credenciales de acceso en la tabla usuario
-    INSERT INTO usuario (username, password_hash, email, created_at)
-    VALUES (v_username_limpio, p_password_hash, v_email_limpio, CURRENT_TIMESTAMP)
+    -- 4. Insercion atomica (BEGIN/EXCEPTION envuelve el procedure entero).
+    INSERT INTO usuario (username, email, created_at)
+    VALUES (v_username_limpio, v_email_limpio, CURRENT_TIMESTAMP)
     RETURNING id_usuario INTO p_id_generado;
 
-    -- Paso B: Crear el perfil del cliente vinculandolo al usuario mediante la relacion 1-1 (id_usuario UNIQUE)
     INSERT INTO cliente (id_usuario, nombre, apellido, dni, telefono, direccion)
     VALUES (p_id_generado, trim(p_nombre), trim(p_apellido), v_dni_limpio, trim(p_telefono), trim(p_direccion));
 
     p_estado  := 'OK';
     p_mensaje := format(
-        'Cuenta de cliente creada para %s %s (usuario %s, DNI %s).',
+        'Cuenta de cliente creada para %s %s (usuario %s, DNI %s). '
+        'Recordar vincular auth_user_id con la identidad de Supabase Auth.',
         trim(p_nombre), trim(p_apellido), v_username_limpio, v_dni_limpio
     );
 
@@ -104,15 +120,7 @@ EXCEPTION
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN OTHERS THEN
-        -- fn_validar_credenciales lanza RAISE EXCEPTION sin SQLSTATE
-        -- especifico; cae aqui. Las reglas de formato son de validacion,
-        -- asi que mapeamos su mensaje a ERROR_VALIDACION para que el
-        -- frontend lo trate como error de negocio.
-        IF SQLERRM ILIKE '%FORMATO%' OR SQLERRM ILIKE '%formato%' THEN
-            p_estado := 'ERROR_VALIDACION';
-        ELSE
-            p_estado := 'ERROR';
-        END IF;
+        p_estado      := 'ERROR';
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
 END;

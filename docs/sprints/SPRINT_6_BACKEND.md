@@ -208,8 +208,8 @@ Reglas operativas que se derivan:
 
 > No se "marca deprecated": o sirve, o no esta. La decision academica que se defiende: **la unica fuente de verdad para credenciales es `auth.users.encrypted_password`**, gestionada por Supabase Auth (GoTrue), que emite JWTs y maneja refresh/recovery. Mantener un `usuario.password_hash` paralelo es invitacion a divergencia de credenciales.
 
-- [ ] B6.1 Auditar con `rg "password_hash"` y `rg "fn_validar_credenciales"` que no hay invocaciones en runtime (ni functions del schema, ni RPC desde el frontend).
-- [ ] B6.2 Si NO se usa en runtime:
+- [x] B6.1 Auditar con `rg "password_hash"` y `rg "fn_validar_credenciales"` que no hay invocaciones en runtime (ni functions del schema, ni RPC desde el frontend).
+- [x] B6.2 Si NO se usa en runtime:
   - **Editar** `schema/01_tables/` (tabla `usuario`) y eliminar la columna `password_hash` del CREATE TABLE.
   - Borrar `schema/04_functions/08_fn_validar_credenciales.sql` completo.
   - Ajustar seeds en `schema/05_seeds/01_usuario.sql` si insertan password_hash.
@@ -230,8 +230,8 @@ Reglas operativas que se derivan:
     --   3. Permite usar features de Auth (OTP, OAuth, MFA) sin reescribir
     --      el flujo de login.
     ```
-- [ ] B6.3 Si sigue usandose para algun caso edge (improbable, pero verificar): conservar columna + function y agregar comentario explicito sobre por que existe esa ruta paralela. **Por defecto, este sprint asume que se borra**.
-- [ ] B6.4 Mismo criterio para `usuario.username` si solo se llenaba como seed y ningun runtime lo lee: borrarlo. Si se mantiene como nombre de usuario alternativo al email, comentar el porque.
+- [x] B6.3 Si sigue usandose para algun caso edge (improbable, pero verificar): conservar columna + function y agregar comentario explicito sobre por que existe esa ruta paralela. **Por defecto, este sprint asume que se borra**.
+- [x] B6.4 Mismo criterio para `usuario.username` si solo se llenaba como seed y ningun runtime lo lee: borrarlo. Si se mantiene como nombre de usuario alternativo al email, comentar el porque.
 
 **Commit**: `refactor(schema): eliminar password_hash y fn_validar_credenciales (Supabase Auth como unica fuente)`
 

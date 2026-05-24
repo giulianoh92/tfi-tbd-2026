@@ -1,6 +1,9 @@
-INSERT INTO usuario (username, password_hash, email) VALUES
-    ('jperez',     crypt('demo1234', gen_salt('bf')), 'jperez@example.com'),
-    ('mgomez',     crypt('demo1234', gen_salt('bf')), 'mgomez@example.com'),
-    ('lrodriguez', crypt('demo1234', gen_salt('bf')), 'lrodriguez@example.com'),
-    ('asanchez',   crypt('demo1234', gen_salt('bf')), 'asanchez@example.com'),
-    ('cmartinez',  crypt('demo1234', gen_salt('bf')), 'cmartinez@example.com');
+-- Sprint 6 (B6): se elimino password_hash. La autenticacion vive en
+-- auth.users (Supabase). Estos seeds solo proveen el bridge logico
+-- (id_usuario) para los seeds de cliente; no permiten login.
+INSERT INTO usuario (username, email) VALUES
+    ('jperez',     'jperez@example.com'),
+    ('mgomez',     'mgomez@example.com'),
+    ('lrodriguez', 'lrodriguez@example.com'),
+    ('asanchez',   'asanchez@example.com'),
+    ('cmartinez',  'cmartinez@example.com');
