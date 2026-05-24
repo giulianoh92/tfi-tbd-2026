@@ -115,7 +115,7 @@ Reglas operativas que se derivan:
 
 > Las policies que hacen `USING (auth_user_id = fn_auth_uid())` evaluan la function por fila. Es la primera optimizacion de RLS recomendada por Supabase. Cambio mecanico, ganancia medible en cuanto el cliente tenga decenas de reservas.
 
-- [ ] B3.1 **Editar** `schema/06_permissions/04_rls_policies.sql` y reemplazar todas las apariciones de `fn_auth_uid()` y `fn_es_staff()` dentro de `USING`/`WITH CHECK` por su forma cacheada `(SELECT fn_auth_uid())` / `(SELECT fn_es_staff())`. Agregar comentario al inicio del archivo:
+- [x] B3.1 **Editar** `schema/06_permissions/04_rls_policies.sql` y reemplazar todas las apariciones de `fn_auth_uid()` y `fn_es_staff()` dentro de `USING`/`WITH CHECK` por su forma cacheada `(SELECT fn_auth_uid())` / `(SELECT fn_es_staff())`. Agregar comentario al inicio del archivo:
   ```sql
   -- Patron oficial de Supabase para RLS: envolver las helpers en (SELECT ...).
   -- Esto fuerza al planner a evaluar la function una sola vez por query
@@ -124,7 +124,7 @@ Reglas operativas que se derivan:
   -- marcadas STABLE; ambas helpers lo son.
   -- Ref: https://supabase.com/docs/guides/database/postgres/row-level-security#performance
   ```
-- [ ] B3.2 Validar via `EXPLAIN ANALYZE` que el plan ahora hace `InitPlan` (ej. consulta `SELECT * FROM reserva WHERE id_cliente = (SELECT auth_user_id ...)`). Adjuntar el EXPLAIN antes/despues como comentario en el commit (opcional, util para la defensa).
+- [x] B3.2 Validar via `EXPLAIN ANALYZE` que el plan ahora hace `InitPlan` (ej. consulta `SELECT * FROM reserva WHERE id_cliente = (SELECT auth_user_id ...)`). Adjuntar el EXPLAIN antes/despues como comentario en el commit (opcional, util para la defensa).
 
 **Commit**: `perf(rls): cachear auth.uid() y es_staff via subselect`
 
