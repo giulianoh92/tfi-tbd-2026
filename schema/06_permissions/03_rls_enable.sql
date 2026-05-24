@@ -23,3 +23,5 @@ ALTER TABLE garantia_reserva             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alquiler                     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mantenimiento                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE factura                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log                    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE devolucion_vencida           ENABLE ROW LEVEL SECURITY;

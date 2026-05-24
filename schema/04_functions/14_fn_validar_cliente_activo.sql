@@ -1,0 +1,48 @@
+-- Funcion: fn_validar_cliente_activo
+-- Sprint 2 (R7). Valida que un cliente exista y este habilitado para operar.
+--
+-- Estado actual del schema: la tabla `cliente` no tiene aun un flag de
+-- actividad (`activo BOOLEAN`) ni una nocion de "deuda pendiente" persistida.
+-- Por lo tanto, esta version se limita a validar EXISTENCIA. La firma queda
+-- preparada para que cuando se introduzcan esos campos (Sprint 4 o
+-- posterior) la regla se extienda aca sin tocar a los callers.
+--
+-- Extensiones futuras esperadas:
+--   * Chequear cliente.activo = TRUE.
+--   * Chequear que no haya facturas impagas o alquileres con devolucion
+--     vencida sin resolver (tabla devolucion_vencida del Sprint 4).
+--
+-- La funcion lanza RAISE EXCEPTION para que el caller la capture en su
+-- bloque EXCEPTION WHEN OTHERS y mapee a p_estado = 'ERROR_VALIDACION' /
+-- 'ERROR_REFERENCIAL' segun aplique.
+
+CREATE OR REPLACE FUNCTION fn_validar_cliente_activo(
+    p_id_cliente BIGINT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_existe BOOLEAN;
+BEGIN
+    IF p_id_cliente IS NULL THEN
+        RAISE EXCEPTION 'REGLA DE NEGOCIO: el id_cliente es obligatorio.'
+            USING ERRCODE = 'check_violation';
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM cliente WHERE id_cliente = p_id_cliente
+    ) INTO v_existe;
+
+    IF NOT v_existe THEN
+        RAISE EXCEPTION 'CONTROL DE INTEGRIDAD: el cliente % no existe.', p_id_cliente
+            USING ERRCODE = 'foreign_key_violation';
+    END IF;
+
+    -- TODO (extensible): cuando se introduzca cliente.activo o una nocion
+    -- de deuda persistida, agregar aqui los chequeos correspondientes y
+    -- mapearlos a un ERRCODE = 'check_violation' para que el caller los
+    -- categorice como ERROR_VALIDACION.
+END;
+$$;

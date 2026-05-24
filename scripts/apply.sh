@@ -53,6 +53,7 @@ apply_dir "$SCHEMA_DIR/03_indexes"     "Indices"
 apply_dir "$SCHEMA_DIR/04_functions"   "Funciones / triggers / vistas"
 apply_dir "$SCHEMA_DIR/05_seeds"       "Datos de prueba (seeds)"
 apply_dir "$SCHEMA_DIR/06_permissions" "Permisos (roles, GRANT, REVOKE)"
+apply_dir "$SCHEMA_DIR/07_triggers"    "Triggers de auditoria"
 
 echo ""
 echo "==> Apply completado exitosamente."

@@ -147,6 +147,56 @@ CREATE POLICY historial_estado_staff_all ON historial_estado_vehiculo FOR ALL TO
 CREATE POLICY mantenimiento_staff_all    ON mantenimiento             FOR ALL TO authenticated USING (fn_es_staff()) WITH CHECK (fn_es_staff());
 
 -- ============================================================
+-- AUDIT_LOG: solo staff puede leer; nadie puede escribir manualmente.
+-- ============================================================
+-- La unica via de escritura es el trigger fn_audit_generic (declarado
+-- SECURITY DEFINER -> corre como owner postgres y bypassea RLS). Cualquier
+-- INSERT/UPDATE/DELETE manual via PostgREST se rechaza porque no hay
+-- policy que lo permita y RLS por defecto niega.
+
+DROP POLICY IF EXISTS audit_log_staff_read ON audit_log;
+CREATE POLICY audit_log_staff_read ON audit_log
+    FOR SELECT TO authenticated
+    USING (fn_es_staff());
+
+-- Bloqueo explicito de escritura manual: politicas FOR INSERT/UPDATE/DELETE
+-- con USING/CHECK = FALSE. Defensa en profundidad sobre la ausencia de
+-- policy permissive (que ya alcanzaria, pero conviene dejarlo declarativo).
+DROP POLICY IF EXISTS audit_log_no_insert ON audit_log;
+DROP POLICY IF EXISTS audit_log_no_update ON audit_log;
+DROP POLICY IF EXISTS audit_log_no_delete ON audit_log;
+CREATE POLICY audit_log_no_insert ON audit_log
+    FOR INSERT TO authenticated, anon
+    WITH CHECK (FALSE);
+CREATE POLICY audit_log_no_update ON audit_log
+    FOR UPDATE TO authenticated, anon
+    USING (FALSE) WITH CHECK (FALSE);
+CREATE POLICY audit_log_no_delete ON audit_log
+    FOR DELETE TO authenticated, anon
+    USING (FALSE);
+
+-- ============================================================
+-- DEVOLUCION_VENCIDA: solo staff puede leer y togglear `notificado`.
+-- ============================================================
+-- Tabla poblada por pa_detectar_devoluciones_vencidas() (job pg_cron). El
+-- procedure corre como rol postgres (owner del schema), que tiene
+-- BYPASSRLS -> el INSERT/UPDATE del job no necesita policy.
+--
+-- El staff la lee desde /admin/devoluciones-vencidas y puede marcar como
+-- notificado=TRUE. NO se permite INSERT ni DELETE desde la UI (la fuente
+-- de verdad es el job).
+
+DROP POLICY IF EXISTS devolucion_vencida_staff_read   ON devolucion_vencida;
+DROP POLICY IF EXISTS devolucion_vencida_staff_update ON devolucion_vencida;
+CREATE POLICY devolucion_vencida_staff_read ON devolucion_vencida
+    FOR SELECT TO authenticated
+    USING (fn_es_staff());
+CREATE POLICY devolucion_vencida_staff_update ON devolucion_vencida
+    FOR UPDATE TO authenticated
+    USING      (fn_es_staff())
+    WITH CHECK (fn_es_staff());
+
+-- ============================================================
 -- GRANTS para roles de Supabase
 -- ============================================================
 -- Los roles anon y authenticated necesitan USAGE sobre el schema y
@@ -162,6 +212,18 @@ BEGIN
         EXECUTE 'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated';
         EXECUTE 'GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated';
         EXECUTE 'GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA public TO authenticated';
+
+        -- audit_log: revocar escritura para que ni siquiera llegue a evaluar
+        -- la policy. La unica via es el trigger fn_audit_generic via
+        -- SECURITY DEFINER. anon ni siquiera puede SELECT.
+        EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON audit_log FROM authenticated';
+        EXECUTE 'REVOKE ALL ON audit_log FROM anon';
+
+        -- devolucion_vencida: staff solo lee y actualiza (toggle notificado).
+        -- INSERT/DELETE quedan reservados al job (corre como postgres). anon
+        -- no la ve.
+        EXECUTE 'REVOKE INSERT, DELETE ON devolucion_vencida FROM authenticated';
+        EXECUTE 'REVOKE ALL ON devolucion_vencida FROM anon';
     END IF;
 END
 $$;
