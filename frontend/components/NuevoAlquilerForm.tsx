@@ -125,7 +125,7 @@ export function NuevoAlquilerForm({
 
     const kmInicioNum = parseInt(kmInicio, 10)
     if (isNaN(kmInicioNum) || kmInicioNum < 0) {
-      setError('Ingresa un kilometraje inicial valido (>= 0).')
+      setError('Ingresa un kilometraje inicial valido (mayor o igual a 0).')
       return
     }
 

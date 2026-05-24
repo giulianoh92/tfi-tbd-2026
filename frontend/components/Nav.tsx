@@ -17,13 +17,13 @@ export async function Nav() {
   const isStaff = user?.app_metadata?.role === 'staff'
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <nav className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-slate-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo / nombre */}
           <Link
             href="/"
-            className="font-bold text-gray-900 text-lg hover:text-blue-600 transition-colors"
+            className="font-display font-bold text-slate-900 text-lg hover:text-brand-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
           >
             AutoRenta
           </Link>
@@ -32,28 +32,26 @@ export async function Nav() {
           <div className="hidden sm:flex items-center gap-6">
             <Link
               href="/"
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-sm text-slate-600 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
               Vehículos
             </Link>
             <Link
               href="/mis-reservas"
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-sm text-slate-600 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
             >
               Mis reservas
             </Link>
-            {/* Link de admin solo visible para usuarios staff */}
             {isStaff && (
               <Link
                 href="/admin"
-                className="text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                className="text-sm font-semibold text-brand-staff-fg hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
               >
                 Admin
               </Link>
             )}
           </div>
 
-          {/* Auth */}
           <AuthButton />
         </div>
       </div>

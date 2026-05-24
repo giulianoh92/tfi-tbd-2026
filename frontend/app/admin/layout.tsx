@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { ShieldCheck } from 'lucide-react'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { Breadcrumbs } from '@/components/admin/Breadcrumbs'
+import { DensityToggle } from '@/components/admin/DensityToggle'
 import { Badge } from '@/components/ui/Badge'
 
 /**
@@ -47,7 +48,10 @@ export default async function AdminLayout({
       <div className="flex flex-col lg:flex-row gap-6">
         <AdminSidebar />
         <div className="flex-1 min-w-0">
-          <Breadcrumbs />
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <Breadcrumbs />
+            <DensityToggle />
+          </div>
           {children}
         </div>
       </div>
