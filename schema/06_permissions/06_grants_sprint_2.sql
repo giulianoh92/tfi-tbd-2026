@@ -22,6 +22,10 @@ GRANT EXECUTE ON PROCEDURE pa_cancelar_reserva(
 -- authenticated por si en el futuro se invocan desde otros procedures que
 -- usen SECURITY INVOKER. No hay riesgo: solo retornan VOID o lanzan
 -- EXCEPTION, no leen datos sensibles.
-GRANT EXECUTE ON FUNCTION fn_validar_periodo(TIMESTAMP, TIMESTAMP)        TO authenticated;
+-- Sprint 6 (B4.2): fn_validar_periodo ahora acepta tolerancia opcional para
+-- el caso walk-in. El grant referencia la signature completa (incluyendo el
+-- parametro con DEFAULT) porque Postgres identifica functions por su firma
+-- exacta de tipos, no por el subconjunto sin defaults.
+GRANT EXECUTE ON FUNCTION fn_validar_periodo(TIMESTAMP, TIMESTAMP, INTERVAL) TO authenticated;
 GRANT EXECUTE ON FUNCTION fn_validar_cliente_activo(BIGINT)               TO authenticated;
 GRANT EXECUTE ON FUNCTION fn_validar_vehiculo_operativo(BIGINT)           TO authenticated;
