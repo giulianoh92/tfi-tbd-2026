@@ -4,6 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Sucursal, TipoVehiculo, Vehiculo } from '@/types/database'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
+import { Label } from '@/components/ui/Label'
 
 type Modo = 'crear' | 'editar'
 
@@ -56,8 +69,6 @@ export function VehiculoFormModal({
   const [kmActuales, setKmActuales] = useState<string>(
     vehiculo?.km_actuales?.toString() ?? '0',
   )
-
-  if (!open) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -145,75 +156,81 @@ export function VehiculoFormModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={() => !loading && onClose()}
-    >
-      <div
-        className="w-full max-w-lg rounded-xl bg-white shadow-xl p-6"
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open={open} onOpenChange={(o) => !o && !loading && onClose()}>
+      <DialogContent
+        // Evita que click fuera cierre cuando hay submit en curso.
+        onPointerDownOutside={(e) => loading && e.preventDefault()}
+        onEscapeKeyDown={(e) => loading && e.preventDefault()}
       >
-        <h2 className="text-lg font-semibold text-gray-900">
-          {modo === 'crear' ? 'Nuevo vehiculo' : `Editar vehiculo #${vehiculo?.id_vehiculo}`}
-        </h2>
+        <DialogHeader>
+          <DialogTitle>
+            {modo === 'crear' ? 'Nuevo vehiculo' : `Editar vehiculo #${vehiculo?.id_vehiculo}`}
+          </DialogTitle>
+          <DialogDescription>
+            {modo === 'crear'
+              ? 'Da de alta un vehiculo en la flota. Patente y sucursal no son editables despues.'
+              : 'Solo marca, modelo, año y confort son editables. El resto se gobierna desde la operacion.'}
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
           {modo === 'crear' && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Sucursal origen</label>
-                  <select
+                <div>
+                  <Label htmlFor="vfm-sucursal" required>Sucursal origen</Label>
+                  <Select
+                    id="vfm-sucursal"
                     required
                     value={idSucursal}
                     onChange={(e) => setIdSucursal(e.target.value)}
-                    className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
                   >
                     {sucursales.map((s) => (
                       <option key={s.id_sucursal} value={s.id_sucursal}>
                         {s.nombre}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Tipo</label>
-                  <select
+                <div>
+                  <Label htmlFor="vfm-tipo" required>Tipo</Label>
+                  <Select
+                    id="vfm-tipo"
                     required
                     value={idTipo}
                     onChange={(e) => setIdTipo(e.target.value)}
-                    className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
                   >
                     {tiposVehiculo.map((t) => (
                       <option key={t.id_tipo} value={t.id_tipo}>
                         {t.nombre}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Patente</label>
-                  <input
+                <div>
+                  <Label htmlFor="vfm-patente" required>Patente</Label>
+                  <Input
+                    id="vfm-patente"
                     type="text"
                     required
                     maxLength={15}
                     value={patente}
                     onChange={(e) => setPatente(e.target.value.toUpperCase())}
-                    className="border border-gray-300 rounded-md px-2 py-1.5 text-sm uppercase"
+                    className="uppercase"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Km actuales</label>
-                  <input
+                <div>
+                  <Label htmlFor="vfm-km" required>Km actuales</Label>
+                  <Input
+                    id="vfm-km"
                     type="number"
                     min={0}
                     step={1}
                     required
                     value={kmActuales}
                     onChange={(e) => setKmActuales(e.target.value)}
-                    className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
                   />
                 </div>
               </div>
@@ -221,79 +238,79 @@ export function VehiculoFormModal({
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600">Marca</label>
-              <input
+            <div>
+              <Label htmlFor="vfm-marca" required>Marca</Label>
+              <Input
+                id="vfm-marca"
                 type="text"
                 required
                 maxLength={50}
                 value={marca}
                 onChange={(e) => setMarca(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
               />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600">Modelo</label>
-              <input
+            <div>
+              <Label htmlFor="vfm-modelo" required>Modelo</Label>
+              <Input
+                id="vfm-modelo"
                 type="text"
                 required
                 maxLength={50}
                 value={modelo}
                 onChange={(e) => setModelo(e.target.value)}
-                className="border border-gray-300 rounded-md px-2 py-1.5 text-sm"
               />
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Año</label>
-            <input
+          <div>
+            <Label htmlFor="vfm-anio" required>Año</Label>
+            <Input
+              id="vfm-anio"
               type="number"
               min={1900}
               max={new Date().getFullYear() + 1}
               required
               value={anio}
               onChange={(e) => setAnio(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1.5 text-sm w-32"
+              className="w-32"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">Detalle de confort</label>
-            <textarea
+          <div>
+            <Label htmlFor="vfm-confort">Detalle de confort</Label>
+            <Textarea
+              id="vfm-confort"
               value={detalleConfort}
               onChange={(e) => setDetalleConfort(e.target.value)}
               rows={3}
-              className="border border-gray-300 rounded-md px-2 py-1.5 text-sm resize-none"
               placeholder="Aire acondicionado, GPS, etc."
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
-              <p className="text-red-700 text-xs">{error}</p>
+            <div
+              role="alert"
+              className="rounded-md bg-danger-bg border border-danger-border px-3 py-2"
+            >
+              <p className="text-danger-fg text-xs">{error}</p>
             </div>
           )}
 
-          <div className="flex gap-2 justify-end mt-2">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" variant="primary" loading={loading}>
               {loading ? 'Guardando...' : modo === 'crear' ? 'Crear' : 'Guardar cambios'}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
