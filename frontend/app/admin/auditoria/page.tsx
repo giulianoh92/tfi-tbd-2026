@@ -1,6 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import type { AuditLog } from '@/types/database'
+import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Label } from '@/components/ui/Label'
+import { formatDateTimeAR } from '@/lib/format'
 
 const TABLAS_AUDITADAS = [
   'cliente',
@@ -11,10 +19,12 @@ const TABLAS_AUDITADAS = [
   'mantenimiento',
 ] as const
 
-const TIPO_OP_LABEL: Record<string, { label: string; clase: string }> = {
-  I: { label: 'INSERT', clase: 'bg-green-50 text-green-700 border-green-200' },
-  U: { label: 'UPDATE', clase: 'bg-blue-50 text-blue-700 border-blue-200' },
-  D: { label: 'DELETE', clase: 'bg-red-50 text-red-700 border-red-200' },
+type BadgeVariant = 'success' | 'info' | 'danger' | 'muted'
+
+const TIPO_OP_LABEL: Record<string, { label: string; variant: BadgeVariant }> = {
+  I: { label: 'INSERT', variant: 'success' },
+  U: { label: 'UPDATE', variant: 'info' },
+  D: { label: 'DELETE', variant: 'danger' },
 }
 
 const PAGE_SIZE = 50
@@ -56,28 +66,18 @@ export default async function AuditoriaPage({
     .order('fecha_hora', { ascending: false })
     .range(from, to)
 
-  if (filtroTabla) {
-    query = query.eq('tabla', filtroTabla)
-  }
-  if (filtroTipoOp) {
-    query = query.eq('tipo_op', filtroTipoOp)
-  }
-  if (filtroDesde) {
-    query = query.gte('fecha_hora', filtroDesde)
-  }
-  if (filtroHasta) {
-    // El input type=date manda YYYY-MM-DD. Para que `hasta` incluya el dia
-    // completo le sumamos 23:59:59 antes de enviarlo a la query.
-    query = query.lte('fecha_hora', `${filtroHasta}T23:59:59.999Z`)
-  }
+  if (filtroTabla) query = query.eq('tabla', filtroTabla)
+  if (filtroTipoOp) query = query.eq('tipo_op', filtroTipoOp)
+  if (filtroDesde) query = query.gte('fecha_hora', filtroDesde)
+  if (filtroHasta) query = query.lte('fecha_hora', `${filtroHasta}T23:59:59.999Z`)
 
   const { data, error, count } = await query
 
   if (error) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6">
-        <p className="text-red-700 font-medium">Error al cargar el log de auditoria</p>
-        <p className="text-red-500 text-sm mt-1">{error.message}</p>
+      <div role="alert" className="rounded-lg bg-danger-bg border border-danger-border p-6">
+        <p className="text-danger-fg font-medium">Error al cargar el log de auditoria</p>
+        <p className="text-danger-fg/80 text-sm mt-1">{error.message}</p>
       </div>
     )
   }
@@ -86,7 +86,6 @@ export default async function AuditoriaPage({
   const total = count ?? 0
   const totalPaginas = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  // Genera querystring conservando filtros y cambiando solo `page`.
   const buildHref = (nuevaPagina: number) => {
     const qs = new URLSearchParams()
     if (filtroTabla) qs.set('tabla', filtroTabla)
@@ -99,192 +98,107 @@ export default async function AuditoriaPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Auditoría</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            {total.toLocaleString('es-AR')} registro{total !== 1 ? 's' : ''} en
-            el log. Página {pagina} de {totalPaginas}.
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Panel
-        </Link>
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold text-slate-900">Auditoría</h1>
+        <p className="text-muted-fg mt-1 text-sm">
+          {total.toLocaleString('es-AR')} registro{total !== 1 ? 's' : ''} en el log. Página {pagina} de {totalPaginas}.
+        </p>
       </div>
 
       {/* Filtros */}
-      <form
-        method="get"
-        className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
-      >
-        <div>
-          <label
-            htmlFor="tabla"
-            className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"
-          >
-            Tabla
-          </label>
-          <select
-            id="tabla"
-            name="tabla"
-            defaultValue={filtroTabla}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          >
-            <option value="">Todas</option>
-            {TABLAS_AUDITADAS.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Card variant="raised" className="p-4 mb-6">
+        <form
+          method="get"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+        >
+          <div>
+            <Label htmlFor="tabla">Tabla</Label>
+            <Select id="tabla" name="tabla" defaultValue={filtroTabla}>
+              <option value="">Todas</option>
+              {TABLAS_AUDITADAS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </Select>
+          </div>
 
-        <div>
-          <label
-            htmlFor="tipo_op"
-            className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"
-          >
-            Operación
-          </label>
-          <select
-            id="tipo_op"
-            name="tipo_op"
-            defaultValue={filtroTipoOp}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          >
-            <option value="">Todas</option>
-            <option value="I">INSERT</option>
-            <option value="U">UPDATE</option>
-            <option value="D">DELETE</option>
-          </select>
-        </div>
+          <div>
+            <Label htmlFor="tipo_op">Operación</Label>
+            <Select id="tipo_op" name="tipo_op" defaultValue={filtroTipoOp}>
+              <option value="">Todas</option>
+              <option value="I">INSERT</option>
+              <option value="U">UPDATE</option>
+              <option value="D">DELETE</option>
+            </Select>
+          </div>
 
-        <div>
-          <label
-            htmlFor="desde"
-            className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"
-          >
-            Desde
-          </label>
-          <input
-            id="desde"
-            type="date"
-            name="desde"
-            defaultValue={filtroDesde}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
+          <div>
+            <Label htmlFor="desde">Desde</Label>
+            <Input id="desde" type="date" name="desde" defaultValue={filtroDesde} />
+          </div>
 
-        <div>
-          <label
-            htmlFor="hasta"
-            className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"
-          >
-            Hasta
-          </label>
-          <input
-            id="hasta"
-            type="date"
-            name="hasta"
-            defaultValue={filtroHasta}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
+          <div>
+            <Label htmlFor="hasta">Hasta</Label>
+            <Input id="hasta" type="date" name="hasta" defaultValue={filtroHasta} />
+          </div>
 
-        <div className="flex items-end gap-2">
-          <button
-            type="submit"
-            className="flex-1 rounded-lg bg-blue-600 text-white text-sm font-medium px-4 py-2 hover:bg-blue-700 transition-colors"
-          >
-            Filtrar
-          </button>
-          <Link
-            href="/admin/auditoria"
-            className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
-          >
-            Limpiar
-          </Link>
-        </div>
-      </form>
+          <div className="flex items-end gap-2">
+            <Button type="submit" variant="primary" className="flex-1">
+              Filtrar
+            </Button>
+            <Link
+              href="/admin/auditoria"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium px-4 py-2 hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              Limpiar
+            </Link>
+          </div>
+        </form>
+      </Card>
 
       {filas.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-          <p className="text-gray-500 text-lg">No hay registros que coincidan con los filtros.</p>
-        </div>
+        <Card variant="raised" className="text-center py-16">
+          <p className="text-muted-fg text-lg">No hay registros que coincidan con los filtros.</p>
+        </Card>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <Card variant="raised" className="overflow-hidden p-0">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Fecha
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Op
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Tabla
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Id registro
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Usuario DB
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Usuario app
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Detalle
-                  </th>
+                  <Th>Fecha</Th>
+                  <Th>Op</Th>
+                  <Th>Tabla</Th>
+                  <Th>Id registro</Th>
+                  <Th>Usuario DB</Th>
+                  <Th>Usuario app</Th>
+                  <Th align="right">Detalle</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {filas.map((row) => {
-                  const fecha = new Date(row.fecha_hora).toLocaleString('es-AR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })
                   const op = TIPO_OP_LABEL[row.tipo_op] ?? {
                     label: row.tipo_op,
-                    clase: 'bg-gray-50 text-gray-700 border-gray-200',
+                    variant: 'muted' as BadgeVariant,
                   }
                   return (
-                    <tr key={row.id_audit} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                        {fecha}
+                    <tr key={row.id_audit} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap tabular-nums">
+                        {formatDateTimeAR(row.fecha_hora)}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${op.clase}`}
-                        >
-                          {op.label}
-                        </span>
+                        <Badge variant={op.variant}>{op.label}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{row.tabla}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500 font-mono">
-                        {row.id_registro ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 font-mono">
-                        {row.usuario_db}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 font-mono">
-                        {row.usuario_app ?? '—'}
-                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-900 font-medium">{row.tabla}</td>
+                      <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.id_registro ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.usuario_db}</td>
+                      <td className="px-4 py-3 text-xs text-muted-fg font-mono">{row.usuario_app ?? '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/admin/auditoria/${row.id_audit}`}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                          className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
                         >
-                          Ver →
+                          Ver
+                          <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                         </Link>
                       </td>
                     </tr>
@@ -293,46 +207,69 @@ export default async function AuditoriaPage({
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Paginacion */}
       {totalPaginas > 1 && (
         <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-fg">
             Mostrando {from + 1}-{Math.min(to + 1, total)} de {total}
           </div>
           <div className="flex items-center gap-2">
-            {pagina > 1 ? (
-              <Link
-                href={buildHref(pagina - 1)}
-                className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-3 py-1.5 hover:bg-gray-50 transition-colors"
-              >
-                ← Anterior
-              </Link>
-            ) : (
-              <span className="rounded-lg border border-gray-200 text-gray-300 text-sm font-medium px-3 py-1.5 cursor-not-allowed">
-                ← Anterior
-              </span>
-            )}
-            <span className="text-sm text-gray-500 px-2">
-              {pagina} / {totalPaginas}
-            </span>
-            {pagina < totalPaginas ? (
-              <Link
-                href={buildHref(pagina + 1)}
-                className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-3 py-1.5 hover:bg-gray-50 transition-colors"
-              >
-                Siguiente →
-              </Link>
-            ) : (
-              <span className="rounded-lg border border-gray-200 text-gray-300 text-sm font-medium px-3 py-1.5 cursor-not-allowed">
-                Siguiente →
-              </span>
-            )}
+            <PageNav href={pagina > 1 ? buildHref(pagina - 1) : null} dir="prev" />
+            <span className="text-sm text-muted-fg px-2 tabular-nums">{pagina} / {totalPaginas}</span>
+            <PageNav href={pagina < totalPaginas ? buildHref(pagina + 1) : null} dir="next" />
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function Th({
+  children,
+  align = 'left',
+}: {
+  children: React.ReactNode
+  align?: 'left' | 'right'
+}) {
+  return (
+    <th
+      className={`px-4 py-3 text-xs font-semibold text-muted-fg uppercase tracking-wider ${
+        align === 'right' ? 'text-right' : 'text-left'
+      }`}
+    >
+      {children}
+    </th>
+  )
+}
+
+function PageNav({ href, dir }: { href: string | null; dir: 'prev' | 'next' }) {
+  const label = dir === 'prev' ? 'Anterior' : 'Siguiente'
+  const Icon = dir === 'prev' ? ArrowLeft : ArrowRight
+  const content = (
+    <span className="inline-flex items-center gap-1">
+      {dir === 'prev' && <Icon className="w-4 h-4" aria-hidden="true" />}
+      {label}
+      {dir === 'next' && <Icon className="w-4 h-4" aria-hidden="true" />}
+    </span>
+  )
+
+  if (!href) {
+    return (
+      <span className="rounded-lg border border-slate-200 text-slate-300 text-sm font-medium px-3 py-1.5 cursor-not-allowed">
+        {content}
+      </span>
+    )
+  }
+
+  return (
+    <Link
+      href={href}
+      className="rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium px-3 py-1.5 hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+    >
+      {content}
+    </Link>
   )
 }

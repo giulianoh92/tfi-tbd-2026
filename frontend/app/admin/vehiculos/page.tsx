@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import { VehiculosAdminClient } from '@/components/VehiculosAdminClient'
 import type {
   Vehiculo,
@@ -48,9 +47,9 @@ export default async function VehiculosPage() {
   const errores = [vehiculosRes.error, sucursalesRes.error, tiposRes.error].filter(Boolean)
   if (errores.length > 0) {
     return (
-      <div className="rounded-lg bg-red-50 border border-red-200 p-6">
-        <p className="text-red-700 font-medium">Error al cargar la flota</p>
-        <ul className="text-red-500 text-sm mt-1 list-disc list-inside">
+      <div role="alert" className="rounded-lg bg-danger-bg border border-danger-border p-6">
+        <p className="text-danger-fg font-medium">Error al cargar la flota</p>
+        <ul className="text-danger-fg/80 text-sm mt-1 list-disc list-inside">
           {errores.map((e, i) => (
             <li key={i}>{e?.message ?? 'desconocido'}</li>
           ))}
@@ -65,19 +64,11 @@ export default async function VehiculosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Flota</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            CRUD de vehiculos via stored procedures.
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          ← Panel
-        </Link>
+      <div className="mb-6">
+        <h1 className="font-display text-3xl font-bold text-slate-900">Flota</h1>
+        <p className="text-muted-fg mt-1 text-sm">
+          Gestiona altas, ediciones y bajas de la flota.
+        </p>
       </div>
 
       <VehiculosAdminClient
