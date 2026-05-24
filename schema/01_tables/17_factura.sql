@@ -7,6 +7,13 @@ CREATE TABLE IF NOT EXISTS factura (
     id_factura                     BIGSERIAL      PRIMARY KEY,
     id_alquiler                    BIGINT         NOT NULL UNIQUE,
     id_cliente                     BIGINT         NOT NULL,
+        -- DECISION DE DISENIO (Sprint 6, B7.1): id_cliente se duplica respecto
+        -- de alquiler.id_cliente INTENCIONALMENTE. La factura es un documento
+        -- contable inmutable: si en el futuro se reasigna el alquiler a otro
+        -- cliente (caso corporativo, transferencia, error administrativo), la
+        -- factura debe conservar al cliente que firmo y pago en su momento.
+        -- Es una denormalizacion controlada que protege el snapshot historico.
+        -- Para "cliente actual del alquiler" leer via JOIN con alquiler.
     numero_factura                 VARCHAR(30)    NOT NULL UNIQUE,
     fecha_emision                  DATE           NOT NULL DEFAULT CURRENT_DATE,
     precio_por_dia_aplicado        NUMERIC(12, 2) NOT NULL,

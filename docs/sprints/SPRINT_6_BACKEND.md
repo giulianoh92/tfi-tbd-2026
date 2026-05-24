@@ -241,7 +241,7 @@ Reglas operativas que se derivan:
 
 > No es "documentar deprecaciones" — es dejar evidencia in-line de POR QUE el codigo es asi para que la defensa academica pueda apoyarse en el comentario.
 
-- [ ] B7.1 **Editar** `schema/01_tables/` archivo de `factura` y agregar comentario sobre `id_cliente`:
+- [x] B7.1 **Editar** `schema/01_tables/` archivo de `factura` y agregar comentario sobre `id_cliente`:
   ```sql
   id_cliente BIGINT NOT NULL,
       -- DECISION DE DISENIO: id_cliente se duplica respecto de alquiler.id_cliente
@@ -250,7 +250,7 @@ Reglas operativas que se derivan:
       -- transferencia), la factura conserva al cliente que firmo en su momento.
       -- Para "cliente actual del alquiler" leer via JOIN con alquiler.
   ```
-- [ ] B7.2 **Editar** `schema/04_functions/05_fn_calcular_factura.sql` cerca de `NEXTVAL('seq_numero_factura')` con comentario:
+- [x] B7.2 **Editar** `schema/04_functions/05_fn_calcular_factura.sql` cerca de `NEXTVAL('seq_numero_factura')` con comentario:
   ```sql
   -- numero_factura puede tener huecos: si una transaccion hace ROLLBACK
   -- (ej. EXCEPTION captura un error post-NEXTVAL), Postgres NO retrocede
@@ -259,7 +259,7 @@ Reglas operativas que se derivan:
   -- con UPDATE bajo lock; queda fuera de scope del TFI academico, se
   -- documenta la limitacion en JUSTIFICACION.md §R10.
   ```
-- [ ] B7.3 Idem en `schema/04_functions/12_fn_audit_generic.sql` cerca del `SECURITY DEFINER`:
+- [x] B7.3 Idem en `schema/04_functions/12_fn_audit_generic.sql` cerca del `SECURITY DEFINER`:
   ```sql
   -- SECURITY DEFINER: el trigger inserta en audit_log saltandose RLS. Es
   -- intencional. RLS sobre audit_log esta en USING(FALSE) para escritura
