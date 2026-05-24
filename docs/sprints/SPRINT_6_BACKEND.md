@@ -174,17 +174,17 @@ Reglas operativas que se derivan:
 
 ## Bloque B5 — Higiene y consistencia
 
-- [ ] B5.1 Borrar `schema/03_indexes/07_idx_historial_estado_vehiculo` (archivo sin extension `.sql`, no se aplica porque `apply.sh` filtra `*.sql`; ademas duplicaria `uq_historial_estado_vigente`).
-- [ ] B5.2 **Editar** `schema/00_extensions.sql` para remover `CREATE EXTENSION ... "uuid-ossp"` si esta presente. Justificacion en comentario donde se conservan las extensiones:
+- [x] B5.1 Borrar `schema/03_indexes/07_idx_historial_estado_vehiculo` (archivo sin extension `.sql`, no se aplica porque `apply.sh` filtra `*.sql`; ademas duplicaria `uq_historial_estado_vigente`).
+- [x] B5.2 **Editar** `schema/00_extensions.sql` para remover `CREATE EXTENSION ... "uuid-ossp"` si esta presente. Justificacion en comentario donde se conservan las extensiones:
   ```sql
   -- pgcrypto provee gen_random_uuid() (RFC 4122 v4). uuid-ossp historicamente
   -- aportaba uuid_generate_v4() y derivados, pero hoy duplica funcionalidad
   -- y suma superficie de attack sin uso real en el proyecto.
   ```
-- [ ] B5.3 **Editar** las functions que comparan catalogo `estado_vehiculo` de forma case-sensitive y unificar a `lower(nombre)`:
+- [x] B5.3 **Editar** las functions que comparan catalogo `estado_vehiculo` de forma case-sensitive y unificar a `lower(nombre)`:
   - `schema/04_functions/03_fn_alquiler_lifecycle.sql:35`
   - `schema/04_functions/06_fn_mantenimiento_lifecycle.sql:11, 52`
-- [ ] B5.4 **Editar** `schema/01_tables/` (archivo de `estado_vehiculo`) agregando CHECK in-line con comentario:
+- [x] B5.4 **Editar** `schema/01_tables/` (archivo de `estado_vehiculo`) agregando CHECK in-line con comentario:
   ```sql
   nombre VARCHAR(50) NOT NULL UNIQUE
       -- Forzamos minusculas en el catalogo para que los lookups sean
@@ -192,7 +192,7 @@ Reglas operativas que se derivan:
       -- silenciosamente; mejor cerrar la puerta a nivel constraint.
       CHECK (nombre = lower(nombre))
   ```
-- [ ] B5.5 **Editar** `schema/04_functions/02_fn_check_vehiculo_overlap.sql` (si sobrevive a B1.5) reemplazando `COALESCE(NEW.id_reserva, -1) <> COALESCE(r.id_reserva, -1)` por `NEW.id_reserva IS DISTINCT FROM r.id_reserva`. Comentario:
+- [x] B5.5 **Editar** `schema/04_functions/02_fn_check_vehiculo_overlap.sql` (si sobrevive a B1.5) reemplazando `COALESCE(NEW.id_reserva, -1) <> COALESCE(r.id_reserva, -1)` por `NEW.id_reserva IS DISTINCT FROM r.id_reserva`. Comentario:
   ```sql
   -- IS DISTINCT FROM trata NULL como un valor mas (NULL <> 5 = NULL,
   -- pero NULL IS DISTINCT FROM 5 = TRUE). Mas limpio que sentinels (-1)
