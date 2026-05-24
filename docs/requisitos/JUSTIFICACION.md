@@ -87,15 +87,29 @@ op, valores). La única traducción técnica es **qué se entiende por "usuario"
 
 **Decisión técnica:** la columna `usuario` del log registra **dos identidades**:
 
-1. `usuario_db` ← `current_user` (rol Postgres efectivo).
+1. `usuario_db` ← `session_user` (rol Postgres con el que se autenticó la
+   sesión HTTP: `authenticated`, `anon`, `quique`, `postgres`, etc).
 2. `usuario_app` ← `auth.uid()` extraído del JWT de Supabase (UUID lógico del
    cliente o staff que disparó la operación).
 
-**Por qué:** en Supabase el `current_user` siempre es `authenticator` /
-`authenticated` / `anon` (roles de PostgREST), no el usuario lógico de negocio.
-Sin la segunda columna la auditoría sería técnicamente correcta pero
-funcionalmente inútil. Registrar ambas mantiene trazabilidad completa: a nivel
-DBA (rol efectivo) y a nivel negocio (cliente/empleado real).
+**Por qué `session_user` y no `current_user` (Sprint 6, B2.2):** el trigger
+`fn_audit_generic` está marcado `SECURITY DEFINER` para poder insertar en
+`audit_log` saltándose RLS. Dentro de un `SECURITY DEFINER`, `current_user`
+toma el valor del **owner** (`postgres`), lo que hacía que `usuario_db`
+siempre registrara `'postgres'` y la mitad de DB de la doble identidad
+perdiera valor. `session_user` mantiene el rol con el que se abrió la
+sesión incluso dentro del DEFINER (`authenticated` para tráfico HTTP,
+`quique` para conexiones psql del profesor, `postgres` para `apply.sh`).
+
+**Append-only real (Sprint 6, B2.1):** la policy RLS sobre `audit_log` ya
+bloqueaba `UPDATE`/`DELETE` para `authenticated`/`anon`, pero **no** para
+roles superiores como `quique` (que tiene `ALL PRIVILEGES`) o `postgres`.
+Se agrega un trigger `BEFORE UPDATE OR DELETE` (`trg_audit_log_no_update`,
+`schema/07_triggers/08_*.sql`) que dispara `RAISE EXCEPTION 'audit_log es
+append-only'` para **cualquier** rol no-superuser. La única forma de
+saltearlo es `SET session_replication_role = replica`, comando que
+requiere superuser y queda registrado en `pg_stat_statements` / logs del
+cluster. Defensa en profundidad sobre RLS.
 
 **Tabla de auditoría:** se opta por **una tabla general** (`audit_log`) sobre
 la opción de tablas por entidad. El PDF acepta ambas explícitamente. La general
@@ -160,6 +174,16 @@ del PDF cuando el contexto de invocación lo permite.
 sistema pasa por RPC HTTP (frontend → PostgREST → Postgres). Forzar `COMMIT`
 literal romper el sistema. La elección de `EXCEPTION WHEN` es la única opción
 técnicamente viable.
+
+**Sprint 6 — nuevo `WHEN exclusion_violation` en SPs (B1.4):** además de los
+SQLSTATE clásicos (23505 / 23503 / 23514), `pa_registrar_reserva` y
+`pa_registrar_alquiler` capturan ahora `exclusion_violation` (23P01),
+disparado por las EXCLUDE constraints de R7. Lo mapean a un nuevo código
+`ERROR_SUPERPOSICION` con mensaje legible. Esto preserva el contrato de
+retorno (R4) frente a un nuevo tipo de violación de integridad
+introducido a nivel índice GiST. Postgres-only: en Oracle el equivalente
+se implementaría con triggers + locking explícito, con más superficie
+para race conditions.
 
 ---
 
@@ -317,12 +341,46 @@ pa_registrar_reserva (orquestador)
   `alquiler` (verificable en `schema/04_functions/02_fn_check_vehiculo_overlap.sql`).
 - Las funciones `fn_validar_*` nuevas se invocan también desde
   `pa_registrar_alquiler`.
+- `fn_validar_periodo(p_inicio, p_fin, p_tolerancia_pasado)` acepta un
+  parámetro de tolerancia con default `INTERVAL '0'` (Sprint 6, B4.2). La
+  reserva usa el default — inicio estrictamente futuro. El walk-in
+  (`pa_registrar_alquiler` rama sin reserva) la invoca con
+  `INTERVAL '5 minutes'` para tolerar latencia HTTP entre el `NOW()`
+  del frontend y el del servidor. Una sola función, dos comportamientos
+  declarativos — encarna la modularización pedida sin duplicar lógica.
+
+**Garantía de no-superposición temporal — EXCLUDE constraint (Sprint 6, B1):**
+> El TFI pide validar superposición de fechas; la versión inicial lo hacía
+> sólo con trigger `BEFORE INSERT`. Eso es **best-effort**: el patrón
+> `SELECT EXISTS (...)` + `INSERT` tiene una ventana de carrera donde
+> dos transacciones concurrentes pueden colarse entre el SELECT y el
+> INSERT, porque cada una lee con su propio snapshot y Postgres no toma
+> locks predicados.
+
+La garantía formal se mueve a **EXCLUDE constraints con `btree_gist`**
+(`schema/02_constraints/14_exclude_alquiler_reserva.sql`):
+
+```sql
+ALTER TABLE alquiler
+    ADD CONSTRAINT excl_alquiler_overlap
+    EXCLUDE USING gist (
+        id_vehiculo WITH =,
+        tsrange(fecha_inicio, fecha_fin_prevista, '[)') WITH &&
+    )
+    WHERE (estado = 'activo');
+```
+
+El índice GiST combina igualdad (`id_vehiculo`) con intersección de rangos
+(`tsrange ... '[)'`, half-open: fin de uno puede ser exacto al inicio del
+siguiente sin solaparse). La validación ocurre **atómica** al insertar:
+la ventana de carrera del trigger desaparece. El trigger se conserva como
+UX (mensajes legibles antes de que dispare `exclusion_violation` 23P01).
 
 **Separación de responsabilidades:**
 - **Validación de período / cliente / vehículo:** funciones puras
   (`fn_validar_*`), retornan boolean o lanzan `RAISE EXCEPTION`.
-- **Validación de superposición:** trigger genérico aplicable a `reserva` y
-  `alquiler` por igual.
+- **Validación de superposición:** EXCLUDE constraint a nivel índice GiST
+  (garantía formal) + trigger best-effort para mensajes amigables.
 - **Orquestación + manejo de errores + retorno:** SP `pa_registrar_*`.
 
 ---
@@ -345,6 +403,29 @@ Reglas de transición de estado:
 
 Validación adicional: si existe un alquiler con `id_reserva` igual al de la
 reserva a cancelar, la cancelación se rechaza.
+
+**Sprint 6 — validación de coherencia tarifa <-> vehículo (B4.1):**
+`pa_registrar_alquiler` valida explícitamente que la tarifa elegida
+pertenezca al **mismo tipo y misma sucursal de origen** del vehículo:
+
+```sql
+IF NOT EXISTS (
+    SELECT 1
+    FROM tarifa t
+    JOIN vehiculo v
+      ON v.id_tipo            = t.id_tipo
+     AND v.id_sucursal_origen = t.id_sucursal
+    WHERE t.id_tarifa   = p_id_tarifa
+      AND v.id_vehiculo = p_id_vehiculo
+) THEN ...
+```
+
+La FK aislada `alquiler.id_tarifa -> tarifa` no garantiza esa coherencia
+porque `tarifa.id_sucursal` y `tarifa.id_tipo` son independientes de
+`vehiculo`. Sin la validación, un cliente con DevTools podía mandar al
+RPC el `id_tarifa` más barato del catálogo (otra sucursal/tipo) y
+aplicárselo al alquiler. El procedure es la única vía de creación, así
+que ahí se cierra la fuga.
 
 ---
 
@@ -399,6 +480,26 @@ reserva a cancelar, la cancelación se rechaza.
 
 Tras la implementación del R1 (auditoría), todos los UPDATE/INSERT de este
 flujo se registrarán automáticamente en `audit_log` sin tocar este código.
+
+**Limitación documentada — `numero_factura` admite huecos (Sprint 6, B7.2):**
+el correlativo se genera con `NEXTVAL('seq_numero_factura')`. Postgres
+NO retrocede una secuencia cuando la transacción que la consumió hace
+`ROLLBACK` (comportamiento estándar para evitar contention global entre
+sesiones concurrentes). En consecuencia, si una transacción falla
+después de leer un `NEXTVAL`, ese número queda perdido: el correlativo
+no es estrictamente sin huecos.
+
+Para un correlativo fiscal AFIP-grade haría falta una tabla contadora
+con `SELECT ... FOR UPDATE` + `UPDATE ... SET valor = valor + 1`,
+patrón mucho más lento que serializa toda la facturación. **Como el
+TFI no requiere comportamiento fiscal real**, mantenemos la secuencia
+y documentamos la limitación. Si en el futuro un requerimiento real lo
+demanda, está acotado como "out of scope" del Sprint 6 con plan de
+migración esbozado.
+
+`numero_factura` sigue siendo `UNIQUE` (no se repite jamás) y
+`monotónicamente creciente` (orden temporal preservado); solo no es
+**denso**.
 
 ---
 

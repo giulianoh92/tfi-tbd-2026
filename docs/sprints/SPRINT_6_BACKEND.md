@@ -307,14 +307,14 @@ Reglas operativas que se derivan:
 
 ## Validacion final
 
-- [ ] V1. `docker compose down -v && docker compose up -d --wait`.
-- [ ] V2. `./scripts/deploy.sh` levanta sin errores end-to-end.
-- [ ] V3. Smoke test concurrencia: dos `psql` simultaneos intentando reservar el mismo vehiculo en periodos solapados -> uno entra, el otro recibe `ERROR_SUPERPOSICION`.
-- [ ] V4. Smoke test auditoria append-only: `UPDATE audit_log ... ` desde `quique` -> falla con `audit_log es append-only`.
-- [ ] V5. Smoke test doble identidad: insert via rol `authenticated` -> `audit_log.usuario_db = 'authenticated'`, no `'postgres'`.
-- [ ] V6. CI verde en GitHub Actions (`validate` + `deploy`).
-- [ ] V7. Lectura final de `JUSTIFICACION.md`: actualizar §R7 (EXCLUDE), §R1 (append-only + session_user), §R8 (validacion tarifa), §R2 (mantener), §R10 (huecos en numero_factura documentados).
-- [ ] V8. `rg "TODO|FIXME|DEPRECATED" schema/` debe devolver vacio (o solo TODOs explicitamente listados en out-of-scope).
+- [ ] V1. `docker compose down -v && docker compose up -d --wait`. **PENDIENTE manual**: este worktree no tiene `.env` y el docker daemon local solo tiene un contenedor PlantUML. Validar tras pushear y mergear o despues de copiar `.env.example` -> `.env`.
+- [ ] V2. `./scripts/deploy.sh` levanta sin errores end-to-end. **PENDIENTE manual** (mismo motivo que V1). Sintaxis SQL revisada por inspeccion; el CI de GitHub Actions hara la validacion real al pushear.
+- [ ] V3. Smoke test concurrencia: dos `psql` simultaneos intentando reservar el mismo vehiculo en periodos solapados -> uno entra, el otro recibe `ERROR_SUPERPOSICION`. **PENDIENTE manual** (requiere Docker corriendo).
+- [ ] V4. Smoke test auditoria append-only: `UPDATE audit_log ... ` desde `quique` -> falla con `audit_log es append-only`. Script automatizado: `tests/audit_append_only.sh` (requiere Docker corriendo).
+- [ ] V5. Smoke test doble identidad: insert via rol `authenticated` -> `audit_log.usuario_db = 'authenticated'`, no `'postgres'`. Cubierto por `tests/audit_append_only.sh` segundo bloque.
+- [ ] V6. CI verde en GitHub Actions (`validate` + `deploy`). Se dispara automaticamente al pushear `sprint-6-backend`.
+- [x] V7. Lectura final de `JUSTIFICACION.md`: actualizar §R7 (EXCLUDE), §R1 (append-only + session_user), §R8 (validacion tarifa), §R2 (mantener), §R10 (huecos en numero_factura documentados).
+- [x] V8. `rg "TODO|FIXME|DEPRECATED" schema/` debe devolver vacio (o solo TODOs explicitamente listados en out-of-scope).
 
 ---
 
