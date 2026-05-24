@@ -21,13 +21,19 @@
 --   p_mensaje     : descripcion legible (SQLERRM en errores).
 --   p_id_generado : id_alquiler creado (NULL si error).
 --
--- Nota sobre fn_validar_periodo: la funcion exige p_inicio > NOW(). Para
--- walk-in significa que el staff debe registrar la fecha de inicio con al
--- menos unos segundos de anticipacion respecto al NOW() del servidor. Esto
--- es deliberado: deja al frontend la responsabilidad de setear
--- "fecha_inicio = NOW() + 1 minuto" cuando el flujo es walk-in puro. Asi
--- preservamos una unica funcion de validacion temporal reusable, como pide
--- R7 (modularizacion).
+-- Sprint 6 (B4.3) — fn_validar_periodo soporta tolerancia: en walk-in se
+-- invoca con INTERVAL '5 minutes' para que el flujo sea robusto a la
+-- latencia HTTP entre el NOW() del frontend y el NOW() del servidor. En
+-- pa_registrar_reserva sigue llamandose sin parametro (default 0). La
+-- responsabilidad de "fecha futura" queda asi siempre en la DB, no en el
+-- frontend.
+--
+-- Sprint 6 (B4.1) — validacion de tarifa coherente: la tarifa elegida
+-- debe pertenecer a la sucursal de origen del vehiculo Y al tipo del
+-- vehiculo. La FK aislada (alquiler.id_tarifa -> tarifa) no lo asegura
+-- porque tarifa.id_sucursal y tarifa.id_tipo son independientes de
+-- vehiculo. Sin esta validacion un cliente podia aplicar la tarifa mas
+-- barata de cualquier sucursal/tipo a su alquiler.
 
 CREATE OR REPLACE PROCEDURE pa_registrar_alquiler(
     IN  p_id_reserva   BIGINT,
@@ -81,6 +87,26 @@ BEGIN
             'El km_inicio (%s) es menor al km_actuales del vehiculo (%s).',
             p_km_inicio, v_km_actuales
         );
+        RETURN;
+    END IF;
+
+    -- Sprint 6 (B4.1) — Coherencia tarifa <-> vehiculo.
+    -- La FK alquiler.id_tarifa -> tarifa garantiza que la tarifa existe,
+    -- pero NO que corresponda al tipo y sucursal de origen del vehiculo
+    -- elegido. Sin este check, un cliente podia consumir la tarifa mas
+    -- barata de cualquier sucursal/tipo del catalogo. Cerramos esa fuga
+    -- a nivel procedure (la unica via legitima de creacion de alquiler).
+    IF NOT EXISTS (
+        SELECT 1
+        FROM tarifa t
+        JOIN vehiculo v
+          ON v.id_tipo            = t.id_tipo
+         AND v.id_sucursal_origen = t.id_sucursal
+        WHERE t.id_tarifa   = p_id_tarifa
+          AND v.id_vehiculo = p_id_vehiculo
+    ) THEN
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := 'La tarifa no corresponde al tipo/sucursal del vehiculo elegido.';
         RETURN;
     END IF;
 
@@ -151,7 +177,13 @@ BEGIN
         ------------------------------------------------------------------
         -- Rama "walk-in" (sin reserva previa).
         ------------------------------------------------------------------
-        PERFORM fn_validar_periodo(p_fecha_inicio, p_fecha_fin);
+        -- Sprint 6 (B4.3): tolerancia de 5 minutos sobre NOW(). En walk-in
+        -- el staff completa la fecha de inicio en el frontend y la envia
+        -- al backend; entre uno y otro pueden pasar varios segundos. Sin
+        -- tolerancia, un click lento generaba un check_violation espureo
+        -- ("la fecha de inicio debe ser futura"). 5 minutos cubre latencia
+        -- razonable sin abrir la puerta a registrar alquileres del pasado.
+        PERFORM fn_validar_periodo(p_fecha_inicio, p_fecha_fin, INTERVAL '5 minutes');
         PERFORM fn_validar_cliente_activo(p_id_cliente);
         PERFORM fn_validar_vehiculo_operativo(p_id_vehiculo);
     END IF;

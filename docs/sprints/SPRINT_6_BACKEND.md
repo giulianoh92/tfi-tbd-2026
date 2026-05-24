@@ -134,7 +134,7 @@ Reglas operativas que se derivan:
 
 > Hoy un cliente avispado puede aplicar la tarifa mas barata de cualquier sucursal/tipo a su alquiler porque `pa_registrar_alquiler` no valida la coherencia tarifa <-> vehiculo. Y `fn_validar_periodo` exige `inicio > NOW()`, rompiendo el flujo walk-in.
 
-- [ ] B4.1 **Editar** `schema/04_functions/18_pa_registrar_alquiler.sql`. Agregar bloque de validacion **antes** del INSERT:
+- [x] B4.1 **Editar** `schema/04_functions/18_pa_registrar_alquiler.sql`. Agregar bloque de validacion **antes** del INSERT:
   ```sql
   -- Regla de negocio: la tarifa elegida tiene que pertenecer a la sucursal
   -- de origen del vehiculo Y al tipo del vehiculo. La FK aislada no lo asegura
@@ -153,7 +153,7 @@ Reglas operativas que se derivan:
       RETURN;
   END IF;
   ```
-- [ ] B4.2 **Editar** `schema/04_functions/13_fn_validar_periodo.sql`. Agregar parametro de tolerancia con default 0, manteniendo retro-compatibilidad de los callers existentes:
+- [x] B4.2 **Editar** `schema/04_functions/13_fn_validar_periodo.sql`. Agregar parametro de tolerancia con default 0, manteniendo retro-compatibilidad de los callers existentes:
   ```sql
   -- p_tolerancia_pasado permite usar la misma helper para reservas (default 0,
   -- inicio estrictamente futuro) y para walk-in (inicio puede ser NOW() menos
@@ -166,7 +166,7 @@ Reglas operativas que se derivan:
   ) RETURNS VOID
   ```
   Y la regla pasa a `p_inicio >= NOW() - p_tolerancia_pasado`.
-- [ ] B4.3 En `pa_registrar_alquiler` rama walk-in, invocar con `INTERVAL '5 minutes'`. En `pa_registrar_reserva` mantener la llamada sin parametro (usa default 0). Eliminar el comentario "TODO frontend pone NOW()+1min" en `18_pa_registrar_alquiler.sql`.
+- [x] B4.3 En `pa_registrar_alquiler` rama walk-in, invocar con `INTERVAL '5 minutes'`. En `pa_registrar_reserva` mantener la llamada sin parametro (usa default 0). Eliminar el comentario "TODO frontend pone NOW()+1min" en `18_pa_registrar_alquiler.sql`.
 
 **Commit**: `feat(schema): validacion de tarifa coherente y tolerancia walk-in en fn_validar_periodo`
 
