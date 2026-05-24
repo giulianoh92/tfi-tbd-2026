@@ -1,9 +1,12 @@
--- Procedures: pa_crear_vehiculo, pa_actualizar_vehiculo, pa_baja_vehiculo
+-- Functions: pa_crear_vehiculo, pa_actualizar_vehiculo, pa_baja_vehiculo
 -- Sprint 3 (R3, R4, R5). CRUD de vehiculo via SP, con retorno estandarizado.
 --
--- Decision de diseno: los tres procedures viven en un mismo archivo porque
+-- Decision de diseno: los tres SPs viven en un mismo archivo porque
 -- comparten el dominio y el codigo de validacion de rol staff. Cada uno
 -- expone su firma independiente.
+--
+-- R11: declarados como FUNCTIONs (no PROCEDUREs) para que PostgREST los
+-- exponga via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
 --
 -- Acceso (R3 / Anexo A): las mutaciones de flota son responsabilidad
 -- exclusiva del staff. No hay un rol PostgreSQL `staff` separado en este
@@ -20,19 +23,20 @@
 ------------------------------------------------------------------------
 -- Estado inicial: lookup en estado_vehiculo WHERE nombre = 'disponible'.
 -- Si no existe en el catalogo, retorna ERROR (el seed deberia poblarlo).
-CREATE OR REPLACE PROCEDURE pa_crear_vehiculo(
-    IN  p_id_sucursal_origen BIGINT,
-    IN  p_id_tipo            BIGINT,
-    IN  p_marca              VARCHAR,
-    IN  p_modelo             VARCHAR,
-    IN  p_anio               INTEGER,
-    IN  p_patente            VARCHAR,
-    IN  p_km_actuales        INTEGER,
-    IN  p_detalle_confort    TEXT,
-    OUT p_estado             TEXT,
-    OUT p_mensaje            TEXT,
-    OUT p_id_generado        BIGINT
+CREATE OR REPLACE FUNCTION pa_crear_vehiculo(
+    p_id_sucursal_origen BIGINT,
+    p_id_tipo            BIGINT,
+    p_marca              VARCHAR,
+    p_modelo             VARCHAR,
+    p_anio               INTEGER,
+    p_patente            VARCHAR,
+    p_km_actuales        INTEGER,
+    p_detalle_confort    TEXT,
+    OUT p_estado         TEXT,
+    OUT p_mensaje        TEXT,
+    OUT p_id_generado    BIGINT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -119,15 +123,16 @@ $$;
 -- triggers de lifecycle (fn_alquiler_start / fn_alquiler_close /
 -- fn_mantenimiento_*). La sucursal de origen tampoco se cambia desde aqui:
 -- los traslados se manejan via ubicacion_vehiculo.
-CREATE OR REPLACE PROCEDURE pa_actualizar_vehiculo(
-    IN  p_id_vehiculo     BIGINT,
-    IN  p_marca           VARCHAR,
-    IN  p_modelo          VARCHAR,
-    IN  p_anio            INTEGER,
-    IN  p_detalle_confort TEXT,
-    OUT p_estado          TEXT,
-    OUT p_mensaje         TEXT
+CREATE OR REPLACE FUNCTION pa_actualizar_vehiculo(
+    p_id_vehiculo     BIGINT,
+    p_marca           VARCHAR,
+    p_modelo          VARCHAR,
+    p_anio            INTEGER,
+    p_detalle_confort TEXT,
+    OUT p_estado      TEXT,
+    OUT p_mensaje     TEXT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -200,12 +205,13 @@ $$;
 -- INOUT p_motivo: entra el motivo del staff, sale enriquecido con timestamp
 -- + uuid del autor (mismo patron que pa_cancelar_reserva). Quedara visible
 -- al caller y se persistira en historial_estado_vehiculo.
-CREATE OR REPLACE PROCEDURE pa_baja_vehiculo(
-    IN    p_id_vehiculo BIGINT,
-    INOUT p_motivo      TEXT,
-    OUT   p_estado      TEXT,
-    OUT   p_mensaje     TEXT
+CREATE OR REPLACE FUNCTION pa_baja_vehiculo(
+    p_id_vehiculo   BIGINT,
+    INOUT p_motivo  TEXT,
+    OUT p_estado    TEXT,
+    OUT p_mensaje   TEXT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE

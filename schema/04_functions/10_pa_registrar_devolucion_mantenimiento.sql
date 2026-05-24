@@ -10,18 +10,22 @@
 --
 -- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
 
-DROP PROCEDURE IF EXISTS pa_registrar_devolucion_mantenimiento(
+DROP FUNCTION IF EXISTS pa_registrar_devolucion_mantenimiento(
     BIGINT, INTEGER
 ) CASCADE;
 
 -- Nota deploy fix: el caller debe pasar NULL explicito en p_km_salida_taller
--- cuando no aplique (Postgres no admite OUT despues de IN con DEFAULT).
-CREATE OR REPLACE PROCEDURE pa_registrar_devolucion_mantenimiento(
-    IN  p_id_vehiculo      BIGINT,
-    IN  p_km_salida_taller INTEGER, -- NULL si no se reportan km al salir del taller
-    OUT p_estado           TEXT,
-    OUT p_mensaje          TEXT
+-- cuando no aplique (Postgres no admite OUT despues de IN con DEFAULT en FUNCTION).
+--
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_registrar_devolucion_mantenimiento(
+    p_id_vehiculo      BIGINT,
+    p_km_salida_taller INTEGER, -- NULL si no se reportan km al salir del taller
+    OUT p_estado       TEXT,
+    OUT p_mensaje      TEXT
 )
+RETURNS RECORD
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id_estado_mantenimiento  BIGINT;

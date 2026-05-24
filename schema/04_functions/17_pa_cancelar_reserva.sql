@@ -25,12 +25,15 @@
 -- el bloque EXCEPTION hace rollback al savepoint implicito y el caller
 -- (PostgREST) commitea al cerrar la transaccion HTTP si no se relanza.
 
-CREATE OR REPLACE PROCEDURE pa_cancelar_reserva(
-    IN    p_id_reserva BIGINT,
-    INOUT p_motivo     TEXT,
-    OUT   p_estado     TEXT,
-    OUT   p_mensaje    TEXT
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_cancelar_reserva(
+    p_id_reserva    BIGINT,
+    INOUT p_motivo  TEXT,
+    OUT p_estado    TEXT,
+    OUT p_mensaje   TEXT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE

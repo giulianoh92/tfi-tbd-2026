@@ -10,17 +10,20 @@
 --
 -- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
 
-DROP PROCEDURE IF EXISTS pa_enviar_mantenimiento_programado(
+DROP FUNCTION IF EXISTS pa_enviar_mantenimiento_programado(
     BIGINT, BIGINT, TEXT
 ) CASCADE;
 
-CREATE OR REPLACE PROCEDURE pa_enviar_mantenimiento_programado(
-    IN  p_id_vehiculo   BIGINT,
-    IN  p_id_taller     BIGINT,
-    IN  p_observaciones TEXT,
-    OUT p_estado        TEXT,
-    OUT p_mensaje       TEXT
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_enviar_mantenimiento_programado(
+    p_id_vehiculo   BIGINT,
+    p_id_taller     BIGINT,
+    p_observaciones TEXT,
+    OUT p_estado    TEXT,
+    OUT p_mensaje   TEXT
 )
+RETURNS RECORD
 LANGUAGE plpgsql AS $$
 DECLARE
     v_id_estado_disponible BIGINT;

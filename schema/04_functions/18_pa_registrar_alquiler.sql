@@ -35,18 +35,21 @@
 -- vehiculo. Sin esta validacion un cliente podia aplicar la tarifa mas
 -- barata de cualquier sucursal/tipo a su alquiler.
 
-CREATE OR REPLACE PROCEDURE pa_registrar_alquiler(
-    IN  p_id_reserva   BIGINT,
-    IN  p_id_cliente   BIGINT,
-    IN  p_id_vehiculo  BIGINT,
-    IN  p_id_tarifa    BIGINT,
-    IN  p_fecha_inicio TIMESTAMP,
-    IN  p_fecha_fin    TIMESTAMP,
-    IN  p_km_inicio    INTEGER,
-    OUT p_estado       TEXT,
-    OUT p_mensaje      TEXT,
-    OUT p_id_generado  BIGINT
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_registrar_alquiler(
+    p_id_reserva   BIGINT,
+    p_id_cliente   BIGINT,
+    p_id_vehiculo  BIGINT,
+    p_id_tarifa    BIGINT,
+    p_fecha_inicio TIMESTAMP,
+    p_fecha_fin    TIMESTAMP,
+    p_km_inicio    INTEGER,
+    OUT p_estado   TEXT,
+    OUT p_mensaje  TEXT,
+    OUT p_id_generado BIGINT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE

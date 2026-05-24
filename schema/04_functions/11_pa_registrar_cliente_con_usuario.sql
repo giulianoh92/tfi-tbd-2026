@@ -19,6 +19,13 @@
 -- para evitar conflicto al re-aplicar (la firma vieja incluia
 -- p_password_hash).
 
+DROP FUNCTION IF EXISTS pa_registrar_cliente_con_usuario(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
+) CASCADE;
+DROP FUNCTION IF EXISTS pa_registrar_cliente_con_usuario(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
+) CASCADE;
+-- Compat con versiones anteriores que pudieran existir como PROCEDURE.
 DROP PROCEDURE IF EXISTS pa_registrar_cliente_con_usuario(
     VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
 ) CASCADE;
@@ -26,18 +33,21 @@ DROP PROCEDURE IF EXISTS pa_registrar_cliente_con_usuario(
     VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
 ) CASCADE;
 
-CREATE OR REPLACE PROCEDURE pa_registrar_cliente_con_usuario(
-    IN  p_username      VARCHAR,
-    IN  p_email         VARCHAR,
-    IN  p_nombre        VARCHAR,
-    IN  p_apellido      VARCHAR,
-    IN  p_dni           VARCHAR,
-    IN  p_telefono      VARCHAR,
-    IN  p_direccion     VARCHAR,
-    OUT p_estado        TEXT,
-    OUT p_mensaje       TEXT,
-    OUT p_id_generado   BIGINT
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_registrar_cliente_con_usuario(
+    p_username      VARCHAR,
+    p_email         VARCHAR,
+    p_nombre        VARCHAR,
+    p_apellido      VARCHAR,
+    p_dni           VARCHAR,
+    p_telefono      VARCHAR,
+    p_direccion     VARCHAR,
+    OUT p_estado      TEXT,
+    OUT p_mensaje     TEXT,
+    OUT p_id_generado BIGINT
 )
+RETURNS RECORD
 LANGUAGE plpgsql AS $$
 DECLARE
     v_username_limpio  VARCHAR(50);

@@ -38,26 +38,30 @@
 -- queda invalidado; el bloque DO al final de 04_rls_policies.sql vuelve a
 -- otorgar EXECUTE a todos los procedures.
 
-DROP PROCEDURE IF EXISTS pa_finalizar_alquiler(
+DROP FUNCTION IF EXISTS pa_finalizar_alquiler(
     BIGINT, INTEGER, BIGINT, VARCHAR, BIGINT, TEXT
 ) CASCADE;
 
 -- Nota Sprint 5 / deploy fix: Postgres no permite OUT parameters despues
 -- de IN con DEFAULT. Por eso los 3 IN opcionales quedaron sin DEFAULT y el
 -- caller debe pasarlos explicitamente (NULL cuando no aplique). Si se quisiera
--- recuperar el comportamiento "opcional", la unica via es invocar el procedure
--- con notacion nombrada: CALL pa_finalizar_alquiler(p_id_alquiler => ..., ...).
-CREATE OR REPLACE PROCEDURE pa_finalizar_alquiler(
-    IN  p_id_alquiler              BIGINT,
-    IN  p_km_fin                   INTEGER,
-    IN  p_id_sucursal_devolucion   BIGINT,
-    IN  p_estado_destino_vehiculo  VARCHAR,
-    IN  p_id_taller                BIGINT,
-    IN  p_observaciones            TEXT,
-    OUT p_estado                   TEXT,
-    OUT p_mensaje                  TEXT,
-    OUT p_id_factura               BIGINT
+-- recuperar el comportamiento "opcional", la unica via es invocar la funcion
+-- con notacion nombrada: SELECT pa_finalizar_alquiler(p_id_alquiler => ..., ...).
+--
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_finalizar_alquiler(
+    p_id_alquiler              BIGINT,
+    p_km_fin                   INTEGER,
+    p_id_sucursal_devolucion   BIGINT,
+    p_estado_destino_vehiculo  VARCHAR,
+    p_id_taller                BIGINT,
+    p_observaciones            TEXT,
+    OUT p_estado               TEXT,
+    OUT p_mensaje              TEXT,
+    OUT p_id_factura           BIGINT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE

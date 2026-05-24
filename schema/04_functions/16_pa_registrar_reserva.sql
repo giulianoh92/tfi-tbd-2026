@@ -18,16 +18,19 @@
 --   Las tres lanzan RAISE EXCEPTION; se capturan transparentemente en el
 --   bloque EXCEPTION WHEN OTHERS y mapean por SQLSTATE.
 
-CREATE OR REPLACE PROCEDURE pa_registrar_reserva(
-    IN  p_id_cliente      BIGINT,
-    IN  p_id_vehiculo     BIGINT,
-    IN  p_id_tipo_reserva BIGINT,
-    IN  p_fecha_inicio    TIMESTAMP,
-    IN  p_fecha_fin       TIMESTAMP,
-    OUT p_estado          TEXT,
-    OUT p_mensaje         TEXT,
-    OUT p_id_generado     BIGINT
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
+-- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+CREATE OR REPLACE FUNCTION pa_registrar_reserva(
+    p_id_cliente      BIGINT,
+    p_id_vehiculo     BIGINT,
+    p_id_tipo_reserva BIGINT,
+    p_fecha_inicio    TIMESTAMP,
+    p_fecha_fin       TIMESTAMP,
+    OUT p_estado      TEXT,
+    OUT p_mensaje     TEXT,
+    OUT p_id_generado BIGINT
 )
+RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 BEGIN
