@@ -40,9 +40,11 @@ BEGIN
             USING ERRCODE = 'foreign_key_violation';
     END IF;
 
-    -- TODO (extensible): cuando se introduzca cliente.activo o una nocion
-    -- de deuda persistida, agregar aqui los chequeos correspondientes y
-    -- mapearlos a un ERRCODE = 'check_violation' para que el caller los
-    -- categorice como ERROR_VALIDACION.
+    -- Extension futura (out-of-scope Sprint 6): cuando se introduzca
+    -- cliente.activo o una nocion de deuda persistida, agregar aqui los
+    -- chequeos correspondientes y mapearlos a ERRCODE = 'check_violation'
+    -- para que el caller los categorice como ERROR_VALIDACION. La firma
+    -- de esta function ya esta preparada (acepta p_id_cliente) para que
+    -- los callers no cambien.
 END;
 $$;

@@ -1,3 +1,0 @@
-CREATE UNIQUE INDEX IF NOT EXISTS idx_vehiculo_estado_vehiculo
-ON historial_estado_vehiculo (id_vehiculo) 
-WHERE fecha_fin IS NULL;

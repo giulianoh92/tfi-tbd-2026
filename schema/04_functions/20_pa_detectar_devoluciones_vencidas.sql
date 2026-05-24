@@ -22,8 +22,22 @@
 -- fecha_fin_prevista)) / 3600. Es una NUMERIC(8,2) -> precision a la
 -- centesima de hora.
 
+-- Sprint 6 (B8.1) — SECURITY DEFINER + search_path = public:
+--   * SECURITY DEFINER: el job corre como owner (postgres) cuando lo invoca
+--     pg_cron. Lo declaramos explicitamente para que, si en el futuro se
+--     llama desde otro rol con privilegios menores (manual debugging, RPC
+--     desde service_role), el INSERT en devolucion_vencida siga
+--     funcionando sin depender de RLS o GRANT especificos.
+--   * SET search_path = public: defensa contra "function hijacking" via
+--     schemas en el PATH del invocador (mitigation estandar contra
+--     CVE-2007-2138 y la familia de ataques que reemplazan funciones
+--     built-in como `format` o `lower` desde un schema temporal del
+--     atacante). Best practice oficial de Supabase para toda function
+--     SECURITY DEFINER.
 CREATE OR REPLACE PROCEDURE pa_detectar_devoluciones_vencidas()
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_filas_afectadas INTEGER;

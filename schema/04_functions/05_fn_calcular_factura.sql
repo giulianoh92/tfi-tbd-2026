@@ -74,7 +74,18 @@ BEGIN
 
     v_total := v_costo_base + v_recargo_excedente;
 
-    -- 4. Emision con numero correlativo y snapshot historico
+    -- 4. Emision con numero correlativo y snapshot historico.
+    --
+    -- Sprint 6 (B7.2): numero_factura puede tener huecos. Si una transaccion
+    -- hace ROLLBACK (ej. el INSERT siguiente captura una excepcion), Postgres
+    -- NO retrocede la secuencia: el comportamiento estandar de NEXTVAL es
+    -- mantener consistencia entre sesiones concurrentes sin lock global, por
+    -- diseno. Para un correlativo fiscal estricto sin huecos haria falta
+    -- una tabla contadora con UPDATE bajo lock (SELECT ... FOR UPDATE +
+    -- UPDATE ... SET valor = valor + 1), patron mucho mas lento y que
+    -- serializa todas las facturaciones. Como el TFI no requiere
+    -- correlativo fiscal AFIP-grade, mantenemos secuencia y documentamos
+    -- la limitacion en JUSTIFICACION.md seccion R10.
     v_numero_factura := 'FAC-' || LPAD(NEXTVAL('seq_numero_factura')::TEXT, 6, '0');
 
     INSERT INTO factura (

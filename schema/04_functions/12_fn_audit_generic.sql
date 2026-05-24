@@ -12,6 +12,13 @@
 -- forma idiomatica en Postgres de tener una unica via de escritura (el
 -- trigger) y bloquear el resto.
 --
+-- Sprint 6 (B7.3) — SECURITY DEFINER intencional: el trigger inserta en
+-- audit_log saltandose RLS. RLS sobre audit_log esta en USING(FALSE) para
+-- escritura desde authenticated/anon, asi que la unica via valida es esta
+-- function corriendo con privilegios del owner. Combinado con search_path
+-- = public (evita function hijacking) y el trigger append-only de B2
+-- (07_triggers/08_*), el log no es manipulable end-to-end.
+--
 -- Identidad del usuario logico: se lee `request.jwt.claims.sub` con fallback
 -- a NULL via bloque EXCEPTION (postgres puro sin Supabase no tiene la GUC
 -- seteada y current_setting lanzaria si missing_ok=false). El cast a UUID
@@ -76,6 +83,18 @@ BEGIN
         v_id_registro := v_row_jsonb ->> v_pk_col;
     END IF;
 
+    -- Sprint 6 (B2.2): usuario_db = session_user, NO current_user.
+    --   * current_user devuelve el rol "efectivo" tras SECURITY DEFINER,
+    --     que es siempre el owner (postgres). Eso rompia la doble
+    --     identidad documentada (DB + JWT) porque la mitad de DB siempre
+    --     registraba 'postgres'.
+    --   * session_user devuelve el rol con el que se autentico la sesion
+    --     HTTP (authenticator -> authenticated/anon segun JWT, o quique
+    --     en una sesion psql del profesor, o postgres en apply.sh). Esto
+    --     es lo que el TFI documenta como "doble identidad: el rol
+    --     Postgres que abrio la sesion + el sub del JWT".
+    -- Ref: PostgreSQL docs "System Information Functions" -> session_user
+    -- vs current_user.
     INSERT INTO audit_log (
         tabla,
         id_registro,
@@ -89,7 +108,7 @@ BEGIN
         TG_TABLE_NAME,
         v_id_registro,
         v_tipo_op,
-        current_user,
+        session_user,
         v_usuario_app,
         v_old_jsonb,
         v_new_jsonb
