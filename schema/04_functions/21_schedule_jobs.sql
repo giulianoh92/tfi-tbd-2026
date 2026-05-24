@@ -8,6 +8,13 @@
 --   2) Si pg_cron esta, verifica que el job no exista todavia (chequea
 --      cron.job por jobname) y recien ahi llama cron.schedule(). Esto
 --      hace al script idempotente frente a re-aplies de apply.sh.
+--   3) Todo el bloque va en DO + EXCEPTION OTHERS para que un cluster sin
+--      pg_cron habilitado o sin permisos para schedulear NO rompa el
+--      apply completo (Postgres puro de CI, o providers managed que
+--      restringen cron a roles especiales). Esto es lo que pide Sprint 6
+--      (B8.3): mantener el deploy funcional aun cuando pg_cron no esta.
+--
+-- Refs Supabase: https://supabase.com/docs/guides/database/extensions/pg_cron
 --
 -- Cron expression: '0 */6 * * *' -> en el minuto 0 de cada hora multiplo
 -- de 6 (00:00, 06:00, 12:00, 18:00). Cuatro corridas por dia es suficiente

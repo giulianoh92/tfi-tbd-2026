@@ -274,7 +274,7 @@ Reglas operativas que se derivan:
 
 ## Bloque B8 — Hardening del job pg_cron
 
-- [ ] B8.1 **Editar** `schema/04_functions/20_pa_detectar_devoluciones_vencidas.sql` y marcar la procedure como `SECURITY DEFINER SET search_path = public`. Comentario:
+- [x] B8.1 **Editar** `schema/04_functions/20_pa_detectar_devoluciones_vencidas.sql` y marcar la procedure como `SECURITY DEFINER SET search_path = public`. Comentario:
   ```sql
   -- SECURITY DEFINER: el job corre como owner (postgres) via pg_cron.
   -- Marcamos explicitamente search_path=public para evitar function
@@ -283,13 +283,13 @@ Reglas operativas que se derivan:
   -- bypassea RLS por ser definer, lo cual es necesario porque
   -- 'service_role' y el rol del job no figuran en las policies de la tabla.
   ```
-- [ ] B8.2 **Editar** `schema/06_permissions/` para revocar EXECUTE del PUBLIC/authenticated sobre `pa_detectar_devoluciones_vencidas` y otorgarlo solo a `postgres, service_role`. Comentario:
+- [x] B8.2 **Editar** `schema/06_permissions/` para revocar EXECUTE del PUBLIC/authenticated sobre `pa_detectar_devoluciones_vencidas` y otorgarlo solo a `postgres, service_role`. Comentario:
   ```sql
   -- Este procedure NO es API publica: solo lo invoca pg_cron. Restringir
   -- EXECUTE evita que un cliente con bypass de RLS via SECURITY DEFINER
   -- consuma recursos lanzando el job manualmente desde el frontend.
   ```
-- [ ] B8.3 Confirmar que `cron.schedule(...)` en `schema/04_functions/21_schedule_jobs.sql` queda envuelto en DO/EXCEPTION (para el caso de Postgres puro sin pg_cron en CI) y con comentario apuntando a Supabase docs.
+- [x] B8.3 Confirmar que `cron.schedule(...)` en `schema/04_functions/21_schedule_jobs.sql` queda envuelto en DO/EXCEPTION (para el caso de Postgres puro sin pg_cron en CI) y con comentario apuntando a Supabase docs.
 
 **Commit**: `feat(jobs): hardening de pa_detectar_devoluciones_vencidas (security definer + grants restringidos)`
 
