@@ -55,5 +55,16 @@ apply_dir "$SCHEMA_DIR/05_seeds"       "Datos de prueba (seeds)"
 apply_dir "$SCHEMA_DIR/06_permissions" "Permisos (roles, GRANT, REVOKE)"
 apply_dir "$SCHEMA_DIR/07_triggers"    "Triggers de auditoria"
 
+# PostgREST cachea el schema completo en memoria al arrancar y solo lo
+# refresca al recibir NOTIFY pgrst, 'reload schema' o tras un timeout largo.
+# Como apply.sh hace DROP SCHEMA public CASCADE + recreate, todos los
+# objetos quedan con OIDs nuevos. Sin este notify, las llamadas RPC fallan
+# con "Could not find the function public.xxx in the schema cache" aun
+# cuando la function existe en pg_proc. En Supabase Cloud el listener
+# 'pgrst' esta siempre activo; en Postgres puro el NOTIFY es no-op inocuo.
+echo ""
+echo "==> Refrescando PostgREST schema cache..."
+psql "$DATABASE_URL" -c "NOTIFY pgrst, 'reload schema';" --set ON_ERROR_STOP=1
+
 echo ""
 echo "==> Apply completado exitosamente."
