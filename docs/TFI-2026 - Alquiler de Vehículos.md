@@ -130,6 +130,7 @@ tags:
   <li>
     <a href="#etapa-2"><span class="t">Etapa 2: implementación en el SGBD</span><span class="dots"></span><span class="pn"></span></a>
     <ul>
+      <li><a href="#requerimientos-etapa-2"><span class="t">Requerimientos técnicos de la Etapa 2</span><span class="dots"></span><span class="pn"></span></a></li>
       <li><a href="#stack-tecnologico"><span class="t">Stack tecnológico</span><span class="dots"></span><span class="pn"></span></a></li>
       <li><a href="#arquitectura-schema"><span class="t">Arquitectura del schema</span><span class="dots"></span><span class="pn"></span></a></li>
       <li><a href="#catalogo-ddl"><span class="t">Catálogo de objetos DDL</span><span class="dots"></span><span class="pn"></span></a></li>
@@ -712,7 +713,30 @@ Se desarrollan a continuación los casos de uso de mayor complejidad, dado que c
 
 ## Etapa 2: implementación en el SGBD
 
-La Etapa 2 traduce el modelo conceptual de la Etapa 1 a DDL ejecutable y a la lógica de negocio que sostiene los casos de uso identificados. El motor elegido es **PostgreSQL 17.6** sobre la plataforma BaaS (*Backend-as-a-Service*) **Supabase**. La motivación de esta combinación es doble: PostgreSQL aporta el SGBD relacional *open-source* más completo del mercado —con extensiones nativas como `btree_gist`, `pg_cron` y `pgcrypto` que permiten implementar restricciones temporales, jobs programados y hashing sin dependencias externas— y Supabase suma sobre el mismo motor una API REST autogenerada (PostgREST), un servicio de autenticación con JWT (GoTrue), políticas declarativas de seguridad a nivel de fila (RLS) y un esquema `auth` listo para usar. Esta sinergia permite que el grueso de la lógica de negocio permanezca *en* la base de datos —tal como exige la consigna— mientras que el frontend Next.js consume las funciones almacenadas como simples llamadas HTTP.
+La Etapa 2 traduce el modelo conceptual de la Etapa 1 a DDL ejecutable y a la lógica de negocio que sostiene los casos de uso identificados. El motor elegido es **PostgreSQL 17.6** sobre la plataforma **BaaS** (*Backend-as-a-Service*) **Supabase**.
+
+La motivación de esta combinación es doble. Por un lado, PostgreSQL aporta el SGBD relacional *open-source* más completo del mercado, con extensiones nativas como `btree_gist`, `pg_cron` y `pgcrypto` que permiten implementar restricciones temporales, tareas programadas y *hashing* sin dependencias externas. Por otro, Supabase suma sobre el mismo motor un conjunto de servicios listos para usar: una API REST autogenerada (**PostgREST**, *API REST que PostgreSQL expone automáticamente a partir del schema, sin requerir capa de servicios escrita a mano*), un servicio de autenticación con **JWT** (*JSON Web Token: token firmado que transporta la identidad y los claims del usuario entre el cliente y el servidor*) provisto por GoTrue, políticas declarativas de seguridad a nivel de fila (**RLS**, *Row-Level Security: filtrado de filas a nivel del motor, donde cada `SELECT` aplica una política que decide qué filas puede ver el usuario actual, sin pasar por código de aplicación*) y un esquema `auth` preconfigurado.
+
+Esta sinergia permite que el grueso de la lógica de negocio permanezca *en* la base de datos —tal como exige la consigna— mientras que cualquier cliente HTTP, incluida la interfaz auxiliar de consulta, invoca las funciones almacenadas como llamadas **RPC** (*Remote Procedure Call: llamada a una función almacenada de la base como si fuera un endpoint HTTP*) sobre JSON.
+
+<a id="requerimientos-etapa-2"></a>
+
+### Requerimientos técnicos de la Etapa 2
+
+La cátedra entregó al equipo un listado de requerimientos técnicos a cumplir durante esta etapa. Se transcriben a continuación para que el lector pueda contrastar cada decisión de implementación con la consigna original:
+
+- **R1.** Implementación de mecanismos de auditoría mediante triggers, registrando las operaciones realizadas sobre las tablas principales del sistema. Los logs deberán almacenar: usuario que realizó la operación, fecha y hora, tipo de operación (INSERT, UPDATE o DELETE). Asimismo: para operaciones INSERT deberán almacenarse los valores nuevos, para operaciones DELETE deberán almacenarse los valores anteriores, para operaciones UPDATE deberán almacenarse tanto los valores anteriores como los nuevos. La auditoría podrá implementarse mediante: una tabla de log general para todo el sistema, o tablas de log específicas por cada entidad auditada. Realizar una interfaz desde el sistema a desarrollar que permita la consulta de estos logs.
+- **R2.** Todos los procedimientos almacenados deberán implementar manejo de excepciones, contemplando: control de errores, mensajes de retorno, aplicación de COMMIT y ROLLBACK en aquellos procesos que involucren transacciones.
+- **R3.** Desarrollo de operaciones CRUD (Create, Read, Update, Delete) para las entidades principales del sistema. Dichas operaciones deberán implementarse mediante programación en base de datos y trabajar obligatoriamente con datos previamente cargados en el sistema.
+- **R4.** Toda la lógica de inserción, actualización y eliminación de información deberá desarrollarse mediante PL/SQL y/o procedimientos almacenados equivalentes según el SGBD seleccionado. Los procedimientos deberán retornar información indicando: éxito de la operación, errores producidos, o validaciones de negocio no cumplidas.
+- **R5.** Implementación y utilización de parámetros: IN, OUT, e IN OUT, en los distintos procedimientos almacenados desarrollados.
+- **R6.** El sistema deberá permitir procesar alquileres: con reserva previa, o directamente sin reserva. Ambas modalidades deberán ser contempladas y correctamente validadas.
+- **R7.** Desarrollo de un procedimiento almacenado encargado de registrar reservas, validando previamente: disponibilidad del vehículo, superposición de fechas, y demás restricciones necesarias. El mismo criterio deberá aplicarse al momento de registrar alquileres. Se valorará especialmente: modularización, reutilización de código, separación de responsabilidades.
+- **R8.** Implementación de funcionalidad de cancelación/baja de reservas. La solución deberá contemplar las validaciones necesarias según el estado de la reserva.
+- **R9.** Desarrollo de jobs/tareas programadas que se ejecuten automáticamente en horarios definidos, con el objetivo de detectar vehículos cuya fecha prevista de devolución haya expirado y aún no hayan sido entregados. La información detectada deberá almacenarse en estructuras específicas de auditoría/reportes históricos diseñadas para tal fin.
+- **R10.** Implementación del proceso de finalización de alquiler, el cual deberá: registrar la devolución del vehículo, actualizar automáticamente el estado del mismo, calcular recargos correspondientes, y generar la factura asociada al alquiler. Parte de esta lógica deberá resolverse mediante triggers y/o programación en base de datos.
+
+Adicionalmente, durante la implementación el equipo introdujo una decisión arquitectónica propia que se documenta en este informe como **R11** (no figura en el enunciado de la cátedra): convertir los procedimientos almacenados a `FUNCTION RETURNS RECORD` para poder exponerlos vía PostgREST. La justificación se desarrolla en la subsección correspondiente al catálogo de objetos DDL.
 
 <a id="stack-tecnologico"></a>
 
@@ -721,10 +745,10 @@ La Etapa 2 traduce el modelo conceptual de la Etapa 1 a DDL ejecutable y a la l�
 | Capa | Tecnología | Justificación |
 | ----- | ----- | ----- |
 | SGBD | PostgreSQL 17.6 | Extensiones nativas (`btree_gist`, `pg_cron`, `pgcrypto`), tipos `tsrange`, índices parciales y `EXCLUDE USING gist` resuelven la antisuperposición temporal a nivel de índice. La alternativa Oracle exigía licenciamiento; MySQL no ofrece `EXCLUDE` ni `pg_cron`. |
-| API | PostgREST 12 (Supabase) | Expone automáticamente cada `FUNCTION` declarada como endpoint `/rest/v1/rpc/{nombre}`, eliminando la necesidad de escribir capa de servicios. El frontend invoca la lógica almacenada directamente vía JSON. |
+| API | PostgREST 12 (Supabase) | Expone automáticamente cada `FUNCTION` declarada como endpoint `/rest/v1/rpc/{nombre}`, eliminando la necesidad de escribir capa de servicios. Cualquier cliente invoca la lógica almacenada directamente vía JSON. |
 | Auth | GoTrue (Supabase Auth) | Emisión y validación de JWT con claves del proyecto. Un trigger sobre `auth.users` (`fn_handle_new_auth_user`) crea automáticamente el registro paralelo en `cliente`, manteniendo el modelo Etapa 1 sin acoplarse al esquema interno de Supabase. |
-| Seguridad | Row-Level Security (RLS) + roles Postgres | Política `USING(FALSE)` sobre `audit_log` para roles `authenticated`/`anon`; políticas específicas por tabla para que cada cliente solo vea sus propios alquileres. Trigger `BEFORE UPDATE OR DELETE` como segunda línea de defensa para roles con `BYPASSRLS`. |
-| Frontend (PoC) | Next.js 14 + TypeScript | Cumple el requisito R1 de "interfaz de consulta" como prueba de concepto, no es objeto de esta entrega. La aplicación consume vistas y funciones via el cliente oficial `@supabase/supabase-js`. |
+| Seguridad | RLS + roles Postgres | Política `USING(FALSE)` sobre `audit_log` para roles `authenticated`/`anon`; políticas específicas por tabla para que cada cliente solo vea sus propios alquileres. Trigger `BEFORE UPDATE OR DELETE` como segunda línea de defensa para roles con `BYPASSRLS`. |
+| Interfaz auxiliar | (cliente HTTP cualquiera) | Interfaz para cumplir el segundo párrafo de R1 (consulta de logs de auditoría) y para que el lector pueda interactuar con los procedimientos almacenados. Su implementación queda fuera del alcance de esta entrega. |
 
 <a id="arquitectura-schema"></a>
 
@@ -739,7 +763,7 @@ El repositorio organiza los objetos DDL en directorios numerados que se aplican 
 | `schema/02_constraints/` | Unique compuestos, FKs explícitas, `EXCLUDE USING gist` | 14 |
 | `schema/03_indexes/` | Índices `btree`, parciales y compuestos | 11 |
 | `schema/04_functions/` | Validaciones (`fn_*`), orquestadores (`pa_*`), lifecycle | 22 |
-| `schema/05_views/` | Vistas para frontend y reporting | 6 |
+| `schema/05_views/` | Vistas para consulta y reportes | 6 |
 | `schema/06_permissions/` | Roles, RLS, grants por sprint | 10 |
 | `schema/07_triggers/` | Triggers de auditoría + append-only | 8 |
 | `schema/08_seeds/` | Datos iniciales para los casos de uso | 17 |
@@ -786,13 +810,15 @@ A las 17 tablas modeladas en la Etapa 1 se suman dos tablas nuevas introducidas 
 
 Más allá de las claves primarias y foráneas habituales, el schema utiliza restricciones avanzadas para hacer cumplir reglas de negocio a nivel de motor:
 
-- **`EXCLUDE USING gist` con `btree_gist`** sobre `alquiler` y `reserva` (`schema/02_constraints/14_exclude_alquiler_reserva.sql`): combina `id_vehiculo WITH =` y `tsrange(fecha_inicio, fecha_fin_prevista, '[)') WITH &&` para impedir que dos períodos del mismo vehículo se solapen, validándolo atómicamente en el índice. Esto cierra la *race condition* que un trigger basado en `SELECT EXISTS` no puede evitar entre dos transacciones concurrentes.
+- **`EXCLUDE USING gist` con `btree_gist`** sobre `alquiler` y `reserva` (`schema/02_constraints/14_exclude_alquiler_reserva.sql`). **GIST** (*tipo de índice de PostgreSQL que soporta operadores no triviales como el solapamiento de rangos temporales `tsrange`*) combinado con **`btree_gist`** (*extensión que permite mezclar columnas de tipo entero como `id_vehiculo` con rangos dentro del mismo índice GIST*) hace cumplir la restricción `id_vehiculo WITH =` y `tsrange(fecha_inicio, fecha_fin_prevista, '[)') WITH &&`. Esto impide que dos períodos del mismo vehículo se solapen, validándolo atómicamente en el índice. Así se cierra la *race condition* que un trigger basado en `SELECT EXISTS` no puede evitar entre dos transacciones concurrentes.
 - **`CHECK` sobre `alquiler`**: `chk_alquiler_km` exige `km_inicio < km_fin` cuando ambos están presentes.
 - **`UNIQUE (id_vehiculo, orden)`** sobre `imagen_vehiculo`: garantiza que no haya dos imágenes con la misma posición para el mismo vehículo.
 - **`UNIQUE (id_sucursal, id_tipo)`** sobre `tarifa`: refuerza la cardinalidad declarada en Etapa 1.
 - **Índice parcial único** sobre `ubicacion_vehiculo (id_vehiculo) WHERE fecha_hasta IS NULL` e idéntico patrón sobre `historial_estado_vehiculo`: garantizan un único registro vigente por vehículo.
 
 #### Funciones de validación (`fn_*`)
+
+En las tablas siguientes la columna *Tipo* distingue entre `FUNCTION` (lógica reutilizable, invocable desde otras funciones o desde HTTP) y *trigger* (*función que el motor ejecuta automáticamente antes o después de un `INSERT`/`UPDATE`/`DELETE` sobre una tabla, sin que el cliente la invoque explícitamente*).
 
 | Nombre | Propósito | Tipo |
 | ----- | ----- | ----- |
@@ -826,7 +852,7 @@ Más allá de las claves primarias y foráneas habituales, el schema utiliza res
 | `pa_crear_vehiculo` / `pa_actualizar_vehiculo` / `pa_baja_vehiculo` | CRUD R3 | CRUD completo de la entidad `vehiculo` con sus tres operaciones declaradas como `FUNCTION` independientes en `schema/04_functions/19_pa_crud_vehiculo.sql`. |
 | `pa_detectar_devoluciones_vencidas` | Job R9 | Sin parámetros. Único objeto declarado como `PROCEDURE` (lo invoca `pg_cron` con `CALL`). |
 
-**Decisión arquitectónica — R11: `FUNCTION` en lugar de `PROCEDURE`.** PostgREST solo expone como endpoint RPC los objetos con `pg_proc.prokind = 'f'` (funciones). Por esa razón se reconvirtieron a `FUNCTION RETURNS RECORD` los 10 orquestadores que el enunciado denomina genéricamente "procedimientos almacenados", manteniendo idéntica semántica: cada uno declara parámetros `OUT (p_estado, p_mensaje, p_id_*)` y envuelve la lógica en un bloque `BEGIN … EXCEPTION WHEN … END`. El único `PROCEDURE` real es `pa_detectar_devoluciones_vencidas`, porque su invocador es `pg_cron` (que ejecuta `CALL`) y no necesita ser expuesto a PostgREST. La justificación completa de esta decisión está documentada en `docs/requisitos/JUSTIFICACION.md` §R11 y fue aprobada por el cliente.
+**Decisión arquitectónica — R11: `FUNCTION` en lugar de `PROCEDURE`.** PostgREST solo expone como endpoint RPC los objetos con `pg_proc.prokind = 'f'` (funciones). Por esa razón se reconvirtieron a `FUNCTION RETURNS RECORD` los 10 orquestadores que el enunciado denomina genéricamente "procedimientos almacenados", manteniendo idéntica semántica: cada uno declara parámetros `OUT (p_estado, p_mensaje, p_id_*)` y envuelve la lógica en un bloque `BEGIN … EXCEPTION WHEN … END`. El único `PROCEDURE` real es `pa_detectar_devoluciones_vencidas`, porque su invocador es `pg_cron` (que ejecuta `CALL`) y no necesita ser expuesto a PostgREST. Esta decisión se justifica con detalle en los comentarios in-line del archivo `schema/04_functions/07_pa_finalizar_alquiler.sql` y de los restantes `pa_*`.
 
 #### Triggers
 
@@ -848,17 +874,17 @@ A estos se suman los triggers de ciclo de vida del vehículo, declarados en `sch
 | Vista | Propósito | Tablas base |
 | ----- | ----- | ----- |
 | `vw_vehiculos_disponibles` | Catálogo público de unidades retirables por sucursal y tipo. | `vehiculo`, `ubicacion_vehiculo`, `tarifa`, `imagen_vehiculo`, `estado_vehiculo`. |
-| `vw_alquileres_activos` | Panel `/admin/alquileres` con cliente, vehículo y sucursal de retiro. | `alquiler`, `cliente`, `vehiculo`, `sucursal`. |
+| `vw_alquileres_activos` | Consulta operativa de alquileres en curso con datos del cliente, vehículo y sucursal de retiro. | `alquiler`, `cliente`, `vehiculo`, `sucursal`. |
 | `vw_reservas_pendientes` | Cola de reservas a confirmar para el staff. | `reserva`, `cliente`, `vehiculo`, `tipo_reserva`. |
 | `vw_facturacion_mensual` | Agregados por mes y sucursal para reportes. | `factura`, `alquiler`, `vehiculo`, `sucursal`. |
 | `vw_devoluciones_vencidas` | Panel R9 con datos enriquecidos del cliente y del vehículo. | `devolucion_vencida`, `cliente`, `vehiculo`. |
-| `vw_audit_log_legible` | Panel `/admin/auditoria` con `tipo_op` traducido (`I`→`INSERT`, etc.). | `audit_log`. |
+| `vw_audit_log_legible` | Consulta legible del log de auditoría con `tipo_op` traducido (`I`→`INSERT`, etc.) y fechas en zona horaria local. | `audit_log`. |
 
-Las vistas reducen consultas N+1 desde el frontend, centralizan los `JOIN`s comunes y ofrecen una interfaz estable: si una tabla base evoluciona (renombrar columna, agregar `id_*`), la vista absorbe el cambio sin que el cliente Next.js deba actualizarse.
+Las vistas reducen consultas **N+1** (*patrón anti-rendimiento donde una consulta principal dispara N consultas adicionales, una por cada fila del resultado*), centralizan los `JOIN`s comunes y ofrecen una interfaz estable hacia los clientes HTTP: si una tabla base evoluciona (renombrar una columna, agregar un `id_*`), la vista absorbe el cambio sin que el código que la consume deba actualizarse.
 
 #### Cron jobs (`pg_cron`)
 
-El único job programado del sistema es la detección de devoluciones vencidas (R9):
+**`pg_cron`** es la *extensión que ejecuta sentencias SQL en horarios programados, equivalente a `cron` pero corriendo dentro del propio motor de PostgreSQL*. El único job programado del sistema es la detección de devoluciones vencidas (R9):
 
 - **Job**: `detectar-devoluciones-vencidas`
 - **Schedule**: `0 */6 * * *` (cada 6 horas — 00:00, 06:00, 12:00, 18:00).
@@ -905,7 +931,6 @@ Esta sección describe cómo cada caso de uso de la Etapa 1 se materializa en ob
 
 - `pa_enviar_mantenimiento_programado` inserta en `mantenimiento`. `trg_mantenimiento_envio` (AFTER INSERT) lleva el vehículo a `en_mantenimiento`.
 - `pa_registrar_devolucion_mantenimiento` actualiza `fecha_devolucion` y, opcionalmente, `vehiculo.km_actuales` con los kilómetros leídos a la salida del taller. `trg_mantenimiento_devolucion` (AFTER UPDATE) devuelve el vehículo a `disponible`.
-- **Interfaz staff**: `/admin/mantenimientos` lista las órdenes vigentes y el histórico cerrado; `/admin/mantenimientos/nuevo` invoca el RPC del CU-07 con selección de vehículo disponible y taller; `/admin/mantenimientos/[id]/devolucion` invoca el RPC del CU-08 mostrando el contexto de la orden (vehículo, taller, fecha de envío, kilometraje actual).
 - **Cumple**: R5.
 
 <a id="auditoria-r1"></a>
@@ -931,7 +956,7 @@ El requisito R1 exige registrar "qué usuario realizó cada operación". En un s
 - `UPDATE` → tanto `valores_anteriores` como `valores_nuevos`.
 - `DELETE` → solo `valores_anteriores`.
 
-**Interfaz de consulta**. El panel staff `/admin/auditoria` (Next.js) consume la vista `vw_audit_log_legible`, que traduce `tipo_op` (`I`/`U`/`D` → `INSERT`/`UPDATE`/`DELETE`) y formatea las fechas en zona horaria local.
+**Interfaz de consulta**. Una interfaz auxiliar permite al personal autorizado revisar los registros de `audit_log` cruzados con `vw_audit_log_legible`, que traduce `tipo_op` (`I`/`U`/`D` → `INSERT`/`UPDATE`/`DELETE`) y formatea las fechas en zona horaria local. Esta consulta cumple el segundo párrafo de R1; el diseño concreto de su interfaz visual queda fuera del alcance de esta entrega.
 
 <a id="excepciones"></a>
 
@@ -944,13 +969,13 @@ El proyecto adopta un **contrato uniforme** para todos los orquestadores `pa_*`:
 - El cuerpo de cada función va envuelto en `BEGIN … EXCEPTION WHEN unique_violation THEN … WHEN foreign_key_violation THEN … WHEN check_violation THEN … WHEN OTHERS THEN … END`, traduciendo cada `SQLSTATE` al código uniforme de `p_estado`.
 - El cliente HTTP recibe siempre código `200 OK` con un cuerpo JSON como `{ "p_estado": "ERROR_VALIDACION", "p_mensaje": "El vehículo ya tiene una reserva en ese período" }`, en lugar de los habituales `500 Internal Server Error` con un *stack trace* de Postgres expuesto.
 
-**Transacciones**. PostgREST envuelve cada llamada RPC en una transacción implícita: si la función termina sin `RAISE`, la transacción se *commitea* automáticamente; si una `EXCEPTION` se captura dentro del bloque, los cambios realizados antes del *raise* se revierten al *savepoint* implícito del `BEGIN`. Esto cumple el espíritu de R2 (manejo explícito de COMMIT/ROLLBACK) sin requerir control transaccional explícito en el código almacenado.
+**Transacciones**. PostgREST envuelve cada llamada RPC en una transacción implícita. Si la función termina sin `RAISE`, la transacción se *commitea* automáticamente; si una `EXCEPTION` se captura dentro del bloque, los cambios realizados antes del *raise* se revierten al *savepoint* (*punto de guardado intermedio dentro de una transacción, que permite revertir solo a partir de ese punto sin abortar toda la operación*) implícito del `BEGIN`. Esto cumple el espíritu de R2 (manejo explícito de COMMIT/ROLLBACK) sin requerir control transaccional explícito en el código almacenado.
 
 <a id="mapeo-r"></a>
 
 ### Mapeo de requerimientos del enunciado
 
-La siguiente tabla cruza cada requerimiento numerado del documento `docs/requisitos/Requerimientos-Profesor.pdf` con los objetos del schema que lo cumplen:
+La siguiente tabla cruza cada requerimiento numerado del enunciado (ver subsección anterior) con los objetos del schema que lo cumplen:
 
 | R | Requerimiento | Objetos que lo cumplen | Archivo |
 | :---: | ----- | ----- | ----- |
@@ -964,7 +989,7 @@ La siguiente tabla cruza cada requerimiento numerado del documento `docs/requisi
 | R8 | Cancelación de reservas con validaciones | `pa_cancelar_reserva` (valida `estado='pendiente'`, marca `garantia_reserva.activa=FALSE`) | `schema/04_functions/17_pa_cancelar_reserva.sql` |
 | R9 | Jobs programados | `pg_cron` invoca `pa_detectar_devoluciones_vencidas` cada 6 h → `devolucion_vencida` | `schema/04_functions/20_pa_detectar_devoluciones_vencidas.sql`, `schema/04_functions/21_schedule_jobs.sql` |
 | R10 | Finalización de alquiler con triggers + programación | `pa_finalizar_alquiler` + `trg_alquiler_set_cerrado` + `trg_alquiler_close` + `fn_calcular_factura` | `schema/04_functions/07_pa_finalizar_alquiler.sql`, `schema/04_functions/03_fn_alquiler_lifecycle.sql`, `schema/04_functions/05_fn_calcular_factura.sql` |
-| R11 | (Decisión del equipo) `PROCEDURE` → `FUNCTION` por PostgREST | 10 orquestadores migrados a `FUNCTION RETURNS RECORD` | `docs/requisitos/JUSTIFICACION.md` §R11 |
+| R11 | (Decisión del equipo) `PROCEDURE` → `FUNCTION` por PostgREST | 10 orquestadores migrados a `FUNCTION RETURNS RECORD` | Comentarios in-line en `schema/04_functions/*.sql` |
 
 <a id="der-etapa2"></a>
 
@@ -984,9 +1009,9 @@ Respecto del DER de la Etapa 1, el modelo de Etapa 2 incorpora dos tablas nuevas
 
 La implementación concreta del modelo confirmó la solidez del diseño conceptual: el modelo de la Etapa 1 sobrevivió sin cambios estructurales, lo único que se agregó fueron las dos tablas transversales (`audit_log` para R1 y `devolucion_vencida` para R9). Esto es un indicador positivo de la calidad del modelado inicial: las decisiones de normalización, los catálogos y la separación entre pertenencia y ubicación física se mantuvieron exactamente como fueron pensadas.
 
-Las decisiones arquitectónicas tomadas en esta etapa —elegir Supabase como BaaS sobre PostgreSQL nativo, declarar los orquestadores como `FUNCTION` en lugar de `PROCEDURE` para exponerlos por PostgREST, modelar la auditoría con triple identidad para tener *forensics* real ante manipulación, y resolver la antisuperposición temporal a nivel de índice con `EXCLUDE USING gist`— responden a problemas reales del stack que solo aparecen al implementar. Cada una está documentada en su lugar correspondiente (`docs/requisitos/JUSTIFICACION.md`, comentarios in-line en los archivos `.sql`) para que sea trazable y revisable.
+Las decisiones arquitectónicas tomadas en esta etapa responden a problemas reales del stack que solo aparecen al implementar: elegir Supabase como BaaS sobre PostgreSQL nativo, declarar los orquestadores como `FUNCTION` en lugar de `PROCEDURE` para exponerlos por PostgREST, modelar la auditoría con triple identidad para tener *forensics* real ante manipulación, y resolver la antisuperposición temporal a nivel de índice con `EXCLUDE USING gist`. Cada una de ellas está justificada en los comentarios in-line de los archivos `.sql` correspondientes, de modo que la trazabilidad entre la decisión y el código que la materializa sea inmediata para el lector.
 
-Hacia la Etapa 3 quedan: completar las interfaces frontend del PoC Next.js (hoy cubre los flujos principales pero falta UX para reportes), agregar pruebas automatizadas más exhaustivas sobre los flujos de error (los *happy paths* ya tienen cobertura en `tests/`), y pulir el panel de auditoría para que el staff pueda consultar `vw_audit_log_legible` con filtros más expresivos. La capa de SGBD, en su forma actual, ya satisface la totalidad de los requerimientos R1–R10 del enunciado, más la decisión documentada del equipo para R11.
+Hacia la Etapa 3 quedan tareas dentro de la propia capa de SGBD: refinar los índices según las consultas más frecuentes que aparezcan en producción, ampliar la cobertura de pruebas automatizadas sobre los flujos de error de los procedimientos almacenados (los *happy paths* ya están cubiertos en `tests/`), y evaluar el particionamiento de `audit_log` cuando el volumen lo justifique. La interfaz visual del sistema, aunque ya cuenta con una prueba de concepto funcional para consumir las RPC y las vistas, queda fuera del alcance de esta entrega. La capa de SGBD, en su forma actual, ya satisface la totalidad de los requerimientos R1–R10 del enunciado, más la decisión documentada del equipo para R11.
 
 <a id="referencias"></a>
 
