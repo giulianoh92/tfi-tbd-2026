@@ -55,9 +55,13 @@ export function AuthButton() {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-slate-600 hidden sm:block max-w-[14ch] truncate">
+      <Link
+        href="/perfil"
+        className="text-sm text-slate-600 hover:text-brand-700 hover:underline transition-colors hidden sm:block max-w-[14ch] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+        title={`Editar perfil (${user.email})`}
+      >
         {user.email}
-      </span>
+      </Link>
       <button
         type="button"
         onClick={handleSignOut}

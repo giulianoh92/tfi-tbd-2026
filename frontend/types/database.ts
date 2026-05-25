@@ -1370,6 +1370,16 @@ export type Database = {
         Args: { p_id_vehiculo: number }
         Returns: undefined
       }
+      pa_actualizar_cliente: {
+        Args: {
+          p_apellido: string
+          p_direccion?: string
+          p_dni: string
+          p_nombre: string
+          p_telefono?: string
+        }
+        Returns: Record<string, unknown>
+      }
       pa_actualizar_vehiculo: {
         Args: {
           p_anio: number
