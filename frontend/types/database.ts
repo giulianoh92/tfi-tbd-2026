@@ -1,20 +1,3 @@
-/**
- * Tipos auto-generados desde el schema de Supabase.
- *
- * STUB — este archivo es un placeholder.
- *
- * Para regenerar con los tipos reales del schema local:
- *   1. Tener `supabase start` corriendo (ver scripts/dev-frontend.sh)
- *   2. Desde la raíz del repo:
- *        supabase gen types typescript --local > frontend/types/database.ts
- *
- * Para regenerar apuntando a Supabase Cloud (proyecto linkeado):
- *        supabase gen types typescript --linked > frontend/types/database.ts
- *
- * Mientras tanto, los tipos abajo son aproximaciones manuales para que
- * el PoC compile. No reflejan constraints ni relaciones exactas.
- */
-
 export type Json =
   | string
   | number
@@ -23,400 +6,996 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-// ---------------------------------------------------------------------------
-// Tablas principales (columnas clave para el PoC)
-// ---------------------------------------------------------------------------
-
-export interface Vehiculo {
-  id_vehiculo: number
-  id_sucursal_origen: number
-  id_tipo: number
-  id_estado: number
-  marca: string
-  modelo: string
-  anio: number
-  patente: string
-  km_actuales: number
-  detalle_confort: string | null
-}
-
-export interface TipoVehiculo {
-  id_tipo: number
-  nombre: string
-  descripcion: string | null
-}
-
-export interface EstadoVehiculo {
-  id_estado: number
-  nombre: string
-  descripcion: string | null
-}
-
-export interface ImagenVehiculo {
-  id_imagen: number
-  id_vehiculo: number
-  url_imagen: string
-  orden: number
-}
-
-export interface Tarifa {
-  id_tarifa: number
-  id_sucursal: number
-  id_tipo: number
-  precio_por_dia: number
-  porcentaje_recargo: number
-}
-
-export interface TipoReserva {
-  id_tipo_reserva: number
-  nombre: string
-  descripcion: string | null
-  requiere_garantia: boolean
-  antelacion_max_dias: number
-}
-
-export interface Reserva {
-  id_reserva: number
-  id_cliente: number
-  id_vehiculo: number
-  id_tipo_reserva: number
-  fecha_inicio: string
-  fecha_fin_prevista: string
-  estado: 'pendiente' | 'concretada' | 'cancelada'
-  fecha_creacion: string
-}
-
-export interface Cliente {
-  id_cliente: number
-  id_usuario: number | null
-  nombre: string
-  apellido: string
-  dni: string
-  telefono: string | null
-  direccion: string | null
-}
-
-export interface Sucursal {
-  id_sucursal: number
-  nombre: string
-  direccion: string | null
-  telefono: string | null
-}
-
-export interface Alquiler {
-  id_alquiler: number
-  id_reserva: number | null
-  id_cliente: number
-  id_vehiculo: number
-  id_tarifa: number
-  id_sucursal_devolucion: number | null
-  fecha_inicio: string
-  fecha_fin_prevista: string
-  fecha_devolucion_real: string | null
-  km_inicio: number
-  km_fin: number | null
-  estado: 'activo' | 'cerrado'
-}
-
-export interface Factura {
-  id_factura: number
-  id_alquiler: number
-  id_cliente: number
-  numero_factura: string
-  fecha_emision: string
-  precio_por_dia_aplicado: number
-  porcentaje_recargo_aplicado: number | null
-  costo_base: number
-  horas_excedidas: number | null
-  recargo_excedente: number | null
-  total: number
-}
-
-// Tabla general de auditoría (R1). Una unica tabla cubre todas las entidades
-// auditadas; el discriminante es la columna `tabla`. `valores_anteriores` y
-// `valores_nuevos` son JSONB serializados con `to_jsonb(OLD/NEW)`.
-export interface AuditLog {
-  id_audit: number
-  tabla: string
-  id_registro: string | null
-  tipo_op: 'I' | 'U' | 'D'
-  usuario_db: string
-  usuario_app: string | null
-  fecha_hora: string
-  valores_anteriores: Json | null
-  valores_nuevos: Json | null
-}
-
-// Tabla historica poblada por pa_detectar_devoluciones_vencidas (Sprint 4 -
-// R9) cada 6 horas via pg_cron. La UI staff la lee desde
-// /admin/devoluciones-vencidas y toggle `notificado` cuando contacta al
-// cliente. INSERT/DELETE estan revocados a authenticated.
-export interface DevolucionVencida {
-  id_devolucion_vencida: number
-  id_alquiler: number
-  id_vehiculo: number
-  id_cliente: number
-  fecha_fin_prevista: string
-  fecha_deteccion: string
-  horas_excedidas: number
-  notificado: boolean
-}
-
-// ---------------------------------------------------------------------------
-// Tipo genérico de Database para @supabase/ssr
-// (estructura mínima que espera el client builder)
-// ---------------------------------------------------------------------------
-
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
   public: {
     Tables: {
-      vehiculo: {
-        Row: Vehiculo
-        Insert: Omit<Vehiculo, 'id_vehiculo'>
-        Update: Partial<Omit<Vehiculo, 'id_vehiculo'>>
-      }
-      tipo_vehiculo: {
-        Row: TipoVehiculo
-        Insert: Omit<TipoVehiculo, 'id_tipo'>
-        Update: Partial<Omit<TipoVehiculo, 'id_tipo'>>
-      }
-      estado_vehiculo: {
-        Row: EstadoVehiculo
-        Insert: Omit<EstadoVehiculo, 'id_estado'>
-        Update: Partial<Omit<EstadoVehiculo, 'id_estado'>>
-      }
-      imagen_vehiculo: {
-        Row: ImagenVehiculo
-        Insert: Omit<ImagenVehiculo, 'id_imagen'>
-        Update: Partial<Omit<ImagenVehiculo, 'id_imagen'>>
-      }
-      tarifa: {
-        Row: Tarifa
-        Insert: Omit<Tarifa, 'id_tarifa'>
-        Update: Partial<Omit<Tarifa, 'id_tarifa'>>
-      }
-      tipo_reserva: {
-        Row: TipoReserva
-        Insert: Omit<TipoReserva, 'id_tipo_reserva'>
-        Update: Partial<Omit<TipoReserva, 'id_tipo_reserva'>>
-      }
-      reserva: {
-        Row: Reserva
-        Insert: Omit<Reserva, 'id_reserva' | 'fecha_creacion'>
-        Update: Partial<Omit<Reserva, 'id_reserva' | 'fecha_creacion'>>
-      }
-      cliente: {
-        Row: Cliente
-        Insert: Omit<Cliente, 'id_cliente'>
-        Update: Partial<Omit<Cliente, 'id_cliente'>>
-      }
-      sucursal: {
-        Row: Sucursal
-        Insert: Omit<Sucursal, 'id_sucursal'>
-        Update: Partial<Omit<Sucursal, 'id_sucursal'>>
-      }
       alquiler: {
-        Row: Alquiler
-        Insert: Omit<Alquiler, 'id_alquiler'>
-        Update: Partial<Omit<Alquiler, 'id_alquiler'>>
-      }
-      factura: {
-        Row: Factura
-        Insert: Omit<Factura, 'id_factura'>
-        Update: Partial<Omit<Factura, 'id_factura'>>
+        Row: {
+          estado: string
+          fecha_devolucion_real: string | null
+          fecha_fin_prevista: string
+          fecha_inicio: string
+          id_alquiler: number
+          id_cliente: number
+          id_reserva: number | null
+          id_sucursal_devolucion: number | null
+          id_tarifa: number
+          id_vehiculo: number
+          km_fin: number | null
+          km_inicio: number
+        }
+        Insert: {
+          estado?: string
+          fecha_devolucion_real?: string | null
+          fecha_fin_prevista: string
+          fecha_inicio: string
+          id_alquiler?: number
+          id_cliente: number
+          id_reserva?: number | null
+          id_sucursal_devolucion?: number | null
+          id_tarifa: number
+          id_vehiculo: number
+          km_fin?: number | null
+          km_inicio: number
+        }
+        Update: {
+          estado?: string
+          fecha_devolucion_real?: string | null
+          fecha_fin_prevista?: string
+          fecha_inicio?: string
+          id_alquiler?: number
+          id_cliente?: number
+          id_reserva?: number | null
+          id_sucursal_devolucion?: number | null
+          id_tarifa?: number
+          id_vehiculo?: number
+          km_fin?: number | null
+          km_inicio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_alquiler_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "cliente"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_reserva"
+            columns: ["id_reserva"]
+            isOneToOne: true
+            referencedRelation: "reserva"
+            referencedColumns: ["id_reserva"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_sucursal_devolucion"
+            columns: ["id_sucursal_devolucion"]
+            isOneToOne: false
+            referencedRelation: "sucursal"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_tarifa"
+            columns: ["id_tarifa"]
+            isOneToOne: false
+            referencedRelation: "tarifa"
+            referencedColumns: ["id_tarifa"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
       }
       audit_log: {
-        Row: AuditLog
-        // Insert/Update intencionalmente bloqueados por RLS — solo el
-        // trigger fn_audit_generic (SECURITY DEFINER) puede escribir.
-        // Los tipos quedan vacios para que TS rechace cualquier intento.
-        Insert: never
-        Update: never
+        Row: {
+          fecha_hora: string
+          id_audit: number
+          id_registro: string | null
+          tabla: string
+          tipo_op: string
+          usuario_app: string | null
+          usuario_db: string
+          valores_anteriores: Json | null
+          valores_nuevos: Json | null
+        }
+        Insert: {
+          fecha_hora?: string
+          id_audit?: number
+          id_registro?: string | null
+          tabla: string
+          tipo_op: string
+          usuario_app?: string | null
+          usuario_db: string
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Update: {
+          fecha_hora?: string
+          id_audit?: number
+          id_registro?: string | null
+          tabla?: string
+          tipo_op?: string
+          usuario_app?: string | null
+          usuario_db?: string
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Relationships: []
+      }
+      cliente: {
+        Row: {
+          apellido: string
+          auth_user_id: string | null
+          direccion: string | null
+          dni: string
+          id_cliente: number
+          id_usuario: number | null
+          nombre: string
+          telefono: string | null
+        }
+        Insert: {
+          apellido: string
+          auth_user_id?: string | null
+          direccion?: string | null
+          dni: string
+          id_cliente?: number
+          id_usuario?: number | null
+          nombre: string
+          telefono?: string | null
+        }
+        Update: {
+          apellido?: string
+          auth_user_id?: string | null
+          direccion?: string | null
+          dni?: string
+          id_cliente?: number
+          id_usuario?: number | null
+          nombre?: string
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_cliente_usuario"
+            columns: ["id_usuario"]
+            isOneToOne: true
+            referencedRelation: "usuario"
+            referencedColumns: ["id_usuario"]
+          },
+        ]
       }
       devolucion_vencida: {
-        Row: DevolucionVencida
-        // Insert intencionalmente bloqueado: solo el job
-        // pa_detectar_devoluciones_vencidas puede insertar (corre como
-        // postgres y bypassea RLS). El staff solo puede actualizar el flag
-        // `notificado` desde la UI.
-        Insert: never
-        Update: Pick<DevolucionVencida, 'notificado'>
+        Row: {
+          fecha_deteccion: string
+          fecha_fin_prevista: string
+          horas_excedidas: number
+          id_alquiler: number
+          id_cliente: number
+          id_devolucion_vencida: number
+          id_vehiculo: number
+          notificado: boolean
+        }
+        Insert: {
+          fecha_deteccion?: string
+          fecha_fin_prevista: string
+          horas_excedidas?: number
+          id_alquiler: number
+          id_cliente: number
+          id_devolucion_vencida?: number
+          id_vehiculo: number
+          notificado?: boolean
+        }
+        Update: {
+          fecha_deteccion?: string
+          fecha_fin_prevista?: string
+          horas_excedidas?: number
+          id_alquiler?: number
+          id_cliente?: number
+          id_devolucion_vencida?: number
+          id_vehiculo?: number
+          notificado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_devolucion_vencida_alquiler"
+            columns: ["id_alquiler"]
+            isOneToOne: true
+            referencedRelation: "alquiler"
+            referencedColumns: ["id_alquiler"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "cliente"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
+      }
+      estado_vehiculo: {
+        Row: {
+          descripcion: string | null
+          id_estado: number
+          nombre: string
+        }
+        Insert: {
+          descripcion?: string | null
+          id_estado?: number
+          nombre: string
+        }
+        Update: {
+          descripcion?: string | null
+          id_estado?: number
+          nombre?: string
+        }
+        Relationships: []
+      }
+      factura: {
+        Row: {
+          costo_base: number
+          fecha_emision: string
+          horas_excedidas: number
+          id_alquiler: number
+          id_cliente: number
+          id_factura: number
+          numero_factura: string
+          porcentaje_recargo_aplicado: number
+          precio_por_dia_aplicado: number
+          recargo_excedente: number
+          total: number
+        }
+        Insert: {
+          costo_base: number
+          fecha_emision?: string
+          horas_excedidas?: number
+          id_alquiler: number
+          id_cliente: number
+          id_factura?: number
+          numero_factura: string
+          porcentaje_recargo_aplicado: number
+          precio_por_dia_aplicado: number
+          recargo_excedente?: number
+          total: number
+        }
+        Update: {
+          costo_base?: number
+          fecha_emision?: string
+          horas_excedidas?: number
+          id_alquiler?: number
+          id_cliente?: number
+          id_factura?: number
+          numero_factura?: string
+          porcentaje_recargo_aplicado?: number
+          precio_por_dia_aplicado?: number
+          recargo_excedente?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_factura_alquiler"
+            columns: ["id_alquiler"]
+            isOneToOne: true
+            referencedRelation: "alquiler"
+            referencedColumns: ["id_alquiler"]
+          },
+          {
+            foreignKeyName: "fk_factura_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "cliente"
+            referencedColumns: ["id_cliente"]
+          },
+        ]
+      }
+      garantia_reserva: {
+        Row: {
+          activa: boolean
+          fecha_registro: string
+          id_garantia: number
+          id_reserva: number
+          numero_tarjeta_hash: string
+          tipo: string
+          titular: string
+          vencimiento: string
+        }
+        Insert: {
+          activa?: boolean
+          fecha_registro?: string
+          id_garantia?: number
+          id_reserva: number
+          numero_tarjeta_hash: string
+          tipo: string
+          titular: string
+          vencimiento: string
+        }
+        Update: {
+          activa?: boolean
+          fecha_registro?: string
+          id_garantia?: number
+          id_reserva?: number
+          numero_tarjeta_hash?: string
+          tipo?: string
+          titular?: string
+          vencimiento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_garantia_reserva"
+            columns: ["id_reserva"]
+            isOneToOne: false
+            referencedRelation: "reserva"
+            referencedColumns: ["id_reserva"]
+          },
+        ]
+      }
+      historial_estado_vehiculo: {
+        Row: {
+          fecha_fin: string | null
+          fecha_inicio: string
+          id_estado: number
+          id_historial: number
+          id_vehiculo: number
+          motivo: string | null
+        }
+        Insert: {
+          fecha_fin?: string | null
+          fecha_inicio: string
+          id_estado: number
+          id_historial?: number
+          id_vehiculo: number
+          motivo?: string | null
+        }
+        Update: {
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          id_estado?: number
+          id_historial?: number
+          id_vehiculo?: number
+          motivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_historial_estado"
+            columns: ["id_estado"]
+            isOneToOne: false
+            referencedRelation: "estado_vehiculo"
+            referencedColumns: ["id_estado"]
+          },
+          {
+            foreignKeyName: "fk_historial_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
+      }
+      imagen_vehiculo: {
+        Row: {
+          id_imagen: number
+          id_vehiculo: number
+          orden: number
+          url_imagen: string
+        }
+        Insert: {
+          id_imagen?: number
+          id_vehiculo: number
+          orden: number
+          url_imagen: string
+        }
+        Update: {
+          id_imagen?: number
+          id_vehiculo?: number
+          orden?: number
+          url_imagen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_imagen_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
+      }
+      mantenimiento: {
+        Row: {
+          fecha_devolucion: string | null
+          fecha_envio: string
+          id_mantenimiento: number
+          id_taller: number
+          id_vehiculo: number
+          observaciones: string | null
+        }
+        Insert: {
+          fecha_devolucion?: string | null
+          fecha_envio: string
+          id_mantenimiento?: number
+          id_taller: number
+          id_vehiculo: number
+          observaciones?: string | null
+        }
+        Update: {
+          fecha_devolucion?: string | null
+          fecha_envio?: string
+          id_mantenimiento?: number
+          id_taller?: number
+          id_vehiculo?: number
+          observaciones?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_mantenimiento_taller"
+            columns: ["id_taller"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id_taller"]
+          },
+          {
+            foreignKeyName: "fk_mantenimiento_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
+      }
+      reserva: {
+        Row: {
+          estado: string
+          fecha_creacion: string
+          fecha_fin_prevista: string
+          fecha_inicio: string
+          id_cliente: number
+          id_reserva: number
+          id_tipo_reserva: number
+          id_vehiculo: number
+        }
+        Insert: {
+          estado?: string
+          fecha_creacion?: string
+          fecha_fin_prevista: string
+          fecha_inicio: string
+          id_cliente: number
+          id_reserva?: number
+          id_tipo_reserva: number
+          id_vehiculo: number
+        }
+        Update: {
+          estado?: string
+          fecha_creacion?: string
+          fecha_fin_prevista?: string
+          fecha_inicio?: string
+          id_cliente?: number
+          id_reserva?: number
+          id_tipo_reserva?: number
+          id_vehiculo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_reserva_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "cliente"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_reserva_tipo"
+            columns: ["id_tipo_reserva"]
+            isOneToOne: false
+            referencedRelation: "tipo_reserva"
+            referencedColumns: ["id_tipo_reserva"]
+          },
+          {
+            foreignKeyName: "fk_reserva_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
+      }
+      sucursal: {
+        Row: {
+          ciudad: string
+          direccion: string
+          id_sucursal: number
+          nombre: string
+          telefono: string | null
+        }
+        Insert: {
+          ciudad: string
+          direccion: string
+          id_sucursal?: number
+          nombre: string
+          telefono?: string | null
+        }
+        Update: {
+          ciudad?: string
+          direccion?: string
+          id_sucursal?: number
+          nombre?: string
+          telefono?: string | null
+        }
+        Relationships: []
+      }
+      taller: {
+        Row: {
+          direccion: string
+          id_taller: number
+          nombre: string
+          telefono: string | null
+        }
+        Insert: {
+          direccion: string
+          id_taller?: number
+          nombre: string
+          telefono?: string | null
+        }
+        Update: {
+          direccion?: string
+          id_taller?: number
+          nombre?: string
+          telefono?: string | null
+        }
+        Relationships: []
+      }
+      tarifa: {
+        Row: {
+          id_sucursal: number
+          id_tarifa: number
+          id_tipo: number
+          porcentaje_recargo: number
+          precio_por_dia: number
+        }
+        Insert: {
+          id_sucursal: number
+          id_tarifa?: number
+          id_tipo: number
+          porcentaje_recargo: number
+          precio_por_dia: number
+        }
+        Update: {
+          id_sucursal?: number
+          id_tarifa?: number
+          id_tipo?: number
+          porcentaje_recargo?: number
+          precio_por_dia?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tarifa_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "sucursal"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_tarifa_tipo"
+            columns: ["id_tipo"]
+            isOneToOne: false
+            referencedRelation: "tipo_vehiculo"
+            referencedColumns: ["id_tipo"]
+          },
+        ]
+      }
+      tipo_reserva: {
+        Row: {
+          antelacion_max_dias: number
+          descripcion: string | null
+          id_tipo_reserva: number
+          nombre: string
+          requiere_garantia: boolean
+        }
+        Insert: {
+          antelacion_max_dias?: number
+          descripcion?: string | null
+          id_tipo_reserva?: number
+          nombre: string
+          requiere_garantia?: boolean
+        }
+        Update: {
+          antelacion_max_dias?: number
+          descripcion?: string | null
+          id_tipo_reserva?: number
+          nombre?: string
+          requiere_garantia?: boolean
+        }
+        Relationships: []
+      }
+      tipo_vehiculo: {
+        Row: {
+          descripcion: string | null
+          id_tipo: number
+          nombre: string
+        }
+        Insert: {
+          descripcion?: string | null
+          id_tipo?: number
+          nombre: string
+        }
+        Update: {
+          descripcion?: string | null
+          id_tipo?: number
+          nombre?: string
+        }
+        Relationships: []
+      }
+      ubicacion_vehiculo: {
+        Row: {
+          fecha_desde: string
+          fecha_hasta: string | null
+          id_sucursal: number
+          id_ubicacion: number
+          id_vehiculo: number
+        }
+        Insert: {
+          fecha_desde: string
+          fecha_hasta?: string | null
+          id_sucursal: number
+          id_ubicacion?: number
+          id_vehiculo: number
+        }
+        Update: {
+          fecha_desde?: string
+          fecha_hasta?: string | null
+          id_sucursal?: number
+          id_ubicacion?: number
+          id_vehiculo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "sucursal"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+        ]
+      }
+      usuario: {
+        Row: {
+          created_at: string
+          email: string
+          id_usuario: number
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id_usuario?: number
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id_usuario?: number
+          username?: string
+        }
+        Relationships: []
+      }
+      vehiculo: {
+        Row: {
+          anio: number
+          detalle_confort: string | null
+          id_estado: number
+          id_sucursal_origen: number
+          id_tipo: number
+          id_vehiculo: number
+          km_actuales: number
+          marca: string
+          modelo: string
+          patente: string
+        }
+        Insert: {
+          anio: number
+          detalle_confort?: string | null
+          id_estado: number
+          id_sucursal_origen: number
+          id_tipo: number
+          id_vehiculo?: number
+          km_actuales?: number
+          marca: string
+          modelo: string
+          patente: string
+        }
+        Update: {
+          anio?: number
+          detalle_confort?: string | null
+          id_estado?: number
+          id_sucursal_origen?: number
+          id_tipo?: number
+          id_vehiculo?: number
+          km_actuales?: number
+          marca?: string
+          modelo?: string
+          patente?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_vehiculo_estado"
+            columns: ["id_estado"]
+            isOneToOne: false
+            referencedRelation: "estado_vehiculo"
+            referencedColumns: ["id_estado"]
+          },
+          {
+            foreignKeyName: "fk_vehiculo_sucursal"
+            columns: ["id_sucursal_origen"]
+            isOneToOne: false
+            referencedRelation: "sucursal"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_vehiculo_tipo"
+            columns: ["id_tipo"]
+            isOneToOne: false
+            referencedRelation: "tipo_vehiculo"
+            referencedColumns: ["id_tipo"]
+          },
+        ]
       }
     }
-    Views: Record<string, never>
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      // Sprint 5 (R2). Cierre de alquiler. Refactor:
-      //   * Cuerpo envuelto en BEGIN ... EXCEPTION WHEN ... END.
-      //   * Agregados OUT p_estado / p_mensaje / p_id_factura.
-      //   * El parametro de entrada antes llamado `p_estado_final_vehiculo`
-      //     se renombro a `p_estado_destino_vehiculo` para no colisionar
-      //     con el OUT p_estado.
-      pa_finalizar_alquiler: {
-        Args: {
-          p_id_alquiler: number
-          p_km_fin: number
-          p_id_sucursal_devolucion: number
-          p_estado_destino_vehiculo?: string
-          p_id_taller?: number | null
-          p_observaciones?: string | null
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_id_factura: number | null
-        }
+      fn_auth_uid: { Args: never; Returns: string }
+      fn_calcular_factura: { Args: { p_id_alquiler: number }; Returns: number }
+      fn_cliente_del_usuario: { Args: never; Returns: number }
+      fn_es_staff: { Args: never; Returns: boolean }
+      fn_validar_cliente_activo: {
+        Args: { p_id_cliente: number }
+        Returns: undefined
       }
-      // Sprint 5 (R2). Envia un vehiculo disponible a mantenimiento. El
-      // trigger fn_mantenimiento_envio mirrorea estado_vehiculo='en_mantenimiento'.
-      pa_enviar_mantenimiento_programado: {
-        Args: {
-          p_id_vehiculo: number
-          p_id_taller: number
-          p_observaciones: string | null
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-        }
+      fn_validar_periodo: {
+        Args: { p_fin: string; p_inicio: string; p_tolerancia_pasado?: string }
+        Returns: undefined
       }
-      // Sprint 5 (R2). Cierra la orden de mantenimiento abierta del vehiculo.
-      // El trigger trg_mantenimiento_devolucion restaura estado='disponible'.
-      pa_registrar_devolucion_mantenimiento: {
-        Args: {
-          p_id_vehiculo: number
-          p_km_salida_taller?: number | null
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-        }
-      }
-      // Sprint 5 (R2). Alta atomica de credenciales + perfil de cliente.
-      // p_id_generado devuelve el id_usuario creado.
-      pa_registrar_cliente_con_usuario: {
-        Args: {
-          p_username: string
-          p_password_hash: string
-          p_email: string
-          p_nombre: string
-          p_apellido: string
-          p_dni: string
-          p_telefono: string | null
-          p_direccion: string | null
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_id_generado: number | null
-        }
-      }
-      // Sprint 2 (R7). Alta de reserva con retorno estandarizado.
-      // PostgREST serializa los OUT como un unico objeto JSON.
-      pa_registrar_reserva: {
-        Args: {
-          p_id_cliente: number
-          p_id_vehiculo: number
-          p_id_tipo_reserva: number
-          p_fecha_inicio: string
-          p_fecha_fin: string
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_id_generado: number | null
-        }
-      }
-      // Sprint 2 (R8). Cancelacion de reserva. `p_motivo` es INOUT: entra el
-      // motivo del usuario, vuelve enriquecido con timestamp + uuid.
-      pa_cancelar_reserva: {
-        Args: {
-          p_id_reserva: number
-          p_motivo: string
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_motivo: string
-        }
-      }
-      // Sprint 3 (R3, R6). Alta de alquiler. Soporta dos modalidades:
-      //   * con reserva previa: p_id_reserva != null.
-      //   * walk-in:           p_id_reserva === null.
-      // Los triggers de lifecycle marcan reserva→concretada y vehiculo→
-      // alquilado al INSERT en alquiler.
-      pa_registrar_alquiler: {
-        Args: {
-          p_id_reserva: number | null
-          p_id_cliente: number
-          p_id_vehiculo: number
-          p_id_tarifa: number
-          p_fecha_inicio: string
-          p_fecha_fin: string
-          p_km_inicio: number
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_id_generado: number | null
-        }
-      }
-      // Sprint 3 (R3). CRUD vehiculo via SP. El estado inicial 'disponible'
-      // lo resuelve el procedure desde el catalogo estado_vehiculo.
-      pa_crear_vehiculo: {
-        Args: {
-          p_id_sucursal_origen: number
-          p_id_tipo: number
-          p_marca: string
-          p_modelo: string
-          p_anio: number
-          p_patente: string
-          p_km_actuales: number
-          p_detalle_confort: string | null
-        }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_id_generado: number | null
-        }
+      fn_validar_vehiculo_operativo: {
+        Args: { p_id_vehiculo: number }
+        Returns: undefined
       }
       pa_actualizar_vehiculo: {
         Args: {
+          p_anio: number
+          p_detalle_confort: string
           p_id_vehiculo: number
           p_marca: string
           p_modelo: string
-          p_anio: number
-          p_detalle_confort: string | null
         }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-        }
+        Returns: Record<string, unknown>
       }
-      // Baja "logica": transiciona vehiculo.id_estado a 'baja'. p_motivo es
-      // INOUT (vuelve enriquecido con timestamp + uuid del autor).
       pa_baja_vehiculo: {
+        Args: { p_id_vehiculo: number; p_motivo: string }
+        Returns: Record<string, unknown>
+      }
+      pa_cancelar_reserva: {
+        Args: { p_id_reserva: number; p_motivo: string }
+        Returns: Record<string, unknown>
+      }
+      pa_crear_vehiculo: {
         Args: {
+          p_anio: number
+          p_detalle_confort: string
+          p_id_sucursal_origen: number
+          p_id_tipo: number
+          p_km_actuales: number
+          p_marca: string
+          p_modelo: string
+          p_patente: string
+        }
+        Returns: Record<string, unknown>
+      }
+      pa_enviar_mantenimiento_programado: {
+        Args: {
+          p_id_taller: number
           p_id_vehiculo: number
-          p_motivo: string
+          p_observaciones: string
         }
-        Returns: {
-          p_estado: ProcedureEstado
-          p_mensaje: string
-          p_motivo: string
+        Returns: Record<string, unknown>
+      }
+      pa_finalizar_alquiler: {
+        Args: {
+          p_estado_destino_vehiculo: string
+          p_id_alquiler: number
+          p_id_sucursal_devolucion: number
+          p_id_taller: number
+          p_km_fin: number
+          p_observaciones: string
         }
+        Returns: Record<string, unknown>
+      }
+      pa_registrar_alquiler: {
+        Args: {
+          p_fecha_fin: string
+          p_fecha_inicio: string
+          p_id_cliente: number
+          p_id_reserva: number
+          p_id_tarifa: number
+          p_id_vehiculo: number
+          p_km_inicio: number
+        }
+        Returns: Record<string, unknown>
+      }
+      pa_registrar_cliente_con_usuario: {
+        Args: {
+          p_apellido: string
+          p_direccion: string
+          p_dni: string
+          p_email: string
+          p_nombre: string
+          p_telefono: string
+          p_username: string
+        }
+        Returns: Record<string, unknown>
+      }
+      pa_registrar_devolucion_mantenimiento: {
+        Args: { p_id_vehiculo: number; p_km_salida_taller: number }
+        Returns: Record<string, unknown>
+      }
+      pa_registrar_reserva: {
+        Args: {
+          p_fecha_fin: string
+          p_fecha_inicio: string
+          p_id_cliente: number
+          p_id_tipo_reserva: number
+          p_id_vehiculo: number
+        }
+        Returns: Record<string, unknown>
       }
     }
-    Enums: Record<string, never>
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-// Codigos de estado estandarizados que devuelven los procedures de negocio
-// (JUSTIFICACION.md §R4). El frontend los mapea a mensajes o flujos UX
-// distintos segun el caso.
-export type ProcedureEstado =
-  | 'OK'
-  | 'ERROR_VALIDACION'
-  | 'ERROR_DUPLICADO'
-  | 'ERROR_REFERENCIAL'
-  | 'ERROR_ESTADO'
-  | 'ERROR'
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
