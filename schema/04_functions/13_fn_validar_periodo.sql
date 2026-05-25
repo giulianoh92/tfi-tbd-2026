@@ -20,9 +20,21 @@
 --
 -- Sprint 6 (B4.2): se anade el parametro p_tolerancia_pasado con default 0
 -- (INTERVAL). Asi mantenemos una sola function reusable para los dos casos
--- (R7: modularizacion). Antes, el comentario decia "el frontend debe poner
--- NOW()+1min" para walk-in, lo que delegaba a la UI una regla de negocio
--- que pertenece a la DB. Mas info en JUSTIFICACION.md §R7.
+-- (R7: modularizacion).
+--
+-- Modos de comparacion contra el presente:
+--   * p_tolerancia_pasado = INTERVAL '0' (default): timestamp estricto,
+--     p_inicio >= NOW(). Util si el caller envia hora concreta y quiere
+--     impedir incluso unos segundos en el pasado.
+--   * p_tolerancia_pasado = INTERVAL 'X': timestamp con holgura. Walk-in
+--     usa '5 minutes' para tolerar la latencia entre que la UI captura
+--     NOW() y el INSERT entra en DB.
+--   * p_tolerancia_pasado = NULL: modo "granularidad dia". Compara solo
+--     la parte DATE de p_inicio contra CURRENT_DATE. Pensado para flujos
+--     donde la UI muestra un input de fecha (sin hora) y manda el
+--     timestamp con hora 00:00:00. Sin este modo la reserva del MISMO dia
+--     fallaria, porque 2026-05-25 00:00:00 < NOW() apenas pasaron unos
+--     minutos del comienzo del dia.
 
 CREATE OR REPLACE FUNCTION fn_validar_periodo(
     p_inicio              TIMESTAMP,
@@ -45,8 +57,18 @@ BEGIN
             USING ERRCODE = 'check_violation';
     END IF;
 
-    -- Comparacion contra NOW() con tolerancia. Default 0 -> mismo
-    -- comportamiento que antes para los callers existentes (reservas).
+    -- Modo "granularidad dia": compara fechas, ignora hora. Permite
+    -- reservar para hoy mismo aunque ya hayan pasado horas desde las 00:00.
+    IF p_tolerancia_pasado IS NULL THEN
+        IF p_inicio::date < CURRENT_DATE THEN
+            RAISE EXCEPTION 'REGLA DE NEGOCIO: la fecha de inicio (%) debe ser hoy o un dia futuro.',
+                p_inicio::date
+                USING ERRCODE = 'check_violation';
+        END IF;
+        RETURN;
+    END IF;
+
+    -- Modo timestamp con tolerancia (default 0 o intervalo positivo).
     IF p_inicio < NOW() - p_tolerancia_pasado THEN
         RAISE EXCEPTION 'REGLA DE NEGOCIO: la fecha de inicio (%) debe ser actual o futura (tolerancia: %).',
             p_inicio, p_tolerancia_pasado

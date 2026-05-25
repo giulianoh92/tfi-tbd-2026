@@ -40,7 +40,11 @@ BEGIN
     p_id_generado := NULL;
 
     -- 1) Validaciones modulares (lanzan EXCEPTION ante fallo).
-    PERFORM fn_validar_periodo(p_fecha_inicio, p_fecha_fin);
+    --    NULL en p_tolerancia_pasado activa modo "granularidad dia": el
+    --    form de reserva online manda timestamp con hora 00:00:00, y la
+    --    regla de negocio real es "la reserva debe ser para hoy o un dia
+    --    futuro", no "para un timestamp futuro".
+    PERFORM fn_validar_periodo(p_fecha_inicio, p_fecha_fin, NULL);
     PERFORM fn_validar_cliente_activo(p_id_cliente);
     PERFORM fn_validar_vehiculo_operativo(p_id_vehiculo);
 
