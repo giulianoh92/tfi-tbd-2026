@@ -148,6 +148,20 @@ export function NuevoAlquilerForm({
     return vehiculos.find((v) => v.id_vehiculo === idVehiculoW) ?? null
   }, [modo, reservaSel, idVehiculoW, vehiculos])
 
+  // Cuando el vehiculo activo cambia (por seleccion de reserva o walk-in),
+  // precargamos km_inicio con el km_actuales registrado en BD. Es el valor
+  // esperado al retiro: el ultimo registrado al cierre anterior. El staff
+  // puede sobreescribirlo si el odometro fisico muestra un valor mayor
+  // (movimientos internos no auditados entre alquileres). El procedure
+  // rechaza valores menores al km_actuales.
+  useEffect(() => {
+    if (vehiculoActivo) {
+      setKmInicio(vehiculoActivo.km_actuales.toString())
+    } else {
+      setKmInicio('')
+    }
+  }, [vehiculoActivo])
+
   // Tarifa derivada: la unica que matchea (id_sucursal_origen, id_tipo) del
   // vehiculo activo. Hay UNIQUE constraint (id_sucursal, id_tipo) en tarifa.
   const tarifaAplicable = useMemo(() => {
@@ -683,13 +697,21 @@ export function NuevoAlquilerForm({
             <Input
               id="km_inicio"
               type="number"
-              min={0}
+              min={vehiculoActivo?.km_actuales ?? 0}
               step={1}
               required
               value={kmInicio}
               onChange={(e) => setKmInicio(e.target.value)}
-              placeholder="0"
+              placeholder={vehiculoActivo?.km_actuales.toString() ?? '0'}
+              disabled={vehiculoActivo == null}
             />
+            {vehiculoActivo && (
+              <p className="mt-1 text-xs text-muted-fg">
+                Km registrados al cierre anterior:{' '}
+                {vehiculoActivo.km_actuales.toLocaleString('es-AR')} km.
+                Verificá contra el odómetro del vehículo antes de confirmar.
+              </p>
+            )}
           </div>
         </div>
 
