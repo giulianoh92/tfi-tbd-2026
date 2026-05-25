@@ -1,6 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/database'
+
+// Tipo de cookie que setAll recibe en @supabase/ssr@0.5
+type CookieToSet = { name: string; value: string; options: CookieOptions }
 
 /**
  * Refresca la sesión de Supabase en cada request del middleware.
@@ -18,7 +21,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )

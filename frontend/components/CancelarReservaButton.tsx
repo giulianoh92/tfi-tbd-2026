@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { rpcCall } from '@/lib/supabase/rpc'
 import {
   Dialog,
   DialogContent,
@@ -42,7 +43,7 @@ export function CancelarReservaButton({ idReserva }: Props) {
     setLoading(true)
     setError(null)
 
-    const { data, error: rpcError } = await supabase.rpc('pa_cancelar_reserva', {
+    const { data, error: rpcError } = await rpcCall(supabase, 'pa_cancelar_reserva', {
       p_id_reserva: idReserva,
       p_motivo: motivo,
     })

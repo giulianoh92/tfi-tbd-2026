@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { rpcCall } from '@/lib/supabase/rpc'
 import type { Cliente, Reserva, Sucursal, Vehiculo } from '@/types/database'
 import type {
   TarifaEnriquecida,
@@ -242,7 +243,8 @@ export function NuevoAlquilerForm({
     }
 
     setAltaLoading(true)
-    const { data, error: rpcError } = await supabase.rpc(
+    const { data, error: rpcError } = await rpcCall(
+      supabase,
       'pa_registrar_cliente_walkin',
       {
         p_dni: altaDni.trim(),
@@ -250,7 +252,7 @@ export function NuevoAlquilerForm({
         p_apellido: altaApellido.trim(),
         p_telefono: altaTelefono.trim() || undefined,
         p_direccion: altaDireccion.trim() || undefined,
-      }
+      },
     )
 
     if (rpcError) {
@@ -359,9 +361,13 @@ export function NuevoAlquilerForm({
     }
 
     setLoading(true)
-    const { data, error: rpcError } = await supabase.rpc(
+    // p_id_reserva puede ser null cuando es walk-in; el SP lo acepta y los
+    // types lo declaran como `number` (no `number | null`) — discrepancia
+    // entre schema real y types regenerados. Casteamos para sortearlo.
+    const { data, error: rpcError } = await rpcCall(
+      supabase,
       'pa_registrar_alquiler',
-      args,
+      args as Parameters<typeof rpcCall<'pa_registrar_alquiler'>>[2],
     )
 
     if (rpcError) {

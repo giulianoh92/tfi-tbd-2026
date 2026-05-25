@@ -1,6 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database'
+
+// Tipo de cookie que setAll recibe en @supabase/ssr@0.5
+type CookieToSet = { name: string; value: string; options: CookieOptions }
 
 /**
  * Cliente Supabase para uso en Server Components y Route Handlers de Next.js 14.
@@ -20,7 +23,7 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)

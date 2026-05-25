@@ -60,7 +60,7 @@ export default async function NuevoAlquilerPage() {
     .from('estado_vehiculo')
     .select('id_estado')
     .eq('nombre', 'disponible')
-    .single()
+    .single<{ id_estado: number }>()
 
   const idEstadoDisp = estadoDisp?.id_estado ?? null
 

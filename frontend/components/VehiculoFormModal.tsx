@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { rpcCall, type FnArgs } from '@/lib/supabase/rpc'
 import type { Sucursal, TipoVehiculo, Vehiculo } from '@/types/database'
 import {
   Dialog,
@@ -92,16 +93,22 @@ export function VehiculoFormModal({
         return
       }
 
-      const { data, error: rpcError } = await supabase.rpc('pa_crear_vehiculo', {
-        p_id_sucursal_origen: idSucNum,
-        p_id_tipo: idTipoNum,
-        p_marca: marca,
-        p_modelo: modelo,
-        p_anio: anioNum,
-        p_patente: patente,
-        p_km_actuales: kmNum,
-        p_detalle_confort: detalleConfort || null,
-      })
+      // p_detalle_confort puede ser null en runtime aunque los types lo
+      // declaren `string` (DEFAULT NULL en el SP). Cast necesario.
+      const { data, error: rpcError } = await rpcCall(
+        supabase,
+        'pa_crear_vehiculo',
+        {
+          p_id_sucursal_origen: idSucNum,
+          p_id_tipo: idTipoNum,
+          p_marca: marca,
+          p_modelo: modelo,
+          p_anio: anioNum,
+          p_patente: patente,
+          p_km_actuales: kmNum,
+          p_detalle_confort: detalleConfort || null,
+        } as FnArgs<'pa_crear_vehiculo'>,
+      )
 
       if (rpcError) {
         setError(rpcError.message)
@@ -124,7 +131,8 @@ export function VehiculoFormModal({
         setLoading(false)
         return
       }
-      const { data, error: rpcError } = await supabase.rpc(
+      const { data, error: rpcError } = await rpcCall(
+        supabase,
         'pa_actualizar_vehiculo',
         {
           p_id_vehiculo: vehiculo.id_vehiculo,
@@ -132,7 +140,7 @@ export function VehiculoFormModal({
           p_modelo: modelo,
           p_anio: anioNum,
           p_detalle_confort: detalleConfort || null,
-        },
+        } as FnArgs<'pa_actualizar_vehiculo'>,
       )
 
       if (rpcError) {

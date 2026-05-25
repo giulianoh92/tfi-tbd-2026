@@ -48,7 +48,7 @@ export default async function HomePage({
     .from('estado_vehiculo')
     .select('id_estado')
     .eq('nombre', 'disponible')
-    .maybeSingle()
+    .maybeSingle<{ id_estado: number }>()
 
   const idEstadoDisp = estadoDispRes.data?.id_estado ?? null
 
@@ -86,7 +86,15 @@ export default async function HomePage({
     supabase.from('sucursal').select('id_sucursal, nombre').order('nombre'),
   ])
 
-  const vehiculos = vehiculosRes.data
+  // Tipamos manualmente la respuesta de la query con joins embedded: el
+  // type inference de postgrest-js@2.106 colapsa a `never` cuando hay JOINs
+  // complejos. La forma del shape esta dictada por el `.select(...)` arriba.
+  type VehiculoRow = Vehiculo & {
+    tipo_vehiculo: Pick<TipoVehiculo, 'nombre'> | null
+    imagen_vehiculo: Pick<ImagenVehiculo, 'url_imagen' | 'orden'>[] | null
+    estado_vehiculo: { nombre: string } | null
+  }
+  const vehiculos = (vehiculosRes.data ?? []) as VehiculoRow[]
   const tarifasAll = tarifasRes.data ?? []
   const tipos = (tiposRes.data ?? []) as Pick<TipoVehiculo, 'id_tipo' | 'nombre'>[]
   const sucursales = (sucursalesRes.data ?? []) as Pick<Sucursal, 'id_sucursal' | 'nombre'>[]
@@ -106,8 +114,8 @@ export default async function HomePage({
   }
 
   // Resolver tarifa por (tipo, sucursal) con fallback a tipo solo.
-  const vehiculosNormalizados: VehiculoConDetalles[] = (vehiculos ?? []).map((v) => {
-    const imgs = (v.imagen_vehiculo as ImagenVehiculo[] | null) ?? []
+  const vehiculosNormalizados: VehiculoConDetalles[] = vehiculos.map((v) => {
+    const imgs = v.imagen_vehiculo ?? []
     const portada = imgs.find((i) => i.orden === 1)?.url_imagen ?? null
 
     const tarifa =
@@ -117,7 +125,7 @@ export default async function HomePage({
 
     return {
       ...v,
-      tipo_vehiculo: v.tipo_vehiculo as { nombre: string } | null,
+      tipo_vehiculo: v.tipo_vehiculo,
       imagen_portada: portada,
       precio_por_dia: tarifa?.precio_por_dia ?? null,
     }

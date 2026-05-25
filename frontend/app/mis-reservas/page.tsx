@@ -35,7 +35,7 @@ export default async function MisReservasPage() {
     .from('cliente')
     .select('id_cliente')
     .eq('auth_user_id', user.id)
-    .maybeSingle()
+    .maybeSingle<{ id_cliente: number }>()
 
   const idCliente = clienteRow?.id_cliente ?? null
 

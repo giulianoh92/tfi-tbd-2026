@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { rpcCall } from '@/lib/supabase/rpc'
 import { Trash2 } from 'lucide-react'
 import {
   Dialog,
@@ -39,7 +40,7 @@ export function BajaVehiculoButton({ idVehiculo, patente }: Props) {
     setLoading(true)
     setError(null)
 
-    const { data, error: rpcError } = await supabase.rpc('pa_baja_vehiculo', {
+    const { data, error: rpcError } = await rpcCall(supabase, 'pa_baja_vehiculo', {
       p_id_vehiculo: idVehiculo,
       p_motivo: motivo,
     })

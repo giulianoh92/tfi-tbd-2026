@@ -29,9 +29,12 @@ export function MarcarNotificadoButton({ idDevolucionVencida, notificado }: Prop
     setLoading(true)
     setError(null)
 
+    // Cast `as never` evita bug de inferencia en postgrest-js@2.106 donde el
+    // generic Row default a never colapsa el args a `never`. Equivalente al
+    // workaround del helper rpcCall.
     const { error: updError } = await supabase
       .from('devolucion_vencida')
-      .update({ notificado: !notificado })
+      .update({ notificado: !notificado } as never)
       .eq('id_devolucion_vencida', idDevolucionVencida)
 
     if (updError) {

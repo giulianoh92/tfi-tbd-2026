@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { rpcCall, type FnArgs } from '@/lib/supabase/rpc'
 import type { Sucursal } from '@/types/database'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -52,11 +53,18 @@ export function CerrarAlquilerForm({ idAlquiler, kmInicio, sucursales }: Props) 
 
     setLoading(true)
 
-    const { data: rpcData, error: rpcError } = await supabase.rpc('pa_finalizar_alquiler', {
-      p_id_alquiler: idAlquiler,
-      p_km_fin: kmFinNum,
-      p_id_sucursal_devolucion: sucursalNum,
-    })
+    // pa_finalizar_alquiler tiene 3 IN params opcionales (DEFAULT NULL en el SP)
+    // que los types regenerados marcan como required. Casteamos para sortear
+    // esa discrepancia entre schema real y types/database.ts.
+    const { data: rpcData, error: rpcError } = await rpcCall(
+      supabase,
+      'pa_finalizar_alquiler',
+      {
+        p_id_alquiler: idAlquiler,
+        p_km_fin: kmFinNum,
+        p_id_sucursal_devolucion: sucursalNum,
+      } as FnArgs<'pa_finalizar_alquiler'>,
+    )
 
     if (rpcError) {
       let msg = rpcError.message
@@ -68,13 +76,17 @@ export function CerrarAlquilerForm({ idAlquiler, kmInicio, sucursales }: Props) 
       return
     }
 
-    if (rpcData && rpcData.p_estado !== 'OK') {
-      setErrorMsg(rpcData.p_mensaje ?? 'No se pudo cerrar el alquiler.')
+    const result = rpcData as
+      | { p_estado: string; p_mensaje: string; p_id_factura: number | null }
+      | null
+
+    if (result && result.p_estado !== 'OK') {
+      setErrorMsg(result.p_mensaje ?? 'No se pudo cerrar el alquiler.')
       setLoading(false)
       return
     }
 
-    const idFactura = rpcData?.p_id_factura ?? null
+    const idFactura = result?.p_id_factura ?? null
 
     if (idFactura) {
       router.push(`/admin/facturas/${idFactura}`)
@@ -87,7 +99,7 @@ export function CerrarAlquilerForm({ idAlquiler, kmInicio, sucursales }: Props) 
       .eq('id_alquiler', idAlquiler)
       .order('id_factura', { ascending: false })
       .limit(1)
-      .single()
+      .single<{ id_factura: number }>()
 
     if (facturaError || !facturaData) {
       router.push('/admin/facturas')

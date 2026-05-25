@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { rpcCall } from '@/lib/supabase/rpc'
 import type { TipoReserva } from '@/types/database'
 import { isoLocal } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
@@ -63,7 +64,7 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
     const { data: clienteRow, error: clienteError } = await supabase
       .from('cliente')
       .select('id_cliente')
-      .maybeSingle()
+      .maybeSingle<{ id_cliente: number }>()
 
     if (clienteError || !clienteRow) {
       setError(
@@ -76,7 +77,7 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
 
     // RPC al procedure de Sprint 2. PostgREST serializa los OUT como
     // objeto JSON con las claves p_estado, p_mensaje, p_id_generado.
-    const { data, error: rpcError } = await supabase.rpc('pa_registrar_reserva', {
+    const { data, error: rpcError } = await rpcCall(supabase, 'pa_registrar_reserva', {
       p_id_cliente: clienteRow.id_cliente,
       p_id_vehiculo: idVehiculo,
       p_id_tipo_reserva: idTipoReserva,

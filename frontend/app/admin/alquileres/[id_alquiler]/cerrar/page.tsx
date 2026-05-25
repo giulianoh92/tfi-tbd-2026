@@ -38,7 +38,7 @@ export default async function CerrarAlquilerPage({ params }: Props) {
       `)
       .eq('id_alquiler', id)
       .eq('estado', 'activo')
-      .single(),
+      .single<AlquilerCompleto>(),
     supabase
       .from('sucursal')
       .select('id_sucursal, nombre')
