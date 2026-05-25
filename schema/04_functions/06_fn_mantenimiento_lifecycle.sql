@@ -4,12 +4,10 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_id_estado BIGINT;
 BEGIN
-    -- Bugfix deploy: el catalogo estado_vehiculo registra "en_mantenimiento"
-    -- (no "mantenimiento"). El nombre antiguo provocaba que el seed de
-    -- mantenimiento fallara y bloqueaba el apply completo.
-    -- Sprint 6 (B5.3): lookup case-insensitive contra el catalogo. El
-    -- CHECK del catalogo (B5.4) ya fuerza minusculas, esto es robustez
-    -- en el codigo cliente para no acoplarse al casing.
+    -- El catalogo estado_vehiculo registra "en_mantenimiento" (no
+    -- "mantenimiento"). Lookup case-insensitive contra el catalogo: el
+    -- CHECK del catalogo ya fuerza minusculas, esto es robustez en el
+    -- codigo cliente para no acoplarse al casing.
     SELECT id_estado INTO v_id_estado
     FROM estado_vehiculo WHERE lower(nombre) = 'en_mantenimiento';
 

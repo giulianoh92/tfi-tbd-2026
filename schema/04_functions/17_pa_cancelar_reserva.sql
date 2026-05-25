@@ -1,18 +1,15 @@
--- Procedure: pa_cancelar_reserva
--- Sprint 2 (R8). Cancela una reserva validando transicion de estado.
+-- Procedure: pa_cancelar_reserva (R8)
+-- Cancela una reserva validando transicion de estado.
 --
 -- Uso de modos de parametro (R5):
 --   IN    p_id_reserva : id de la reserva a cancelar.
 --   INOUT p_motivo     : entra el motivo del cliente; sale enriquecido con
 --                        prefijo "[timestamp | usuario uuid]" para dejar
---                        rastro auditable de quien/cuando cancelo. Es el
---                        unico INOUT del sistema en Sprint 2 (el otro
---                        previsto, pa_baja_vehiculo.p_motivo, va en
---                        Sprint 3). Ver JUSTIFICACION.md §R5.
+--                        rastro auditable de quien/cuando cancelo.
 --   OUT   p_estado     : codigo estandarizado.
 --   OUT   p_mensaje    : descripcion legible.
 --
--- Reglas de transicion documentadas (JUSTIFICACION.md §R8):
+-- Reglas de transicion (R8):
 --   pendiente  -> cancelada       (permitido)
 --   concretada -> *               (rechazado: hay que finalizar el alquiler)
 --   cancelada  -> cancelada       (rechazado idempotente: ya esta cancelada)
@@ -21,12 +18,12 @@
 -- reserva no puede cancelarse desde aqui aunque su estado siga 'pendiente'
 -- (caso degenerado, pero defensa en profundidad).
 --
--- Como en R2 / JUSTIFICACION.md §R2, no usamos COMMIT/ROLLBACK literales:
--- el bloque EXCEPTION hace rollback al savepoint implicito y el caller
--- (PostgREST) commitea al cerrar la transaccion HTTP si no se relanza.
+-- Manejo transaccional (R2): no usamos COMMIT/ROLLBACK literales: el bloque
+-- EXCEPTION hace rollback al savepoint implicito y el caller (PostgREST)
+-- commitea al cerrar la transaccion HTTP si no se relanza.
 
--- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
--- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
+-- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_cancelar_reserva(
     p_id_reserva    BIGINT,
     INOUT p_motivo  TEXT,

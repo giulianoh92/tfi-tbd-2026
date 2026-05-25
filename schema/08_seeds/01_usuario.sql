@@ -1,4 +1,4 @@
--- Sprint 6 (B6): se elimino password_hash. La autenticacion vive en
+-- public.usuario no almacena password_hash. La autenticacion vive en
 -- auth.users (Supabase). Estos seeds solo proveen el bridge logico
 -- (id_usuario) para los seeds de cliente; no permiten login.
 INSERT INTO usuario (username, email) VALUES

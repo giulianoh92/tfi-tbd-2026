@@ -1,12 +1,12 @@
 -- Functions: pa_crear_vehiculo, pa_actualizar_vehiculo, pa_baja_vehiculo
--- Sprint 3 (R3, R4, R5). CRUD de vehiculo via SP, con retorno estandarizado.
+-- (R3, R4, R5). CRUD de vehiculo via SP, con retorno estandarizado.
 --
 -- Decision de diseno: los tres SPs viven en un mismo archivo porque
 -- comparten el dominio y el codigo de validacion de rol staff. Cada uno
 -- expone su firma independiente.
 --
 -- R11: declarados como FUNCTIONs (no PROCEDUREs) para que PostgREST los
--- exponga via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- exponga via /rest/v1/rpc.
 --
 -- Acceso (R3 / Anexo A): las mutaciones de flota son responsabilidad
 -- exclusiva del staff. No hay un rol PostgreSQL `staff` separado en este

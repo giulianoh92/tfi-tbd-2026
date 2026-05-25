@@ -1,18 +1,17 @@
 -- pa_registrar_cliente_con_usuario(...) — Alta atomica de bridge usuario +
 -- perfil de cliente.
 --
--- Sprint 6 (B6) — refactor profundo:
---   * Se elimino el parametro p_password_hash. La unica fuente de verdad
---     para credenciales es Supabase Auth (auth.users). El flujo real de
---     signup pasa por GoTrue + el trigger fn_handle_new_auth_user, que
---     crea automaticamente la fila cliente vinculada por auth_user_id.
+-- Notas de diseno:
+--   * No recibe password_hash. La unica fuente de verdad para credenciales
+--     es Supabase Auth (auth.users). El flujo real de signup pasa por
+--     GoTrue + el trigger fn_handle_new_auth_user, que crea automaticamente
+--     la fila cliente vinculada por auth_user_id.
 --   * Este procedure persiste para casos de carga manual / scripting
 --     (seeds, tests), donde se necesita crear el bridge usuario + cliente
 --     sin pasar por Auth. NO autentica: si se llama desde la API publica
 --     el cliente resultante no podra loguearse hasta vincularse a un
 --     auth.users via auth_user_id.
---   * Se elimino la dependencia con fn_validar_credenciales (borrada en
---     B6.2). Las validaciones de formato basicas quedan inline:
+--   * Las validaciones de formato basicas viven inline:
 --     username/email no vacios, email con '@'.
 --
 -- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita
@@ -33,8 +32,8 @@ DROP PROCEDURE IF EXISTS pa_registrar_cliente_con_usuario(
     VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
 ) CASCADE;
 
--- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
--- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
+-- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_registrar_cliente_con_usuario(
     p_username      VARCHAR,
     p_email         VARCHAR,

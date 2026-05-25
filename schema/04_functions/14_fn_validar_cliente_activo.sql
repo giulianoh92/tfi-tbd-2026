@@ -1,16 +1,16 @@
--- Funcion: fn_validar_cliente_activo
--- Sprint 2 (R7). Valida que un cliente exista y este habilitado para operar.
+-- Funcion: fn_validar_cliente_activo (R7)
+-- Valida que un cliente exista y este habilitado para operar.
 --
 -- Estado actual del schema: la tabla `cliente` no tiene aun un flag de
 -- actividad (`activo BOOLEAN`) ni una nocion de "deuda pendiente" persistida.
 -- Por lo tanto, esta version se limita a validar EXISTENCIA. La firma queda
--- preparada para que cuando se introduzcan esos campos (Sprint 4 o
--- posterior) la regla se extienda aca sin tocar a los callers.
+-- preparada para que cuando se introduzcan esos campos la regla se extienda
+-- aca sin tocar a los callers.
 --
 -- Extensiones futuras esperadas:
 --   * Chequear cliente.activo = TRUE.
 --   * Chequear que no haya facturas impagas o alquileres con devolucion
---     vencida sin resolver (tabla devolucion_vencida del Sprint 4).
+--     vencida sin resolver (tabla devolucion_vencida).
 --
 -- La funcion lanza RAISE EXCEPTION para que el caller la capture en su
 -- bloque EXCEPTION WHEN OTHERS y mapee a p_estado = 'ERROR_VALIDACION' /
@@ -40,11 +40,10 @@ BEGIN
             USING ERRCODE = 'foreign_key_violation';
     END IF;
 
-    -- Extension futura (out-of-scope Sprint 6): cuando se introduzca
-    -- cliente.activo o una nocion de deuda persistida, agregar aqui los
-    -- chequeos correspondientes y mapearlos a ERRCODE = 'check_violation'
-    -- para que el caller los categorice como ERROR_VALIDACION. La firma
-    -- de esta function ya esta preparada (acepta p_id_cliente) para que
-    -- los callers no cambien.
+    -- Extension futura: cuando se introduzca cliente.activo o una nocion
+    -- de deuda persistida, agregar aqui los chequeos correspondientes y
+    -- mapearlos a ERRCODE = 'check_violation' para que el caller los
+    -- categorice como ERROR_VALIDACION. La firma de esta function ya esta
+    -- preparada (acepta p_id_cliente) para que los callers no cambien.
 END;
 $$;

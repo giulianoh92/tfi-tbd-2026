@@ -3,10 +3,9 @@
 -- trg_mantenimiento_devolucion (sobre mantenimiento) mirrorea el estado
 -- 'disponible' al vehiculo via catalogo.
 --
--- Sprint 5 (R2) — refactor:
---   * Cuerpo envuelto en BEGIN ... EXCEPTION WHEN ... THEN ... END.
---   * Agregados OUT p_estado / p_mensaje (contrato estandar JUSTIFICACION.md
---     §R4).
+-- Diseno transaccional (R2): cuerpo envuelto en BEGIN ... EXCEPTION WHEN
+-- ... THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
+-- segun el contrato R4.
 --
 -- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
 
@@ -14,11 +13,11 @@ DROP FUNCTION IF EXISTS pa_registrar_devolucion_mantenimiento(
     BIGINT, INTEGER
 ) CASCADE;
 
--- Nota deploy fix: el caller debe pasar NULL explicito en p_km_salida_taller
--- cuando no aplique (Postgres no admite OUT despues de IN con DEFAULT en FUNCTION).
+-- Nota: el caller debe pasar NULL explicito en p_km_salida_taller cuando no
+-- aplique (Postgres no admite OUT despues de IN con DEFAULT en FUNCTION).
 --
--- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
--- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
+-- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_registrar_devolucion_mantenimiento(
     p_id_vehiculo      BIGINT,
     p_km_salida_taller INTEGER, -- NULL si no se reportan km al salir del taller

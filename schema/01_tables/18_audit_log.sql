@@ -2,10 +2,9 @@
 --
 -- Una unica tabla para todas las entidades auditadas: simplifica triggers
 -- (un solo fn_audit_generic), simplifica la interfaz de consulta y permite
--- filtrar por tabla via la columna `tabla`. Justificacion completa en
--- docs/requisitos/JUSTIFICACION.md seccion R1.
+-- filtrar por tabla via la columna `tabla`.
 --
--- TRIPLE IDENTIDAD de usuario (Sprint 6 hotfix):
+-- TRIPLE IDENTIDAD de usuario:
 --
 -- El requisito academico habla de "usuario que realizo la operacion". En un
 -- modelo BaaS con Supabase eso se descompone en TRES facetas, cada una con

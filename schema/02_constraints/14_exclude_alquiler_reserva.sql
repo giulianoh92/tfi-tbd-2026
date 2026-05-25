@@ -1,4 +1,4 @@
--- Sprint 6 (B1) - Garantia de NO-SUPERPOSICION temporal a nivel indice.
+-- Garantia de NO-SUPERPOSICION temporal a nivel indice.
 --
 -- Problema que resuelve: el trigger fn_check_vehiculo_overlap es best-effort.
 -- Dos transacciones concurrentes pueden colarse en la ventana entre el

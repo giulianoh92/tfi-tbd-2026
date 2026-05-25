@@ -1,7 +1,7 @@
 -- fn_check_vehiculo_overlap — Trigger BEFORE INSERT/UPDATE en reserva y
 -- alquiler. Valida superposicion de fechas para un mismo vehiculo.
 --
--- IMPORTANTE (Sprint 6 - B1): este trigger NO es la garantia de unicidad
+-- IMPORTANTE: este trigger NO es la garantia de unicidad
 -- temporal. La garantia DURA la da la EXCLUDE constraint excl_alquiler_overlap
 -- / excl_reserva_overlap (schema/02_constraints/14_exclude_alquiler_reserva.sql),
 -- que opera a nivel indice GiST y cierra la ventana de carrera entre
@@ -33,11 +33,11 @@ DECLARE
     v_self_res     BIGINT;
     v_self_alq     BIGINT;
 BEGIN
-    -- Sprint 6 (B5.5): se reemplazan los sentinels -1 por NULL + IS DISTINCT
-    -- FROM. NULL <> 5 = NULL (truthy false), pero NULL IS DISTINCT FROM 5
-    -- = TRUE. Es la forma idiomatica en Postgres de excluir "la propia fila"
-    -- (id NULL en INSERT, id real en UPDATE) sin riesgo de colisionar con
-    -- un id real -1 en otro contexto.
+    -- Se usa NULL + IS DISTINCT FROM para excluir "la propia fila" (id NULL
+    -- en INSERT, id real en UPDATE). NULL <> 5 = NULL (truthy false), pero
+    -- NULL IS DISTINCT FROM 5 = TRUE. Es la forma idiomatica en Postgres
+    -- sin riesgo de colisionar con un sentinel (ej: -1) que podria ser un
+    -- id real en otro contexto.
     IF TG_TABLE_NAME = 'reserva' THEN
         v_self_res := NEW.id_reserva;     -- NULL en INSERT, id real en UPDATE
         v_self_alq := NULL;

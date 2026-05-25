@@ -3,10 +3,9 @@
 -- mantenimiento) propaga el estado 'en_mantenimiento' al vehiculo via
 -- catalogo estado_vehiculo.
 --
--- Sprint 5 (R2) — refactor:
---   * Cuerpo envuelto en BEGIN ... EXCEPTION WHEN ... THEN ... END.
---   * Agregados OUT p_estado / p_mensaje (contrato estandar JUSTIFICACION.md
---     §R4).
+-- Diseno transaccional (R2): cuerpo envuelto en BEGIN ... EXCEPTION WHEN
+-- ... THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
+-- segun el contrato R4.
 --
 -- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
 
@@ -14,8 +13,8 @@ DROP FUNCTION IF EXISTS pa_enviar_mantenimiento_programado(
     BIGINT, BIGINT, TEXT
 ) CASCADE;
 
--- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
--- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
+-- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_enviar_mantenimiento_programado(
     p_id_vehiculo   BIGINT,
     p_id_taller     BIGINT,

@@ -1,5 +1,5 @@
--- Funcion: fn_validar_vehiculo_operativo
--- Sprint 2 (R7). Valida que un vehiculo exista y este en estado "disponible".
+-- Funcion: fn_validar_vehiculo_operativo (R7)
+-- Valida que un vehiculo exista y este en estado "disponible".
 --
 -- Reglas:
 --   1) p_id_vehiculo no nulo.
@@ -12,8 +12,8 @@
 -- (schema/04_functions/02_*.sql), que ya esta vivo sobre reserva y
 -- alquiler. Mantener separacion de responsabilidades segun R7.
 --
--- Caller esperado: pa_registrar_reserva (Sprint 2) y pa_registrar_alquiler
--- (Sprint 3, rama "sin reserva previa").
+-- Callers: pa_registrar_reserva y pa_registrar_alquiler (rama "sin reserva
+-- previa").
 
 CREATE OR REPLACE FUNCTION fn_validar_vehiculo_operativo(
     p_id_vehiculo BIGINT

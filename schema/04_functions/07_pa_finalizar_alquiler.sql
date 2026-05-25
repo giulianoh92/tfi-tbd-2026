@@ -4,18 +4,16 @@
 -- (ubicacion + historial + estado en el catalogo), emite la factura y opcionalmente
 -- envia el vehiculo a mantenimiento.
 --
--- Sprint 5 (R2) — refactor:
---   * Se envuelve el cuerpo en BEGIN ... EXCEPTION WHEN ... THEN ... END para
---     cumplir el contrato del PDF (manejo de excepciones + COMMIT/ROLLBACK por
---     espiritu). En Postgres el BEGIN del procedure asocia un savepoint
---     implicito: si una excepcion se captura, se hace rollback al savepoint;
---     si el bloque termina sin excepcion, la transaccion del caller se
---     compromete normalmente.
---   * Se agregan los OUT parameters estandarizados (p_estado, p_mensaje,
---     p_id_factura) para que el frontend pueda mostrar mensajes legibles en
---     lugar de error 500. Mismo contrato que pa_registrar_reserva / etc.
---   * El parametro de entrada antes llamado p_estado_final_vehiculo se renombro
---     a p_estado_destino_vehiculo para no colisionar con el OUT p_estado.
+-- Diseno transaccional (R2):
+--   * El cuerpo va envuelto en BEGIN ... EXCEPTION WHEN ... THEN ... END para
+--     cumplir el manejo de excepciones (COMMIT/ROLLBACK por espiritu). En
+--     Postgres el BEGIN del procedure asocia un savepoint implicito: si una
+--     excepcion se captura, se hace rollback al savepoint; si el bloque
+--     termina sin excepcion, la transaccion del caller se compromete
+--     normalmente.
+--   * Los OUT parameters estandarizados (p_estado, p_mensaje, p_id_factura)
+--     permiten al frontend mostrar mensajes legibles en lugar de error 500.
+--     Mismo contrato que pa_registrar_reserva / etc.
 --
 -- Aporte original: Marcia Viera (commit 257d86f del 2026-05-16,
 -- "funcionalidad finalizar alquiler"). Adaptaciones al schema reescrito:
@@ -42,15 +40,14 @@ DROP FUNCTION IF EXISTS pa_finalizar_alquiler(
     BIGINT, INTEGER, BIGINT, VARCHAR, BIGINT, TEXT
 ) CASCADE;
 
--- Hotfix Sprint 6: los 3 ultimos IN parameters van con DEFAULT NULL para
--- que el caller mas frecuente (cierre con destino "disponible", flujo
--- normal sin envio a taller) pueda invocar la function solo con los 3
--- args obligatorios via PostgREST RPC.
+-- Los 3 ultimos IN parameters van con DEFAULT NULL para que el caller mas
+-- frecuente (cierre con destino "disponible", flujo normal sin envio a
+-- taller) pueda invocar la function solo con los 3 args obligatorios via
+-- PostgREST RPC.
 --
--- Aclaracion sobre comentario previo: NO es cierto que Postgres prohiba
--- OUT despues de IN con DEFAULT. La regla real es que los IN con DEFAULT
--- deben ir AL FINAL de la lista de IN params (los OUT son separados y
--- pueden ir despues). Por ende esta firma es valida.
+-- Regla de Postgres: los IN con DEFAULT deben ir AL FINAL de la lista de
+-- IN params; los OUT son separados y pueden ir despues. Esta firma es
+-- valida.
 --
 -- Llamadas validas desde PostgREST:
 --   * { p_id_alquiler, p_km_fin, p_id_sucursal_devolucion }
@@ -58,8 +55,8 @@ DROP FUNCTION IF EXISTS pa_finalizar_alquiler(
 --   * Mismos 3 + { p_estado_destino_vehiculo:'en_mantenimiento', p_id_taller, p_observaciones }
 --       -> destino mantenimiento al cierre
 --
--- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
--- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
+-- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_finalizar_alquiler(
     p_id_alquiler              BIGINT,
     p_km_fin                   INTEGER,

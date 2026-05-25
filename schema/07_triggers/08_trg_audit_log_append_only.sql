@@ -1,4 +1,4 @@
--- Sprint 6 (B2) — Hard-lock append-only sobre audit_log.
+-- Hard-lock append-only sobre audit_log.
 --
 -- Defensa en profundidad:
 --   * Primera linea: RLS sobre audit_log con USING(FALSE) para authenticated

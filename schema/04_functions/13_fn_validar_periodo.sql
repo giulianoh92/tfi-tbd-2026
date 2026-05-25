@@ -1,7 +1,6 @@
--- Funcion: fn_validar_periodo
--- Sprint 2 (R7). Valida la consistencia temporal de un periodo de reserva o
--- alquiler. Se invoca desde los procedures pa_registrar_reserva y, mas
--- adelante en Sprint 3, desde pa_registrar_alquiler.
+-- Funcion: fn_validar_periodo (R7)
+-- Valida la consistencia temporal de un periodo de reserva o alquiler. Se
+-- invoca desde pa_registrar_reserva y pa_registrar_alquiler.
 --
 -- Reglas validadas:
 --   1) p_inicio y p_fin deben estar definidos.
@@ -18,9 +17,8 @@
 -- captura la excepcion en su bloque EXCEPTION WHEN OTHERS y mapea a
 -- p_estado = 'ERROR_VALIDACION'.
 --
--- Sprint 6 (B4.2): se anade el parametro p_tolerancia_pasado con default 0
--- (INTERVAL). Asi mantenemos una sola function reusable para los dos casos
--- (R7: modularizacion).
+-- p_tolerancia_pasado tiene default 0 (INTERVAL) para mantener una sola
+-- function reusable entre ambos flujos (R7: modularizacion).
 --
 -- Modos de comparacion contra el presente:
 --   * p_tolerancia_pasado = INTERVAL '0' (default): timestamp estricto,

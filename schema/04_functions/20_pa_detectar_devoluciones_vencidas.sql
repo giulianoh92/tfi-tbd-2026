@@ -1,6 +1,6 @@
--- Procedure: pa_detectar_devoluciones_vencidas
--- Sprint 4 (R9). Job: detecta alquileres con devolucion vencida y los
--- persiste en la tabla historica `devolucion_vencida`.
+-- Procedure: pa_detectar_devoluciones_vencidas (R9)
+-- Job: detecta alquileres con devolucion vencida y los persiste en la
+-- tabla historica `devolucion_vencida`.
 --
 -- Schedulado via pg_cron (ver schema/04_functions/21_schedule_jobs.sql)
 -- cada 6 horas. Al ser un job no hay caller HTTP, asi que no devuelve
@@ -22,7 +22,7 @@
 -- fecha_fin_prevista)) / 3600. Es una NUMERIC(8,2) -> precision a la
 -- centesima de hora.
 
--- Sprint 6 (B8.1) — SECURITY DEFINER + search_path = public:
+-- SECURITY DEFINER + search_path = public:
 --   * SECURITY DEFINER: el job corre como owner (postgres) cuando lo invoca
 --     pg_cron. Lo declaramos explicitamente para que, si en el futuro se
 --     llama desde otro rol con privilegios menores (manual debugging, RPC

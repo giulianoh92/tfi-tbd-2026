@@ -8,10 +8,11 @@
 --                    app_metadata.role  via fn_es_staff() leyendo el JWT.
 --                    = 'staff')
 --
--- DROP POLICY IF EXISTS antes de cada CREATE para idempotencia. apply.sh
--- ya hace DROP SCHEMA public CASCADE; estos drops son defensa en profundidad.
+-- DROP POLICY IF EXISTS antes de cada CREATE para idempotencia. La rutina
+-- de despliegue ya hace DROP SCHEMA public CASCADE; estos drops son
+-- defensa en profundidad.
 --
--- Sprint 6 (B3) — Performance pattern de Supabase para RLS:
+-- Performance pattern de Supabase para RLS:
 --   Las helpers fn_auth_uid(), fn_es_staff(), fn_cliente_del_usuario() se
 --   envuelven en (SELECT helper()) dentro de USING/WITH CHECK. El planner
 --   de Postgres reconoce el subselect como InitPlan y lo evalua UNA sola

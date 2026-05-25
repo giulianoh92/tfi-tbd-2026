@@ -1,4 +1,4 @@
--- NOTA DE DISENIO (Sprint 6, B6): esta tabla NO almacena hash de contrasena.
+-- NOTA DE DISENIO: esta tabla NO almacena hash de contrasena.
 --
 -- La autenticacion del sistema corre por Supabase Auth (auth.users),
 -- que persiste la contrasena bcrypt en auth.users.encrypted_password

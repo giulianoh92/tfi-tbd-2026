@@ -23,10 +23,10 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_id_estado_alquilado BIGINT;
 BEGIN
-    -- Sprint 6 (B5.3): se compara con lower(nombre) para alinear con el
-    -- CHECK del catalogo (estado_vehiculo.nombre = lower(nombre)). El
-    -- catalogo queda forzado a minusculas, pero usar lower() en el lookup
-    -- hace al codigo robusto si en el futuro entra una cadena distinta.
+    -- Se compara con lower(nombre) para alinear con el CHECK del catalogo
+    -- (estado_vehiculo.nombre = lower(nombre)). El catalogo queda forzado a
+    -- minusculas, pero usar lower() en el lookup hace al codigo robusto si
+    -- en el futuro entra una cadena distinta.
     SELECT id_estado INTO v_id_estado_alquilado
     FROM estado_vehiculo WHERE lower(nombre) = 'alquilado';
 

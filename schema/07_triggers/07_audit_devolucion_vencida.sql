@@ -1,4 +1,4 @@
--- Trigger de auditoria para `devolucion_vencida` (Sprint 4 - R9 + R1).
+-- Trigger de auditoria para `devolucion_vencida` (R9 + R1).
 --
 -- Cada deteccion de devolucion vencida y cada actualizacion (notificado,
 -- refresco de horas) queda registrada en audit_log con usuario_app NULL

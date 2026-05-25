@@ -1,4 +1,4 @@
--- Sprint 6 (B8.2) — Grants restringidos para procedures de jobs internos.
+-- Grants restringidos para procedures de jobs internos.
 --
 -- pa_detectar_devoluciones_vencidas() NO es API publica: solo lo invoca
 -- pg_cron como rol postgres. El GRANT EXECUTE wildcard de 04_rls_policies.sql

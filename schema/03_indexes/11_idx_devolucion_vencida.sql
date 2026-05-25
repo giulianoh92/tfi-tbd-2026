@@ -1,4 +1,4 @@
--- Indices para devolucion_vencida (Sprint 4 - R9).
+-- Indices para devolucion_vencida (R9).
 --
 -- Casos de uso:
 --   1) Panel /admin/devoluciones-vencidas: lista cronologica descendente

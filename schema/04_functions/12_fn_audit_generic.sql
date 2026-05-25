@@ -12,11 +12,11 @@
 -- forma idiomatica en Postgres de tener una unica via de escritura (el
 -- trigger) y bloquear el resto.
 --
--- Sprint 6 (B7.3) — SECURITY DEFINER intencional: el trigger inserta en
--- audit_log saltandose RLS. RLS sobre audit_log esta en USING(FALSE) para
--- escritura desde authenticated/anon, asi que la unica via valida es esta
--- function corriendo con privilegios del owner. Combinado con search_path
--- = public (evita function hijacking) y el trigger append-only de B2
+-- SECURITY DEFINER intencional: el trigger inserta en audit_log saltandose
+-- RLS. RLS sobre audit_log esta en USING(FALSE) para escritura desde
+-- authenticated/anon, asi que la unica via valida es esta function
+-- corriendo con privilegios del owner. Combinado con search_path = public
+-- (evita function hijacking) y el trigger append-only sobre audit_log
 -- (07_triggers/08_*), el log no es manipulable end-to-end.
 --
 -- Identidad del usuario logico: se lee `request.jwt.claims.sub` con fallback

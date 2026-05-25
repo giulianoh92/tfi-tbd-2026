@@ -1,14 +1,14 @@
 -- pa_registrar_cliente_walkin(...) — registro de cliente presencial sin
--- cuenta online (R6 walk-in del PDF + design doc linea 279: "los clientes
--- presenciales no requieren cuenta online").
+-- cuenta online (R6 walk-in: "los clientes presenciales no requieren
+-- cuenta online").
 --
 -- Inserta solamente en public.cliente. NO toca auth.users — los clientes
 -- walk-in operan sin login. El campo auth_user_id queda NULL. Si despues
 -- el cliente decide crear cuenta online, se vincula via el trigger
 -- fn_handle_new_auth_user que matchea por DNI.
 --
--- Triple identidad audit (Sprint 6): la insercion dispara fn_audit_generic
--- que registra (rol_sesion, usuario_db, usuario_app) — el staff queda como
+-- Triple identidad audit: la insercion dispara fn_audit_generic que
+-- registra (rol_sesion, usuario_db, usuario_app) — el staff queda como
 -- responsable de la operacion via su JWT.
 --
 -- R11: FUNCTION para exposicion via PostgREST RPC.

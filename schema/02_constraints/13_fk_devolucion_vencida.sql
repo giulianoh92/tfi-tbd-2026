@@ -1,4 +1,4 @@
--- FKs de devolucion_vencida (Sprint 4 - R9).
+-- FKs de devolucion_vencida (R9).
 --
 -- ON DELETE CASCADE en id_alquiler: si por alguna razon (correccion manual,
 -- DBA) se elimina un alquiler, la fila historica deja de tener sentido y

@@ -1,5 +1,5 @@
--- Procedure: pa_registrar_alquiler
--- Sprint 3 (R3, R4, R5, R6). Orquestador unico para alta de alquiler.
+-- Procedure: pa_registrar_alquiler (R3, R4, R5, R6)
+-- Orquestador unico para alta de alquiler.
 --
 -- Soporta dos modalidades (R6):
 --   1) Con reserva previa: p_id_reserva != NULL. La reserva debe existir,
@@ -21,22 +21,22 @@
 --   p_mensaje     : descripcion legible (SQLERRM en errores).
 --   p_id_generado : id_alquiler creado (NULL si error).
 --
--- Sprint 6 (B4.3) — fn_validar_periodo soporta tolerancia: en walk-in se
--- invoca con INTERVAL '5 minutes' para que el flujo sea robusto a la
--- latencia HTTP entre el NOW() del frontend y el NOW() del servidor. En
--- pa_registrar_reserva sigue llamandose sin parametro (default 0). La
+-- fn_validar_periodo soporta tolerancia: en walk-in se invoca con
+-- INTERVAL '5 minutes' para que el flujo sea robusto a la latencia HTTP
+-- entre el NOW() del frontend y el NOW() del servidor. En
+-- pa_registrar_reserva se llama sin parametro (default 0). La
 -- responsabilidad de "fecha futura" queda asi siempre en la DB, no en el
 -- frontend.
 --
--- Sprint 6 (B4.1) — validacion de tarifa coherente: la tarifa elegida
--- debe pertenecer a la sucursal de origen del vehiculo Y al tipo del
--- vehiculo. La FK aislada (alquiler.id_tarifa -> tarifa) no lo asegura
--- porque tarifa.id_sucursal y tarifa.id_tipo son independientes de
--- vehiculo. Sin esta validacion un cliente podia aplicar la tarifa mas
--- barata de cualquier sucursal/tipo a su alquiler.
+-- Validacion de tarifa coherente: la tarifa elegida debe pertenecer a la
+-- sucursal de origen del vehiculo Y al tipo del vehiculo. La FK aislada
+-- (alquiler.id_tarifa -> tarifa) no lo asegura porque tarifa.id_sucursal y
+-- tarifa.id_tipo son independientes de vehiculo. Sin esta validacion un
+-- cliente podia aplicar la tarifa mas barata de cualquier sucursal/tipo a
+-- su alquiler.
 
--- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
--- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
+-- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
+-- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_registrar_alquiler(
     p_id_reserva   BIGINT,
     p_id_cliente   BIGINT,
@@ -93,7 +93,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Sprint 6 (B4.1) — Coherencia tarifa <-> vehiculo.
+    -- Coherencia tarifa <-> vehiculo.
     -- La FK alquiler.id_tarifa -> tarifa garantiza que la tarifa existe,
     -- pero NO que corresponda al tipo y sucursal de origen del vehiculo
     -- elegido. Sin este check, un cliente podia consumir la tarifa mas
@@ -180,7 +180,7 @@ BEGIN
         ------------------------------------------------------------------
         -- Rama "walk-in" (sin reserva previa).
         ------------------------------------------------------------------
-        -- Sprint 6 (B4.3): tolerancia de 5 minutos sobre NOW(). En walk-in
+        -- Tolerancia de 5 minutos sobre NOW(). En walk-in
         -- el staff completa la fecha de inicio en el frontend y la envia
         -- al backend; entre uno y otro pueden pasar varios segundos. Sin
         -- tolerancia, un click lento generaba un check_violation espureo
@@ -226,11 +226,11 @@ EXCEPTION
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN exclusion_violation THEN
-        -- Sprint 6 (B1): 23P01 = exclusion_violation. Lo dispara la EXCLUDE
-        -- constraint excl_alquiler_overlap cuando otra transaccion ya ocupo
-        -- el rango con un id_vehiculo + tsrange solapado. Es el "lock
-        -- optimista" idiomatico: el indice GiST valida atomicamente, sin
-        -- ventana de carrera entre SELECT y INSERT como tenia el trigger.
+        -- 23P01 = exclusion_violation. Lo dispara la EXCLUDE constraint
+        -- excl_alquiler_overlap cuando otra transaccion ya ocupo el rango
+        -- con un id_vehiculo + tsrange solapado. Es el "lock optimista"
+        -- idiomatico: el indice GiST valida atomicamente, sin ventana de
+        -- carrera entre SELECT y INSERT como tenia el trigger.
         p_estado      := 'ERROR_SUPERPOSICION';
         p_mensaje     := 'El vehiculo ya esta reservado/alquilado en ese periodo.';
         p_id_generado := NULL;

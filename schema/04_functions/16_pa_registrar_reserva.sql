@@ -1,5 +1,5 @@
--- Procedure: pa_registrar_reserva
--- Sprint 2 (R7). Orquestador unico para alta de reserva.
+-- Procedure: pa_registrar_reserva (R7)
+-- Orquestador unico para alta de reserva.
 --
 -- Diseno modular: la validacion de superposicion de fechas la sigue
 -- haciendo el trigger BEFORE INSERT fn_check_vehiculo_overlap sobre la
@@ -7,7 +7,7 @@
 -- replica: confia en el trigger y captura la excepcion que pueda lanzar
 -- en su bloque EXCEPTION OTHERS (mapeada a ERROR_VALIDACION).
 --
--- Contrato de retorno estandarizado (JUSTIFICACION.md §R4):
+-- Contrato de retorno estandarizado (R4):
 --   p_estado      : 'OK' | 'ERROR_VALIDACION' | 'ERROR_DUPLICADO' |
 --                   'ERROR_REFERENCIAL' | 'ERROR'
 --   p_mensaje     : descripcion legible del resultado (en error: SQLERRM)
@@ -18,14 +18,13 @@
 --   Las tres lanzan RAISE EXCEPTION; se capturan transparentemente en el
 --   bloque EXCEPTION WHEN OTHERS y mapean por SQLSTATE.
 
--- Sprint 6 (B6 - garantia): si el tipo de reserva tiene requiere_garantia=TRUE
--- (caso de "estandar"), la regla del negocio acordada con el cliente exige
--- que el cliente cargue una tarjeta de credito como garantia al momento de
--- reservar (Etapa 1 - Consideraciones de diseño §garantia con tarjeta). El
--- procedure recibe los 4 datos sensibles como parametros opcionales y los
--- valida + persiste en garantia_reserva dentro de la misma transaccion. El
--- numero de tarjeta se almacena hasheado con bcrypt (pgcrypto) para no
--- guardar el PAN en claro. El frontend nunca debe ver el hash; solo envia el
+-- Garantia con tarjeta: si el tipo de reserva tiene requiere_garantia=TRUE
+-- (caso "estandar"), la regla del negocio exige que el cliente cargue una
+-- tarjeta de credito como garantia al momento de reservar. El procedure
+-- recibe los 4 datos sensibles como parametros opcionales y los valida +
+-- persiste en garantia_reserva dentro de la misma transaccion. El numero
+-- de tarjeta se almacena hasheado con bcrypt (pgcrypto) para no guardar
+-- el PAN en claro. El frontend nunca debe ver el hash; solo envia el
 -- numero en texto plano por HTTPS y se descarta del lado servidor.
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
@@ -147,11 +146,11 @@ EXCEPTION
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN exclusion_violation THEN
-        -- Sprint 6 (B1): 23P01 = exclusion_violation. Lo dispara la EXCLUDE
-        -- constraint excl_reserva_overlap cuando otra transaccion ya ocupo
-        -- el rango con un id_vehiculo + tsrange solapado. Es el "lock
-        -- optimista" idiomatico: el indice GiST valida atomicamente, sin
-        -- ventana de carrera entre SELECT y INSERT como tenia el trigger.
+        -- 23P01 = exclusion_violation. Lo dispara la EXCLUDE constraint
+        -- excl_reserva_overlap cuando otra transaccion ya ocupo el rango
+        -- con un id_vehiculo + tsrange solapado. Es el "lock optimista"
+        -- idiomatico: el indice GiST valida atomicamente, sin ventana de
+        -- carrera entre SELECT y INSERT como tenia el trigger.
         p_estado      := 'ERROR_SUPERPOSICION';
         p_mensaje     := 'El vehiculo ya esta reservado/alquilado en ese periodo.';
         p_id_generado := NULL;

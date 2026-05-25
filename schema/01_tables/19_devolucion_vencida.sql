@@ -1,4 +1,4 @@
--- Tabla historica de devoluciones vencidas (R9, Sprint 4).
+-- Tabla historica de devoluciones vencidas (R9).
 --
 -- Poblada por pa_detectar_devoluciones_vencidas() schedulado via pg_cron
 -- cada 6 horas. Un alquiler 'activo' cuya fecha_fin_prevista < NOW() y aun
