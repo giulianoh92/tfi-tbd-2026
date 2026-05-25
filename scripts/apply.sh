@@ -50,10 +50,11 @@ apply_dir "$SCHEMA_DIR"                "Extensiones"
 apply_dir "$SCHEMA_DIR/01_tables"      "Tablas"
 apply_dir "$SCHEMA_DIR/02_constraints" "Constraints"
 apply_dir "$SCHEMA_DIR/03_indexes"     "Indices"
-apply_dir "$SCHEMA_DIR/04_functions"   "Funciones / triggers / vistas"
-apply_dir "$SCHEMA_DIR/05_seeds"       "Datos de prueba (seeds)"
+apply_dir "$SCHEMA_DIR/04_functions"   "Funciones / procedures"
+apply_dir "$SCHEMA_DIR/05_views"       "Vistas (Etapa 2)"
 apply_dir "$SCHEMA_DIR/06_permissions" "Permisos (roles, GRANT, REVOKE)"
 apply_dir "$SCHEMA_DIR/07_triggers"    "Triggers de auditoria"
+apply_dir "$SCHEMA_DIR/08_seeds"       "Datos de prueba (seeds)"
 
 # PostgREST cachea el schema completo en memoria al arrancar y solo lo
 # refresca al recibir NOTIFY pgrst, 'reload schema' o tras un timeout largo.

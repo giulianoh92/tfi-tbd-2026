@@ -11,10 +11,11 @@ Reglas tecnicas para el contenido del repo. Si lo que necesitas saber es **como 
 | `schema/01_tables/` | `CREATE TABLE` | Un archivo por tabla, con prefijo: `01_clientes.sql`, `02_pedidos.sql` |
 | `schema/02_constraints/` | Foreign keys y constraints multi-columna | Con prefijo: `01_fk_pedidos.sql` |
 | `schema/03_indexes/` | Indices | `01_idx_clientes_email.sql` |
-| `schema/04_functions/` | Funciones, triggers, vistas | `01_fn_calcular_total.sql`, `02_vw_listado_xxx.sql` |
-| `schema/05_seeds/` | Datos de prueba (`INSERT INTO`) | `01_clientes.sql`, `02_pedidos.sql` |
+| `schema/04_functions/` | Funciones y stored procedures (`pa_*`, `fn_*`) | `01_fn_calcular_total.sql`, `16_pa_registrar_reserva.sql` |
+| `schema/05_views/` | Vistas de consulta (Etapa 2) | `01_vw_vehiculos_disponibles.sql`, `02_vw_alquileres_activos.sql` |
 | `schema/06_permissions/` | Roles, RLS policies, GRANT, REVOKE | `01_roles.sql`, `02_rls_helpers.sql`, `04_rls_policies.sql` |
 | `schema/07_triggers/` | Triggers de auditoria y append-only | `01_audit_cliente.sql`, `08_trg_audit_log_append_only.sql` |
+| `schema/08_seeds/` | Datos de prueba (`INSERT INTO`) — se aplica al final, post-DDL | `01_usuario.sql`, `02_cliente.sql` |
 
 > [!important]
 > **Prefijos numericos obligatorios.** Tanto las carpetas (`01_tables/`, `02_constraints/`, ...) como los archivos `.sql` dentro de ellas arrancan con dos digitos. La carpeta define el orden entre etapas; el prefijo del archivo, el orden dentro de la etapa. Sin el prefijo, el deploy puede romper por dependencias resueltas en orden incorrecto.

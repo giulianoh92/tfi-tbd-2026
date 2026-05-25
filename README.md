@@ -129,13 +129,14 @@ schema/
 ├── 01_tables/            # CREATE TABLE (un archivo por tabla)
 ├── 02_constraints/       # Foreign keys y constraints multi-columna (FK + EXCLUDE)
 ├── 03_indexes/           # Indices
-├── 04_functions/         # Funciones, stored procedures (pa_*), vistas
-├── 05_seeds/             # Datos de prueba (INSERT INTO)
+├── 04_functions/         # Funciones, stored procedures (pa_*)
+├── 05_views/             # Vistas (Etapa 2): vw_vehiculos_disponibles, vw_alquileres_activos, etc.
 ├── 06_permissions/       # Roles, RLS policies, GRANT, REVOKE
-└── 07_triggers/          # Triggers de auditoria y append-only del log
+├── 07_triggers/          # Triggers de auditoria y append-only del log
+└── 08_seeds/             # Datos de prueba (INSERT INTO) — al final, post-DDL
 ```
 
-Las carpetas se aplican en orden numerico (`00_` → `07_`). Los archivos dentro de cada carpeta tambien arrancan con dos digitos (`01_`, `02_`, ...) y se aplican en ese orden alfabetico.
+Las carpetas se aplican en orden numerico (`00_` → `08_`). Los archivos dentro de cada carpeta tambien arrancan con dos digitos (`01_`, `02_`, ...) y se aplican en ese orden alfabetico.
 
 La garantia de no-superposicion temporal entre alquileres / reservas la
 da una EXCLUDE constraint con `btree_gist` (ver
