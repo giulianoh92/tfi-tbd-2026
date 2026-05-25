@@ -7,22 +7,14 @@
 -- ... THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
 -- segun el contrato R4.
 --
--- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
-
-DROP FUNCTION IF EXISTS pa_registrar_devolucion_mantenimiento(
-    BIGINT, INTEGER
-) CASCADE;
-
--- Nota: el caller debe pasar NULL explicito en p_km_salida_taller cuando no
--- aplique (Postgres no admite OUT despues de IN con DEFAULT en FUNCTION).
---
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
 -- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_registrar_devolucion_mantenimiento(
-    p_id_vehiculo      BIGINT,
-    p_km_salida_taller INTEGER, -- NULL si no se reportan km al salir del taller
-    OUT p_estado       TEXT,
-    OUT p_mensaje      TEXT
+    p_id_vehiculo       BIGINT,
+    p_km_salida_taller  INTEGER, -- NULL si no se reportan km al salir del taller
+    p_observaciones     TEXT DEFAULT NULL,
+    OUT p_estado        TEXT,
+    OUT p_mensaje       TEXT
 )
 RETURNS RECORD
 LANGUAGE plpgsql AS $$
@@ -93,10 +85,18 @@ BEGIN
         WHERE id_vehiculo = p_id_vehiculo;
     END IF;
 
-    -- Cerramos la orden de mantenimiento asignando la fecha de hoy.
+    -- Cerramos la orden de mantenimiento asignando la fecha de hoy. Si el
+    -- caller proveyo observaciones nuevas (resumen del taller, repuestos
+    -- cambiados, etc.), las apendea a las observaciones existentes
+    -- separadas por salto de linea, preservando el historial.
     -- NOTA: Esto dispara de forma automatica el trigger trg_mantenimiento_devolucion.
     UPDATE mantenimiento
-    SET fecha_devolucion = CURRENT_DATE
+    SET fecha_devolucion = CURRENT_DATE,
+        observaciones    = CASE
+                              WHEN NULLIF(trim(p_observaciones), '') IS NULL THEN observaciones
+                              WHEN observaciones IS NULL OR observaciones = ''  THEN p_observaciones
+                              ELSE observaciones || E'\n[devolucion] ' || p_observaciones
+                           END
     WHERE id_mantenimiento = v_id_mantenimiento_abierto;
 
     p_estado  := 'OK';

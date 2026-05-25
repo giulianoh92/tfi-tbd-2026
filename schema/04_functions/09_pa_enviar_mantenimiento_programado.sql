@@ -1,4 +1,4 @@
--- pa_enviar_mantenimiento_programado(...) — Envia un vehiculo disponible a
+-- pa_enviar_mantenimiento_programado(...) — Envia un vehiculo a
 -- mantenimiento. El trigger fn_mantenimiento_envio (sobre la tabla
 -- mantenimiento) propaga el estado 'en_mantenimiento' al vehiculo via
 -- catalogo estado_vehiculo.
@@ -7,11 +7,10 @@
 -- ... THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
 -- segun el contrato R4.
 --
--- Cambio de firma -> DROP PROCEDURE previo con la firma vieja explicita.
-
-DROP FUNCTION IF EXISTS pa_enviar_mantenimiento_programado(
-    BIGINT, BIGINT, TEXT
-) CASCADE;
+-- Precondicion: el vehiculo no debe estar 'alquilado' (un vehiculo en
+-- poder del cliente no puede irse al taller). Cualquier otro estado
+-- operativo del catalogo (disponible, fuera_de_servicio, en_traslado, ...)
+-- admite el envio.
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
 -- exponga via /rest/v1/rpc.
@@ -25,15 +24,16 @@ CREATE OR REPLACE FUNCTION pa_enviar_mantenimiento_programado(
 RETURNS RECORD
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id_estado_disponible BIGINT;
-    v_id_estado_actual     BIGINT;
+    v_id_estado_alquilado BIGINT;
+    v_id_estado_actual    BIGINT;
+    v_nombre_estado       VARCHAR(50);
 BEGIN
     p_estado  := 'ERROR';
     p_mensaje := NULL;
 
-    SELECT id_estado INTO v_id_estado_disponible
+    SELECT id_estado INTO v_id_estado_alquilado
     FROM estado_vehiculo
-    WHERE lower(nombre) = 'disponible';
+    WHERE lower(nombre) = 'alquilado';
 
     -- FOR UPDATE bloquea la fila del vehiculo para evitar carrera con un
     -- alquiler que se cree en paralelo.
@@ -48,10 +48,28 @@ BEGIN
         RETURN;
     END IF;
 
-    IF v_id_estado_actual IS DISTINCT FROM v_id_estado_disponible THEN
+    IF v_id_estado_actual = v_id_estado_alquilado THEN
         p_estado  := 'ERROR_ESTADO';
         p_mensaje := format(
-            'REGLA DE NEGOCIO: El vehiculo %s no esta "disponible" para mantenimiento.',
+            'REGLA DE NEGOCIO: el vehiculo %s esta "alquilado" y no puede enviarse a mantenimiento hasta que se cierre el alquiler.',
+            p_id_vehiculo
+        );
+        RETURN;
+    END IF;
+
+    -- Tambien rechazamos si el vehiculo ya esta en mantenimiento (orden
+    -- abierta sin devolucion). El trigger fn_mantenimiento_envio mira
+    -- el catalogo, no la tabla mantenimiento, asi que la double-booking
+    -- la atajamos aca.
+    SELECT lower(ev.nombre)
+      INTO v_nombre_estado
+      FROM estado_vehiculo ev
+     WHERE ev.id_estado = v_id_estado_actual;
+
+    IF v_nombre_estado = 'en_mantenimiento' THEN
+        p_estado  := 'ERROR_ESTADO';
+        p_mensaje := format(
+            'REGLA DE NEGOCIO: el vehiculo %s ya esta en mantenimiento.',
             p_id_vehiculo
         );
         RETURN;

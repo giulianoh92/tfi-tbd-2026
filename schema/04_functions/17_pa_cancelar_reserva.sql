@@ -110,6 +110,15 @@ BEGIN
        SET estado = 'cancelada'
      WHERE id_reserva = p_id_reserva;
 
+    -- 5) Inactivar la garantia asociada (si existia). No se borra la fila:
+    --    el diseno conserva el historial de tarjetas que el cliente cargo
+    --    para auditoria fiscal. El flag activa = FALSE indica que la
+    --    autorizacion sobre esa tarjeta ya no esta vigente.
+    UPDATE garantia_reserva
+       SET activa = FALSE
+     WHERE id_reserva = p_id_reserva
+       AND activa     = TRUE;
+
     p_estado  := 'OK';
     p_mensaje := format('Reserva %s cancelada exitosamente.', p_id_reserva);
 

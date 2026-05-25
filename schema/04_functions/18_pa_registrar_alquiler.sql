@@ -28,37 +28,47 @@
 -- responsabilidad de "fecha futura" queda asi siempre en la DB, no en el
 -- frontend.
 --
--- Validacion de tarifa coherente: la tarifa elegida debe pertenecer a la
--- sucursal de origen del vehiculo Y al tipo del vehiculo. La FK aislada
--- (alquiler.id_tarifa -> tarifa) no lo asegura porque tarifa.id_sucursal y
--- tarifa.id_tipo son independientes de vehiculo. Sin esta validacion un
--- cliente podia aplicar la tarifa mas barata de cualquier sucursal/tipo a
--- su alquiler.
+-- Validacion de ubicacion fisica: el vehiculo debe estar en la sucursal
+-- donde el cliente se presenta a retirarlo. Esto preserva la disociacion
+-- entre pertenencia (vehiculo.id_sucursal_origen, fija para tarifa) y
+-- ubicacion fisica (ubicacion_vehiculo, evoluciona por devoluciones
+-- cruzadas).
+--
+-- Resolucion de tarifa: la lookup se hace dentro del procedure por la
+-- pareja (id_sucursal_origen, id_tipo) del vehiculo. La FK aislada
+-- alquiler.id_tarifa -> tarifa no podia asegurar coherencia porque
+-- tarifa.id_sucursal y tarifa.id_tipo son independientes de vehiculo.
+-- Al resolver internamente, el caller no puede aplicar una tarifa mas
+-- barata de otra sucursal/tipo.
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
 -- exponga via /rest/v1/rpc.
 CREATE OR REPLACE FUNCTION pa_registrar_alquiler(
-    p_id_reserva   BIGINT,
-    p_id_cliente   BIGINT,
-    p_id_vehiculo  BIGINT,
-    p_id_tarifa    BIGINT,
-    p_fecha_inicio TIMESTAMP,
-    p_fecha_fin    TIMESTAMP,
-    p_km_inicio    INTEGER,
-    OUT p_estado   TEXT,
-    OUT p_mensaje  TEXT,
-    OUT p_id_generado BIGINT
+    p_id_reserva          BIGINT,
+    p_id_cliente          BIGINT,
+    p_id_vehiculo         BIGINT,
+    p_id_sucursal_retiro  BIGINT,
+    p_fecha_inicio        TIMESTAMP,
+    p_fecha_fin           TIMESTAMP,
+    p_km_inicio           INTEGER,
+    OUT p_estado          TEXT,
+    OUT p_mensaje         TEXT,
+    OUT p_id_generado     BIGINT
 )
 RETURNS RECORD
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_reserva_estado     TEXT;
-    v_reserva_cliente    BIGINT;
-    v_reserva_vehiculo   BIGINT;
-    v_reserva_inicio     TIMESTAMP;
-    v_reserva_fin        TIMESTAMP;
-    v_km_actuales        INTEGER;
+    v_reserva_estado        TEXT;
+    v_reserva_cliente       BIGINT;
+    v_reserva_vehiculo      BIGINT;
+    v_reserva_inicio        TIMESTAMP;
+    v_reserva_fin           TIMESTAMP;
+    v_km_actuales           INTEGER;
+    v_id_sucursal_origen    BIGINT;
+    v_id_tipo_vehiculo      BIGINT;
+    v_id_sucursal_vigente   BIGINT;
+    v_id_tarifa             BIGINT;
 BEGIN
     p_estado      := 'ERROR';
     p_mensaje     := NULL;
@@ -71,10 +81,16 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Cargar km_actuales del vehiculo. Si el vehiculo no existe, mas adelante
-    -- la fn_validar_vehiculo_operativo o el FK lanzan el error apropiado.
-    SELECT km_actuales
-      INTO v_km_actuales
+    IF p_id_sucursal_retiro IS NULL THEN
+        p_estado  := 'ERROR_VALIDACION';
+        p_mensaje := 'La sucursal de retiro es obligatoria.';
+        RETURN;
+    END IF;
+
+    -- Cargar datos clave del vehiculo en un solo round-trip. Si no existe,
+    -- mas adelante fn_validar_vehiculo_operativo / el FK lanzan el error.
+    SELECT km_actuales, id_sucursal_origen, id_tipo
+      INTO v_km_actuales, v_id_sucursal_origen, v_id_tipo_vehiculo
       FROM vehiculo
      WHERE id_vehiculo = p_id_vehiculo;
 
@@ -93,23 +109,49 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Coherencia tarifa <-> vehiculo.
-    -- La FK alquiler.id_tarifa -> tarifa garantiza que la tarifa existe,
-    -- pero NO que corresponda al tipo y sucursal de origen del vehiculo
-    -- elegido. Sin este check, un cliente podia consumir la tarifa mas
-    -- barata de cualquier sucursal/tipo del catalogo. Cerramos esa fuga
-    -- a nivel procedure (la unica via legitima de creacion de alquiler).
-    IF NOT EXISTS (
-        SELECT 1
-        FROM tarifa t
-        JOIN vehiculo v
-          ON v.id_tipo            = t.id_tipo
-         AND v.id_sucursal_origen = t.id_sucursal
-        WHERE t.id_tarifa   = p_id_tarifa
-          AND v.id_vehiculo = p_id_vehiculo
-    ) THEN
+    -- Ubicacion fisica vigente: el vehiculo debe estar en la sucursal donde
+    -- el cliente se presenta a retirar. Sin este check, el staff de una
+    -- sucursal podia emitir alquiler de un vehiculo que en realidad esta
+    -- en otra (devolucion cruzada anterior).
+    SELECT id_sucursal
+      INTO v_id_sucursal_vigente
+      FROM ubicacion_vehiculo
+     WHERE id_vehiculo  = p_id_vehiculo
+       AND fecha_hasta IS NULL;
+
+    IF NOT FOUND THEN
+        p_estado  := 'ERROR_ESTADO';
+        p_mensaje := format(
+            'El vehiculo %s no tiene ubicacion fisica vigente registrada.',
+            p_id_vehiculo
+        );
+        RETURN;
+    END IF;
+
+    IF v_id_sucursal_vigente IS DISTINCT FROM p_id_sucursal_retiro THEN
         p_estado  := 'ERROR_VALIDACION';
-        p_mensaje := 'La tarifa no corresponde al tipo/sucursal del vehiculo elegido.';
+        p_mensaje := format(
+            'El vehiculo %s no esta fisicamente en la sucursal de retiro (sucursal vigente: %s, sucursal solicitada: %s).',
+            p_id_vehiculo, v_id_sucursal_vigente, p_id_sucursal_retiro
+        );
+        RETURN;
+    END IF;
+
+    -- Resolucion interna de tarifa por (sucursal_origen, tipo) del vehiculo.
+    -- La tarifa siempre es la de la sucursal de origen, no la de retiro:
+    -- las devoluciones cruzadas no deben cambiar el precio pactado.
+    SELECT id_tarifa
+      INTO v_id_tarifa
+      FROM tarifa
+     WHERE id_sucursal = v_id_sucursal_origen
+       AND id_tipo     = v_id_tipo_vehiculo;
+
+    IF NOT FOUND THEN
+        p_estado  := 'ERROR_REFERENCIAL';
+        p_mensaje := format(
+            'No hay tarifa configurada para la combinacion (sucursal de origen %s, tipo %s) del vehiculo.',
+            v_id_sucursal_origen, v_id_tipo_vehiculo
+        );
         RETURN;
     END IF;
 
@@ -208,7 +250,7 @@ BEGIN
         p_id_reserva,
         p_id_cliente,
         p_id_vehiculo,
-        p_id_tarifa,
+        v_id_tarifa,
         p_fecha_inicio,
         p_fecha_fin,
         p_km_inicio
