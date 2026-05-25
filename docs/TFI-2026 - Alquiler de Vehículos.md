@@ -748,7 +748,17 @@ Adicionalmente, durante la implementación el equipo introdujo una decisión arq
 | API | PostgREST 12 (Supabase) | Expone automáticamente cada `FUNCTION` declarada como endpoint `/rest/v1/rpc/{nombre}`, eliminando la necesidad de escribir capa de servicios. Cualquier cliente invoca la lógica almacenada directamente vía JSON. |
 | Auth | GoTrue (Supabase Auth) | Emisión y validación de JWT con claves del proyecto. Un trigger sobre `auth.users` (`fn_handle_new_auth_user`) crea automáticamente el registro paralelo en `cliente`, manteniendo el modelo Etapa 1 sin acoplarse al esquema interno de Supabase. |
 | Seguridad | RLS + roles Postgres | Política `USING(FALSE)` sobre `audit_log` para roles `authenticated`/`anon`; políticas específicas por tabla para que cada cliente solo vea sus propios alquileres. Trigger `BEFORE UPDATE OR DELETE` como segunda línea de defensa para roles con `BYPASSRLS`. |
-| Interfaz auxiliar | (cliente HTTP cualquiera) | Interfaz para cumplir el segundo párrafo de R1 (consulta de logs de auditoría) y para que el lector pueda interactuar con los procedimientos almacenados. Su implementación queda fuera del alcance de esta entrega. |
+| Interfaz auxiliar | Next.js 14 + TypeScript + Tailwind CSS + `@supabase/ssr` | Cliente web que invoca las funciones almacenadas vía PostgREST y cumple el segundo párrafo de R1 (interfaz de consulta del log de auditoría). Es un complemento al schema, no el sujeto de la entrega. |
+
+A continuación se describe brevemente esta interfaz, sin entrar en detalles de implementación que escapan al alcance del informe.
+
+#### Sobre la interfaz auxiliar
+
+El grupo desarrolló una aplicación web en **Next.js 14** (framework React con renderizado en servidor) con **TypeScript** para el tipado, **Tailwind CSS** para el estilado, y los clientes oficiales `@supabase/ssr` y `@supabase/supabase-js` para hablar con la base. El código vive en el directorio `frontend/` del repositorio y se despliega automáticamente en Vercel ante cada `push` a la rama principal.
+
+Su rol dentro del trabajo es doble. Por un lado, cubre el segundo párrafo de R1: ofrecer una interfaz desde la cual el personal del sistema puede consultar el log de auditoría. Por otro, sirve como vehículo de prueba para que el lector pueda observar la lógica almacenada en funcionamiento real (reservas, alquileres, devoluciones, mantenimientos) sin tener que invocar las funciones a mano desde `psql`. Todas las operaciones que realiza la aplicación pasan por los mismos `pa_*` y vistas documentados en este informe; la interfaz no contiene lógica de negocio propia, solo orquesta las llamadas y presenta los resultados.
+
+Su diseño detallado, sus rutas, sus componentes y su experiencia de usuario quedan fuera del alcance de esta entrega, cuyo eje es la base de datos.
 
 <a id="arquitectura-schema"></a>
 
