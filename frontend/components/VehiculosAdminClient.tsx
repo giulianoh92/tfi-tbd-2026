@@ -96,8 +96,8 @@ export function VehiculosAdminClient({
                     <td className="px-5 py-3 text-sm">
                       <Badge variant={badgeVariant(estado)}>{estado}</Badge>
                     </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-1">
+                    <td className="px-5 py-3 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-2">
                         <Button
                           type="button"
                           variant="ghost"

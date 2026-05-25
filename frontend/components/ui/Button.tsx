@@ -15,7 +15,7 @@ import { cn } from '@/lib/cn'
 const buttonVariants = cva(
   // Base: layout + tipografia + transicion + focus consistente
   [
-    'inline-flex items-center justify-center gap-2',
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap',
     'rounded-lg font-medium select-none',
     'transition-colors duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-default',
