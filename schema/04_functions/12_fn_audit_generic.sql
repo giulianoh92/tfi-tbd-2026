@@ -83,18 +83,29 @@ BEGIN
         v_id_registro := v_row_jsonb ->> v_pk_col;
     END IF;
 
-    -- Sprint 6 (B2.2): usuario_db = session_user, NO current_user.
-    --   * current_user devuelve el rol "efectivo" tras SECURITY DEFINER,
-    --     que es siempre el owner (postgres). Eso rompia la doble
-    --     identidad documentada (DB + JWT) porque la mitad de DB siempre
-    --     registraba 'postgres'.
-    --   * session_user devuelve el rol con el que se autentico la sesion
-    --     HTTP (authenticator -> authenticated/anon segun JWT, o quique
-    --     en una sesion psql del profesor, o postgres en apply.sh). Esto
-    --     es lo que el TFI documenta como "doble identidad: el rol
-    --     Postgres que abrio la sesion + el sub del JWT".
-    -- Ref: PostgreSQL docs "System Information Functions" -> session_user
-    -- vs current_user.
+    -- usuario_db: rol Postgres que ejecuto la operacion, con preferencia
+    -- por el JWT role claim sobre el session_user crudo.
+    --
+    -- Por que NO usamos solamente session_user:
+    --   Supabase abre todas las conexiones del pool PostgREST con el rol
+    --   `authenticator` y luego hace `SET ROLE <jwt.role>` por cada request
+    --   (authenticated/anon/service_role). `session_user` siempre devuelve
+    --   el rol original de la conexion = `authenticator`, perdiendo la
+    --   info del rol efectivo asignado segun el JWT.
+    --
+    -- Por que NO usamos solamente current_user:
+    --   Esta function corre con SECURITY DEFINER, por lo que `current_user`
+    --   queda fijado al owner = `postgres`. Eso rompia la doble identidad.
+    --
+    -- Solucion: leer la GUC `request.jwt.claim.role` que PostgREST setea
+    -- por request. Es request-scope, no role-scope, asi que sobrevive
+    -- el SECURITY DEFINER. Si no hay JWT (apply.sh, pg_cron, psql directo
+    -- del profesor como quique), caemos a session_user que captura el
+    -- rol real.
+    --
+    -- Doble identidad documentada en TFI:
+    --   usuario_db  = rol Postgres aplicado (authenticated/anon/quique/postgres)
+    --   usuario_app = sub del JWT = UUID del usuario logico en auth.users
     INSERT INTO audit_log (
         tabla,
         id_registro,
@@ -108,7 +119,14 @@ BEGIN
         TG_TABLE_NAME,
         v_id_registro,
         v_tipo_op,
-        session_user,
+        COALESCE(
+            NULLIF(current_setting('request.jwt.claim.role', true), ''),
+            NULLIF(
+                (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'),
+                ''
+            ),
+            session_user
+        ),
         v_usuario_app,
         v_old_jsonb,
         v_new_jsonb
