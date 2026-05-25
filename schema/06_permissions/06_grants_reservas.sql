@@ -1,15 +1,14 @@
--- Grants explicitos para las functions del Sprint 2 (R7, R8).
+-- Grants para las operaciones de reserva (R7, R8) y sus validaciones
+-- reutilizables.
 --
--- Comentario sobre redundancia: el bloque DO al final de 04_rls_policies.sql
--- hace `GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated`,
--- de modo que estas functions ya quedarian ejecutables aun sin este
--- archivo. Aun asi, dejamos los grants explicitos para que la grilla de
--- permisos por function quede legible en `\dp` y revisable en code review
--- (PLAN_IMPLEMENTACION.md §2.4).
+-- Redundancia explicita: el bloque DO al final de 04_rls_policies.sql hace
+-- `GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated`, asi
+-- que estas functions ya quedarian ejecutables sin este archivo. Se dejan
+-- los grants explicitos para que la grilla de permisos por function quede
+-- legible en `\dp` y revisable en code review.
 --
--- R11: convertidas de PROCEDURE a FUNCTION para exposicion via PostgREST RPC.
--- Idempotente: GRANT EXECUTE es seguro de reaplicar; no falla si ya esta
--- otorgado.
+-- Las functions estan declaradas como FUNCTION (no PROCEDURE) para que
+-- PostgREST las exponga via /rest/v1/rpc.
 
 -- pa_registrar_reserva: 5 IN obligatorios + 4 IN opcionales para garantia
 -- (tipo, titular, numero_tarjeta en texto plano, vencimiento). El grant
@@ -28,10 +27,12 @@ GRANT EXECUTE ON FUNCTION pa_cancelar_reserva(
 -- authenticated por si en el futuro se invocan desde otros procedures que
 -- usen SECURITY INVOKER. No hay riesgo: solo retornan VOID o lanzan
 -- EXCEPTION, no leen datos sensibles.
--- Sprint 6 (B4.2): fn_validar_periodo ahora acepta tolerancia opcional para
--- el caso walk-in. El grant referencia la signature completa (incluyendo el
--- parametro con DEFAULT) porque Postgres identifica functions por su firma
--- exacta de tipos, no por el subconjunto sin defaults.
+--
+-- fn_validar_periodo acepta una tolerancia opcional (INTERVAL) para
+-- diferenciar reservas (granularidad dia) de walk-in (timestamp con
+-- holgura). El grant referencia la signature completa incluyendo el
+-- parametro con DEFAULT porque Postgres identifica functions por su
+-- firma exacta de tipos.
 GRANT EXECUTE ON FUNCTION fn_validar_periodo(TIMESTAMP, TIMESTAMP, INTERVAL) TO authenticated;
 GRANT EXECUTE ON FUNCTION fn_validar_cliente_activo(BIGINT)               TO authenticated;
 GRANT EXECUTE ON FUNCTION fn_validar_vehiculo_operativo(BIGINT)           TO authenticated;
