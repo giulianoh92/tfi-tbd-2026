@@ -66,10 +66,38 @@ export type Database = {
             referencedColumns: ["id_cliente"]
           },
           {
+            foreignKeyName: "fk_alquiler_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_cliente"]
+          },
+          {
             foreignKeyName: "fk_alquiler_reserva"
             columns: ["id_reserva"]
             isOneToOne: true
             referencedRelation: "reserva"
+            referencedColumns: ["id_reserva"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_reserva"
+            columns: ["id_reserva"]
+            isOneToOne: true
+            referencedRelation: "vw_reservas_pendientes"
             referencedColumns: ["id_reserva"]
           },
           {
@@ -80,6 +108,34 @@ export type Database = {
             referencedColumns: ["id_sucursal"]
           },
           {
+            foreignKeyName: "fk_alquiler_sucursal_devolucion"
+            columns: ["id_sucursal_devolucion"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_sucursal_devolucion"
+            columns: ["id_sucursal_devolucion"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_sucursal_devolucion"
+            columns: ["id_sucursal_devolucion"]
+            isOneToOne: false
+            referencedRelation: "vw_facturacion_mensual"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_sucursal_devolucion"
+            columns: ["id_sucursal_devolucion"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
+            referencedColumns: ["id_sucursal_actual"]
+          },
+          {
             foreignKeyName: "fk_alquiler_tarifa"
             columns: ["id_tarifa"]
             isOneToOne: false
@@ -87,10 +143,45 @@ export type Database = {
             referencedColumns: ["id_tarifa"]
           },
           {
+            foreignKeyName: "fk_alquiler_tarifa"
+            columns: ["id_tarifa"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_tarifa"]
+          },
+          {
             foreignKeyName: "fk_alquiler_vehiculo"
             columns: ["id_vehiculo"]
             isOneToOne: false
             referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_alquiler_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
             referencedColumns: ["id_vehiculo"]
           },
         ]
@@ -215,6 +306,20 @@ export type Database = {
             referencedColumns: ["id_alquiler"]
           },
           {
+            foreignKeyName: "fk_devolucion_vencida_alquiler"
+            columns: ["id_alquiler"]
+            isOneToOne: true
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_alquiler"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_alquiler"
+            columns: ["id_alquiler"]
+            isOneToOne: true
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_alquiler"]
+          },
+          {
             foreignKeyName: "fk_devolucion_vencida_cliente"
             columns: ["id_cliente"]
             isOneToOne: false
@@ -222,10 +327,59 @@ export type Database = {
             referencedColumns: ["id_cliente"]
           },
           {
+            foreignKeyName: "fk_devolucion_vencida_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_cliente"]
+          },
+          {
             foreignKeyName: "fk_devolucion_vencida_vehiculo"
             columns: ["id_vehiculo"]
             isOneToOne: false
             referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_devolucion_vencida_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
             referencedColumns: ["id_vehiculo"]
           },
         ]
@@ -297,10 +451,45 @@ export type Database = {
             referencedColumns: ["id_alquiler"]
           },
           {
+            foreignKeyName: "fk_factura_alquiler"
+            columns: ["id_alquiler"]
+            isOneToOne: true
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_alquiler"]
+          },
+          {
+            foreignKeyName: "fk_factura_alquiler"
+            columns: ["id_alquiler"]
+            isOneToOne: true
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_alquiler"]
+          },
+          {
             foreignKeyName: "fk_factura_cliente"
             columns: ["id_cliente"]
             isOneToOne: false
             referencedRelation: "cliente"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_factura_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_factura_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_factura_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
             referencedColumns: ["id_cliente"]
           },
         ]
@@ -342,6 +531,13 @@ export type Database = {
             columns: ["id_reserva"]
             isOneToOne: false
             referencedRelation: "reserva"
+            referencedColumns: ["id_reserva"]
+          },
+          {
+            foreignKeyName: "fk_garantia_reserva"
+            columns: ["id_reserva"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
             referencedColumns: ["id_reserva"]
           },
         ]
@@ -386,6 +582,34 @@ export type Database = {
             referencedRelation: "vehiculo"
             referencedColumns: ["id_vehiculo"]
           },
+          {
+            foreignKeyName: "fk_historial_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_historial_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_historial_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_historial_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
+            referencedColumns: ["id_vehiculo"]
+          },
         ]
       }
       imagen_vehiculo: {
@@ -413,6 +637,34 @@ export type Database = {
             columns: ["id_vehiculo"]
             isOneToOne: false
             referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_imagen_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_imagen_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_imagen_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_imagen_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
             referencedColumns: ["id_vehiculo"]
           },
         ]
@@ -457,6 +709,34 @@ export type Database = {
             referencedRelation: "vehiculo"
             referencedColumns: ["id_vehiculo"]
           },
+          {
+            foreignKeyName: "fk_mantenimiento_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_mantenimiento_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_mantenimiento_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_mantenimiento_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
+            referencedColumns: ["id_vehiculo"]
+          },
         ]
       }
       reserva: {
@@ -499,6 +779,27 @@ export type Database = {
             referencedColumns: ["id_cliente"]
           },
           {
+            foreignKeyName: "fk_reserva_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_reserva_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_cliente"]
+          },
+          {
+            foreignKeyName: "fk_reserva_cliente"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_cliente"]
+          },
+          {
             foreignKeyName: "fk_reserva_tipo"
             columns: ["id_tipo_reserva"]
             isOneToOne: false
@@ -506,10 +807,45 @@ export type Database = {
             referencedColumns: ["id_tipo_reserva"]
           },
           {
+            foreignKeyName: "fk_reserva_tipo"
+            columns: ["id_tipo_reserva"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_tipo_reserva"]
+          },
+          {
             foreignKeyName: "fk_reserva_vehiculo"
             columns: ["id_vehiculo"]
             isOneToOne: false
             referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_reserva_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_reserva_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_reserva_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_reserva_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
             referencedColumns: ["id_vehiculo"]
           },
         ]
@@ -588,6 +924,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sucursal"
             referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_tarifa_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_tarifa_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_tarifa_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_facturacion_mensual"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_tarifa_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
+            referencedColumns: ["id_sucursal_actual"]
           },
           {
             foreignKeyName: "fk_tarifa_tipo"
@@ -671,10 +1035,66 @@ export type Database = {
             referencedColumns: ["id_sucursal"]
           },
           {
+            foreignKeyName: "fk_ubicacion_vehiculo_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_facturacion_mensual"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
+            referencedColumns: ["id_sucursal_actual"]
+          },
+          {
             foreignKeyName: "fk_ubicacion_vehiculo_vehiculo"
             columns: ["id_vehiculo"]
             isOneToOne: false
             referencedRelation: "vehiculo"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_reservas_pendientes"
+            referencedColumns: ["id_vehiculo"]
+          },
+          {
+            foreignKeyName: "fk_ubicacion_vehiculo_vehiculo"
+            columns: ["id_vehiculo"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
             referencedColumns: ["id_vehiculo"]
           },
         ]
@@ -753,6 +1173,34 @@ export type Database = {
             referencedColumns: ["id_sucursal"]
           },
           {
+            foreignKeyName: "fk_vehiculo_sucursal"
+            columns: ["id_sucursal_origen"]
+            isOneToOne: false
+            referencedRelation: "vw_alquileres_activos"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_vehiculo_sucursal"
+            columns: ["id_sucursal_origen"]
+            isOneToOne: false
+            referencedRelation: "vw_devoluciones_vencidas"
+            referencedColumns: ["id_sucursal_origen"]
+          },
+          {
+            foreignKeyName: "fk_vehiculo_sucursal"
+            columns: ["id_sucursal_origen"]
+            isOneToOne: false
+            referencedRelation: "vw_facturacion_mensual"
+            referencedColumns: ["id_sucursal"]
+          },
+          {
+            foreignKeyName: "fk_vehiculo_sucursal"
+            columns: ["id_sucursal_origen"]
+            isOneToOne: false
+            referencedRelation: "vw_vehiculos_disponibles"
+            referencedColumns: ["id_sucursal_actual"]
+          },
+          {
             foreignKeyName: "fk_vehiculo_tipo"
             columns: ["id_tipo"]
             isOneToOne: false
@@ -763,7 +1211,147 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_alquileres_activos: {
+        Row: {
+          cliente_apellido: string | null
+          cliente_dni: string | null
+          cliente_nombre: string | null
+          duracion_actual: string | null
+          estado: string | null
+          fecha_devolucion_real: string | null
+          fecha_fin_prevista: string | null
+          fecha_inicio: string | null
+          id_alquiler: number | null
+          id_cliente: number | null
+          id_sucursal_origen: number | null
+          id_tarifa: number | null
+          id_vehiculo: number | null
+          km_fin: number | null
+          km_inicio: number | null
+          marca: string | null
+          modelo: string | null
+          patente: string | null
+          porcentaje_recargo: number | null
+          precio_por_dia: number | null
+          sucursal_ciudad: string | null
+          sucursal_origen: string | null
+          tiempo_restante: string | null
+        }
+        Relationships: []
+      }
+      vw_audit_log_legible: {
+        Row: {
+          fecha_operacion: string | null
+          id_audit: number | null
+          id_registro: string | null
+          operacion: string | null
+          rol_efectivo: string | null
+          rol_postgres: string | null
+          tabla: string | null
+          usuario_aplicacion: string | null
+          valores_anteriores: Json | null
+          valores_nuevos: Json | null
+        }
+        Insert: {
+          fecha_operacion?: string | null
+          id_audit?: number | null
+          id_registro?: string | null
+          operacion?: never
+          rol_efectivo?: string | null
+          rol_postgres?: string | null
+          tabla?: string | null
+          usuario_aplicacion?: string | null
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Update: {
+          fecha_operacion?: string | null
+          id_audit?: number | null
+          id_registro?: string | null
+          operacion?: never
+          rol_efectivo?: string | null
+          rol_postgres?: string | null
+          tabla?: string | null
+          usuario_aplicacion?: string | null
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Relationships: []
+      }
+      vw_devoluciones_vencidas: {
+        Row: {
+          cliente: string | null
+          dni: string | null
+          email: string | null
+          fecha_deteccion: string | null
+          fecha_fin_prevista: string | null
+          horas_vencidas: number | null
+          id_alquiler: number | null
+          id_cliente: number | null
+          id_devolucion_vencida: number | null
+          id_sucursal_origen: number | null
+          id_vehiculo: number | null
+          notificado: boolean | null
+          patente: string | null
+          sucursal_origen: string | null
+          telefono: string | null
+          vehiculo: string | null
+        }
+        Relationships: []
+      }
+      vw_facturacion_mensual: {
+        Row: {
+          facturas_emitidas: number | null
+          id_sucursal: number | null
+          mes: string | null
+          sucursal: string | null
+          ticket_promedio: number | null
+          total_costo_base: number | null
+          total_facturado: number | null
+          total_recargos: number | null
+        }
+        Relationships: []
+      }
+      vw_reservas_pendientes: {
+        Row: {
+          cliente_apellido: string | null
+          cliente_dni: string | null
+          cliente_nombre: string | null
+          estado: string | null
+          fecha_creacion: string | null
+          fecha_fin_prevista: string | null
+          fecha_inicio: string | null
+          garantia_activa: boolean | null
+          id_cliente: number | null
+          id_reserva: number | null
+          id_tipo_reserva: number | null
+          id_vehiculo: number | null
+          marca: string | null
+          modelo: string | null
+          patente: string | null
+          requiere_garantia: boolean | null
+          tipo_reserva: string | null
+        }
+        Relationships: []
+      }
+      vw_vehiculos_disponibles: {
+        Row: {
+          anio: number | null
+          detalle_confort: string | null
+          id_sucursal_actual: number | null
+          id_vehiculo: number | null
+          km_actuales: number | null
+          marca: string | null
+          modelo: string | null
+          patente: string | null
+          porcentaje_recargo: number | null
+          precio_por_dia: number | null
+          sucursal_actual: string | null
+          sucursal_ciudad: string | null
+          tipo: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       fn_auth_uid: { Args: never; Returns: string }
@@ -823,12 +1411,12 @@ export type Database = {
       }
       pa_finalizar_alquiler: {
         Args: {
-          p_estado_destino_vehiculo: string
+          p_estado_destino_vehiculo?: string
           p_id_alquiler: number
           p_id_sucursal_devolucion: number
-          p_id_taller: number
+          p_id_taller?: number
           p_km_fin: number
-          p_observaciones: string
+          p_observaciones?: string
         }
         Returns: Record<string, unknown>
       }
@@ -858,11 +1446,11 @@ export type Database = {
       }
       pa_registrar_cliente_walkin: {
         Args: {
+          p_apellido: string
+          p_direccion?: string
           p_dni: string
           p_nombre: string
-          p_apellido: string
           p_telefono?: string
-          p_direccion?: string
         }
         Returns: Record<string, unknown>
       }
@@ -874,6 +1462,10 @@ export type Database = {
         Args: {
           p_fecha_fin: string
           p_fecha_inicio: string
+          p_garantia_numero_tarjeta?: string
+          p_garantia_tipo?: string
+          p_garantia_titular?: string
+          p_garantia_vencimiento?: string
           p_id_cliente: number
           p_id_tipo_reserva: number
           p_id_vehiculo: number
