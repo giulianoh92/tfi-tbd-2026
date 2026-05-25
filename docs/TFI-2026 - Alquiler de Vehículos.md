@@ -768,7 +768,7 @@ Su diseño detallado, sus rutas, sus componentes y su experiencia de usuario que
 
 ### Arquitectura del schema
 
-El repositorio organiza los objetos DDL en directorios numerados que se aplican en orden estricto mediante el script `scripts/apply.sh`. El orden refleja las dependencias topológicas: extensiones primero, tablas antes que constraints, funciones antes que triggers, permisos al final.
+El repositorio organiza los objetos DDL en directorios numerados que se aplican en orden estricto. El orden refleja las dependencias topológicas: extensiones primero, tablas antes que constraints, funciones antes que triggers, permisos al final.
 
 | Directorio | Contenido | Cantidad |
 | ----- | ----- | :---: |
