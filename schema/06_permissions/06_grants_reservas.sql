@@ -23,6 +23,13 @@ GRANT EXECUTE ON FUNCTION pa_cancelar_reserva(
     BIGINT, TEXT
 ) TO authenticated;
 
+-- pa_actualizar_cliente: el cliente edita sus propios datos personales.
+-- La fila objetivo se resuelve desde el JWT dentro del SP, asi que no
+-- hay riesgo de cross-tenant aunque el grant sea generico.
+GRANT EXECUTE ON FUNCTION pa_actualizar_cliente(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR
+) TO authenticated;
+
 -- Tambien dejamos disponibles las funciones de validacion reusables a
 -- authenticated por si en el futuro se invocan desde otros procedures que
 -- usen SECURITY INVOKER. No hay riesgo: solo retornan VOID o lanzan
