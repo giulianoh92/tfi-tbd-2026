@@ -1426,7 +1426,7 @@ export type Database = {
           p_fecha_inicio: string
           p_id_cliente: number
           p_id_reserva: number
-          p_id_tarifa: number
+          p_id_sucursal_retiro: number
           p_id_vehiculo: number
           p_km_inicio: number
         }
@@ -1455,7 +1455,11 @@ export type Database = {
         Returns: Record<string, unknown>
       }
       pa_registrar_devolucion_mantenimiento: {
-        Args: { p_id_vehiculo: number; p_km_salida_taller: number }
+        Args: {
+          p_id_vehiculo: number
+          p_km_salida_taller: number
+          p_observaciones?: string
+        }
         Returns: Record<string, unknown>
       }
       pa_registrar_reserva: {

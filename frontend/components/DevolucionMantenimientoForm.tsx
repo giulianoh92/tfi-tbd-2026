@@ -32,6 +32,7 @@ export function DevolucionMantenimientoForm({ idVehiculo, kmActuales }: Props) {
   const router = useRouter()
 
   const [kmSalida, setKmSalida] = useState<string>('')
+  const [observaciones, setObservaciones] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<{ km?: string }>({})
@@ -58,17 +59,21 @@ export function DevolucionMantenimientoForm({ idVehiculo, kmActuales }: Props) {
       kmSalidaNum = parsed
     }
 
+    const obsTrimmed = observaciones.trim()
+
     setLoading(true)
-    // Pasamos null explicito si no se reporta km — undefined puede causar que
-    // postgrest omita el param y caiga al default 'NULL' de todos modos, pero
-    // null es mas seguro y explicito. Cast a FnArgs porque el types regenerado
-    // marca p_km_salida_taller como required, pero el SP acepta NULL.
+    // Pasamos null explicito si no se reporta km / observaciones — undefined
+    // puede causar que postgrest omita el param y caiga al default NULL de
+    // todos modos, pero null es mas seguro y explicito. Cast a FnArgs porque
+    // los types regenerados marcan los params como required mientras el SP
+    // los acepta NULL via DEFAULT.
     const { data, error: rpcError } = await rpcCall(
       supabase,
       'pa_registrar_devolucion_mantenimiento',
       {
         p_id_vehiculo: idVehiculo,
         p_km_salida_taller: kmSalidaNum,
+        p_observaciones: obsTrimmed === '' ? null : obsTrimmed,
       } as FnArgs<'pa_registrar_devolucion_mantenimiento'>,
     )
 
@@ -124,6 +129,21 @@ export function DevolucionMantenimientoForm({ idVehiculo, kmActuales }: Props) {
               el taller no reportó nuevos km, dejalo vacío.
             </p>
           )}
+        </div>
+
+        <div>
+          <Label htmlFor="observaciones">Observaciones del taller</Label>
+          <textarea
+            id="observaciones"
+            value={observaciones}
+            onChange={(e) => setObservaciones(e.target.value)}
+            placeholder="Resumen del servicio: repuestos cambiados, diagnóstico, etc. (opcional)"
+            rows={3}
+            className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          <p className="mt-1 text-xs text-muted-fg">
+            Se apenda al texto inicial del envío para preservar el historial completo.
+          </p>
         </div>
 
         {errorMsg && (

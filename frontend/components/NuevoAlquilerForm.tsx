@@ -320,10 +320,19 @@ export function NuevoAlquilerForm({
       p_id_reserva: number | null
       p_id_cliente: number
       p_id_vehiculo: number
-      p_id_tarifa: number
+      p_id_sucursal_retiro: number
       p_fecha_inicio: string
       p_fecha_fin: string
       p_km_inicio: number
+    }
+
+    // La sucursal de retiro la elige el operador. En walk-in es la
+    // sucursal cargada arriba (idSucursal); en flujo con reserva, la
+    // sucursal de retiro coincide con la sucursal donde fisicamente
+    // esta el vehiculo de la reserva (ubicacion vigente).
+    if (idSucursal == null) {
+      setError('Seleccioná una sucursal de retiro.')
+      return
     }
 
     if (modo === 'con_reserva') {
@@ -331,11 +340,16 @@ export function NuevoAlquilerForm({
         setError('Seleccioná una reserva.')
         return
       }
+      const sucursalVehiculo = ubicacionPorVehiculo.get(reservaSel.id_vehiculo)
+      if (sucursalVehiculo == null) {
+        setError('El vehiculo de la reserva no tiene ubicación vigente registrada.')
+        return
+      }
       args = {
         p_id_reserva: idReserva,
         p_id_cliente: reservaSel.id_cliente,
         p_id_vehiculo: reservaSel.id_vehiculo,
-        p_id_tarifa: tarifaAplicable.id_tarifa,
+        p_id_sucursal_retiro: sucursalVehiculo,
         p_fecha_inicio: reservaSel.fecha_inicio,
         p_fecha_fin: reservaSel.fecha_fin_prevista,
         p_km_inicio: kmInicioNum,
@@ -353,7 +367,7 @@ export function NuevoAlquilerForm({
         p_id_reserva: null,
         p_id_cliente: idClienteW,
         p_id_vehiculo: idVehiculoW,
-        p_id_tarifa: tarifaAplicable.id_tarifa,
+        p_id_sucursal_retiro: idSucursal,
         p_fecha_inicio: fechaInicioW,
         p_fecha_fin: fechaFinW,
         p_km_inicio: kmInicioNum,
@@ -364,6 +378,8 @@ export function NuevoAlquilerForm({
     // p_id_reserva puede ser null cuando es walk-in; el SP lo acepta y los
     // types lo declaran como `number` (no `number | null`) — discrepancia
     // entre schema real y types regenerados. Casteamos para sortearlo.
+    // Ya no se manda p_id_tarifa: el procedure la resuelve internamente
+    // por (sucursal_origen del vehiculo, tipo del vehiculo).
     const { data, error: rpcError } = await rpcCall(
       supabase,
       'pa_registrar_alquiler',
