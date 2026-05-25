@@ -856,6 +856,16 @@ export type Database = {
         }
         Returns: Record<string, unknown>
       }
+      pa_registrar_cliente_walkin: {
+        Args: {
+          p_dni: string
+          p_nombre: string
+          p_apellido: string
+          p_telefono?: string
+          p_direccion?: string
+        }
+        Returns: Record<string, unknown>
+      }
       pa_registrar_devolucion_mantenimiento: {
         Args: { p_id_vehiculo: number; p_km_salida_taller: number }
         Returns: Record<string, unknown>
