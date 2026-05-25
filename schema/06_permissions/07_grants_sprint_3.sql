@@ -32,3 +32,9 @@ GRANT EXECUTE ON FUNCTION pa_actualizar_vehiculo(
 GRANT EXECUTE ON FUNCTION pa_baja_vehiculo(
     BIGINT, TEXT
 ) TO authenticated;
+
+-- Sprint 6 hotfix UX — alta de cliente walk-in (presencial sin cuenta online).
+-- fn_es_staff() dentro del body bloquea no-staff (defensa en profundidad).
+GRANT EXECUTE ON FUNCTION pa_registrar_cliente_walkin(
+    VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT
+) TO authenticated;
