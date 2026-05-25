@@ -42,11 +42,21 @@ DROP FUNCTION IF EXISTS pa_finalizar_alquiler(
     BIGINT, INTEGER, BIGINT, VARCHAR, BIGINT, TEXT
 ) CASCADE;
 
--- Nota Sprint 5 / deploy fix: Postgres no permite OUT parameters despues
--- de IN con DEFAULT. Por eso los 3 IN opcionales quedaron sin DEFAULT y el
--- caller debe pasarlos explicitamente (NULL cuando no aplique). Si se quisiera
--- recuperar el comportamiento "opcional", la unica via es invocar la funcion
--- con notacion nombrada: SELECT pa_finalizar_alquiler(p_id_alquiler => ..., ...).
+-- Hotfix Sprint 6: los 3 ultimos IN parameters van con DEFAULT NULL para
+-- que el caller mas frecuente (cierre con destino "disponible", flujo
+-- normal sin envio a taller) pueda invocar la function solo con los 3
+-- args obligatorios via PostgREST RPC.
+--
+-- Aclaracion sobre comentario previo: NO es cierto que Postgres prohiba
+-- OUT despues de IN con DEFAULT. La regla real es que los IN con DEFAULT
+-- deben ir AL FINAL de la lista de IN params (los OUT son separados y
+-- pueden ir despues). Por ende esta firma es valida.
+--
+-- Llamadas validas desde PostgREST:
+--   * { p_id_alquiler, p_km_fin, p_id_sucursal_devolucion }
+--       -> destino "disponible" (default), sin mantenimiento
+--   * Mismos 3 + { p_estado_destino_vehiculo:'en_mantenimiento', p_id_taller, p_observaciones }
+--       -> destino mantenimiento al cierre
 --
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
 -- via /rest/v1/rpc. Ver JUSTIFICACION.md §R11.
@@ -54,9 +64,9 @@ CREATE OR REPLACE FUNCTION pa_finalizar_alquiler(
     p_id_alquiler              BIGINT,
     p_km_fin                   INTEGER,
     p_id_sucursal_devolucion   BIGINT,
-    p_estado_destino_vehiculo  VARCHAR,
-    p_id_taller                BIGINT,
-    p_observaciones            TEXT,
+    p_estado_destino_vehiculo  VARCHAR DEFAULT NULL,
+    p_id_taller                BIGINT  DEFAULT NULL,
+    p_observaciones            TEXT    DEFAULT NULL,
     OUT p_estado               TEXT,
     OUT p_mensaje              TEXT,
     OUT p_id_factura           BIGINT
