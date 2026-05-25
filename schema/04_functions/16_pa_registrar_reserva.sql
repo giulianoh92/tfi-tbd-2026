@@ -27,12 +27,6 @@
 -- numero de tarjeta se almacena hasheado con bcrypt (pgcrypto) para no
 -- guardar el PAN en claro. El frontend nunca debe ver el hash; solo envia el
 -- numero en texto plano por HTTPS y se descarta del lado servidor.
---
--- DROP previo: cambiar firma agregando IN params requiere recrear la
--- function (Postgres no permite cambiar parametros por CREATE OR REPLACE).
-DROP FUNCTION IF EXISTS pa_registrar_reserva(
-    BIGINT, BIGINT, BIGINT, TIMESTAMP, TIMESTAMP
-) CASCADE;
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
 -- via /rest/v1/rpc.

@@ -11,8 +11,13 @@
 -- Idempotente: GRANT EXECUTE es seguro de reaplicar; no falla si ya esta
 -- otorgado.
 
+-- pa_registrar_reserva: 5 IN obligatorios + 4 IN opcionales para garantia
+-- (tipo, titular, numero_tarjeta en texto plano, vencimiento). El grant
+-- referencia la firma completa porque Postgres identifica functions por su
+-- tipo de parametros, no por el subconjunto sin defaults.
 GRANT EXECUTE ON FUNCTION pa_registrar_reserva(
-    BIGINT, BIGINT, BIGINT, TIMESTAMP, TIMESTAMP
+    BIGINT, BIGINT, BIGINT, TIMESTAMP, TIMESTAMP,
+    VARCHAR, VARCHAR, TEXT, DATE
 ) TO authenticated;
 
 GRANT EXECUTE ON FUNCTION pa_cancelar_reserva(
