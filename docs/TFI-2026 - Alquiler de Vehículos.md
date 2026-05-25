@@ -616,24 +616,25 @@ Cada caso de uso opera sobre un subconjunto del diccionario de datos. La columna
 
 <style>
 .cu-mapping-table table { table-layout: fixed; }
-.cu-mapping-table th:nth-child(1), .cu-mapping-table td:nth-child(1) { width: 11%; }
-.cu-mapping-table th:nth-child(2), .cu-mapping-table td:nth-child(2) { width: 23%; }
-.cu-mapping-table th:nth-child(3), .cu-mapping-table td:nth-child(3) { width: 25%; }
-.cu-mapping-table th:nth-child(4), .cu-mapping-table td:nth-child(4) { width: 41%; }
+.cu-mapping-table th:nth-child(1), .cu-mapping-table td:nth-child(1) { width: 8%; }
+.cu-mapping-table th:nth-child(2), .cu-mapping-table td:nth-child(2) { width: 18%; }
+.cu-mapping-table th:nth-child(3), .cu-mapping-table td:nth-child(3) { width: 20%; }
+.cu-mapping-table th:nth-child(4), .cu-mapping-table td:nth-child(4) { width: 20%; }
+.cu-mapping-table th:nth-child(5), .cu-mapping-table td:nth-child(5) { width: 34%; }
 </style>
 
 <div class="cu-mapping-table">
 
-| ID | Entidades involucradas | Operaciones | Lógica de negocio crítica |
-| ----- | ----- | ----- | ----- |
-| CU-01 | usuario, cliente | C usuario, C cliente | Unicidad de username, email y dni. Hash de password. Vinculación 1:1 usuario↔cliente. |
-| CU-02 | vehiculo, imagen_vehiculo, tipo_vehiculo, sucursal, tarifa, ubicacion_vehiculo, estado_vehiculo | R todas | Filtros por sucursal/tipo/fechas. Resolución de tarifa por (sucursal, tipo). Solo vehiculos cuyo `id_estado` corresponde a 'disponible' y cuya ubicación vigente coincide con la sucursal de retiro deseada. |
-| CU-03 | reserva, tipo_reserva, garantia_reserva, vehiculo, cliente | C reserva, C garantia_reserva, R tipo_reserva, R vehiculo, R cliente | Validación de superposición contra otras reservas y alquileres activos del mismo vehiculo. Si `tipo_reserva.requiere_garantia = true`, se exige carga de tarjeta en `garantia_reserva`. estado inicial='pendiente'. |
-| CU-04 | reserva, garantia_reserva | U reserva, U garantia_reserva | Cambio de estado a 'cancelada'. Solo reservas en estado 'pendiente'. Libera disponibilidad. La garantía asociada (si existía) se marca como inactiva (no se elimina, para preservar trazabilidad). |
-| CU-05 | alquiler, reserva, vehiculo, tarifa, cliente, ubicacion_vehiculo, historial_estado_vehiculo | C alquiler, U reserva, U vehiculo, C historial_estado_vehiculo, R tarifa, R cliente, R ubicacion_vehiculo | Registro de km_inicio. Validación de que la ubicación física vigente del vehículo coincide con la sucursal de retiro. Resolución de `id_tarifa` por (sucursal_origen, tipo). Si proviene de reserva, marcarla como 'concretada'. Trigger: cambio de estado a 'alquilado' (registrado en `historial_estado_vehiculo` y propagado a `vehiculo.id_estado`). |
-| CU-06 | alquiler, factura, vehiculo, tarifa, ubicacion_vehiculo, historial_estado_vehiculo | U alquiler, C factura, U vehiculo, C historial_estado_vehiculo, U ubicacion_vehiculo (cierra registro previo, abre nuevo en sucursal de devolución), R tarifa | Registro de km_fin, fecha_devolucion_real y `id_sucursal_devolucion`. Cálculo de días, horas_excedidas, costo_base, recargo_excedente y total. Snapshot de `precio_por_dia` y `porcentaje_recargo` copiados desde `tarifa` en el momento de emisión. Triggers: cambio de estado a 'disponible' y actualización de `ubicacion_vehiculo` con la sucursal de devolución (que puede diferir de la de origen). |
-| CU-07 | mantenimiento, vehiculo, taller, historial_estado_vehiculo | C mantenimiento, U vehiculo, C historial_estado_vehiculo, R taller | Validación de que `vehiculo.id_estado` no es 'alquilado'. Trigger: cambio de estado a 'en_mantenimiento'. La ubicación física no se modifica (el vehículo sigue asociado a la sucursal donde estaba). |
-| CU-08 | mantenimiento, vehiculo, historial_estado_vehiculo | U mantenimiento, U vehiculo, C historial_estado_vehiculo | Registro de fecha_devolucion y observaciones. Trigger: cambio de estado a 'disponible'. |
+| ID | Caso de uso | Entidades involucradas | Operaciones | Lógica de negocio crítica |
+| ----- | ----- | ----- | ----- | ----- |
+| CU-01 | Registrar cuenta de cliente | usuario, cliente | C usuario, C cliente | Unicidad de username, email y dni. Hash de password. Vinculación 1:1 usuario↔cliente. |
+| CU-02 | Consultar catálogo y disponibilidad | vehiculo, imagen_vehiculo, tipo_vehiculo, sucursal, tarifa, ubicacion_vehiculo, estado_vehiculo | R todas | Filtros por sucursal/tipo/fechas. Resolución de tarifa por (sucursal, tipo). Solo vehiculos cuyo `id_estado` corresponde a 'disponible' y cuya ubicación vigente coincide con la sucursal de retiro deseada. |
+| CU-03 | Reservar vehículo online | reserva, tipo_reserva, garantia_reserva, vehiculo, cliente | C reserva, C garantia_reserva, R tipo_reserva, R vehiculo, R cliente | Validación de superposición contra otras reservas y alquileres activos del mismo vehiculo. Si `tipo_reserva.requiere_garantia = true`, se exige carga de tarjeta en `garantia_reserva`. estado inicial='pendiente'. |
+| CU-04 | Cancelar reserva | reserva, garantia_reserva | U reserva, U garantia_reserva | Cambio de estado a 'cancelada'. Solo reservas en estado 'pendiente'. Libera disponibilidad. La garantía asociada (si existía) se marca como inactiva (no se elimina, para preservar trazabilidad). |
+| CU-05 | Iniciar alquiler (retiro del vehículo) | alquiler, reserva, vehiculo, tarifa, cliente, ubicacion_vehiculo, historial_estado_vehiculo | C alquiler, U reserva, U vehiculo, C historial_estado_vehiculo, R tarifa, R cliente, R ubicacion_vehiculo | Registro de km_inicio. Validación de que la ubicación física vigente del vehículo coincide con la sucursal de retiro. Resolución de `id_tarifa` por (sucursal_origen, tipo). Si proviene de reserva, marcarla como 'concretada'. Trigger: cambio de estado a 'alquilado' (registrado en `historial_estado_vehiculo` y propagado a `vehiculo.id_estado`). |
+| CU-06 | Finalizar alquiler y generar factura | alquiler, factura, vehiculo, tarifa, ubicacion_vehiculo, historial_estado_vehiculo | U alquiler, C factura, U vehiculo, C historial_estado_vehiculo, U ubicacion_vehiculo (cierra registro previo, abre nuevo en sucursal de devolución), R tarifa | Registro de km_fin, fecha_devolucion_real y `id_sucursal_devolucion`. Cálculo de días, horas_excedidas, costo_base, recargo_excedente y total. Snapshot de `precio_por_dia` y `porcentaje_recargo` copiados desde `tarifa` en el momento de emisión. Triggers: cambio de estado a 'disponible' y actualización de `ubicacion_vehiculo` con la sucursal de devolución (que puede diferir de la de origen). |
+| CU-07 | Enviar vehículo a mantenimiento | mantenimiento, vehiculo, taller, historial_estado_vehiculo | C mantenimiento, U vehiculo, C historial_estado_vehiculo, R taller | Validación de que `vehiculo.id_estado` no es 'alquilado'. Trigger: cambio de estado a 'en_mantenimiento'. La ubicación física no se modifica (el vehículo sigue asociado a la sucursal donde estaba). |
+| CU-08 | Registrar devolución de mantenimiento | mantenimiento, vehiculo, historial_estado_vehiculo | U mantenimiento, U vehiculo, C historial_estado_vehiculo | Registro de fecha_devolucion y observaciones. Trigger: cambio de estado a 'disponible'. |
 
 </div>
 
