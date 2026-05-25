@@ -717,7 +717,7 @@ Se desarrollan a continuación los casos de uso de mayor complejidad, dado que c
 
 La Etapa 2 traduce el modelo conceptual de la Etapa 1 a DDL ejecutable y a la lógica de negocio que sostiene los casos de uso identificados. El motor elegido es **PostgreSQL 17.6** sobre la plataforma **BaaS** (*Backend-as-a-Service*) **Supabase**.
 
-Antes de profundizar conviene fijar un término que recorrerá toda la sección. En este informe se usará **schema** para referirse al *conjunto declarativo de objetos de la base —tablas, vistas, funciones, disparadores, índices y permisos— que define su estructura*. En PostgreSQL la palabra también nombra un **namespace** lógico dentro de la base (`public`, `auth`, etc.); cuando aparezca en ese segundo sentido se indicará explícitamente. El directorio `schema/` del repositorio reúne los archivos `.sql` que, ejecutados en orden, materializan ese conjunto.
+Antes de profundizar conviene fijar un término que recorrerá toda la sección. En este informe se usará **schema** para referirse al *conjunto declarativo de objetos de la base —tablas, vistas, funciones, disparadores, índices y permisos— que define su estructura*. En PostgreSQL la palabra también nombra un **namespace** lógico dentro de la base (`public`, `auth`, etc.); cuando aparezca en ese segundo sentido se indicará explícitamente. Los archivos `.sql` que acompañan esta entrega, agrupados en módulos numerados, materializan ese conjunto cuando se aplican en orden.
 
 La motivación de esta combinación es doble. Por un lado, PostgreSQL aporta el SGBD relacional *open-source* más completo del mercado, con extensiones nativas como `btree_gist`, `pg_cron` y `pgcrypto` que permiten implementar restricciones temporales, tareas programadas y *hashing* sin dependencias externas. Por otro, Supabase suma sobre el mismo motor un conjunto de servicios listos para usar: una API REST autogenerada (**PostgREST**, *API REST que PostgreSQL expone automáticamente a partir del schema, sin requerir capa de servicios escrita a mano*), un servicio de autenticación con **JWT** (*JSON Web Token: token firmado que transporta la identidad y los claims del usuario entre el cliente y el servidor*) provisto por GoTrue, políticas declarativas de seguridad a nivel de fila (**RLS**, *Row-Level Security: filtrado de filas a nivel del motor, donde cada `SELECT` aplica una política que decide qué filas puede ver el usuario actual, sin pasar por código de aplicación*) y un esquema `auth` preconfigurado.
 
@@ -758,7 +758,7 @@ A continuación se describe brevemente esta interfaz, sin entrar en detalles de 
 
 #### Sobre la interfaz auxiliar
 
-El grupo desarrolló una aplicación web en **Next.js 14** (framework React con renderizado en servidor) con **TypeScript** para el tipado, **Tailwind CSS** para el estilado, y los clientes oficiales `@supabase/ssr` y `@supabase/supabase-js` para hablar con la base. El código vive en el directorio `frontend/` del repositorio y se despliega automáticamente en Vercel ante cada `push` a la rama principal.
+El grupo desarrolló una aplicación web en **Next.js 14** (framework React con renderizado en servidor) con **TypeScript** para el tipado, **Tailwind CSS** para el estilado, y los clientes oficiales `@supabase/ssr` y `@supabase/supabase-js` para hablar con la base. Se ejecuta como aplicación independiente del SGBD y consume las funciones almacenadas a través de PostgREST.
 
 Su rol dentro del trabajo es doble. Por un lado, cubre el segundo párrafo de R1: ofrecer una interfaz desde la cual el personal del sistema puede consultar el log de auditoría. Por otro, sirve como vehículo de prueba para que el lector pueda observar la lógica almacenada en funcionamiento real (reservas, alquileres, devoluciones, mantenimientos) sin tener que invocar las funciones a mano desde `psql`. Todas las operaciones que realiza la aplicación pasan por los mismos `pa_*` y vistas documentados en este informe; la interfaz no contiene lógica de negocio propia, solo orquesta las llamadas y presenta los resultados.
 
@@ -768,19 +768,19 @@ Su diseño detallado, sus rutas, sus componentes y su experiencia de usuario que
 
 ### Arquitectura del schema
 
-El repositorio organiza los objetos DDL en directorios numerados que se aplican en orden estricto. El orden refleja las dependencias topológicas: extensiones primero, tablas antes que constraints, funciones antes que triggers, permisos al final.
+Los objetos DDL se agrupan en módulos numerados que se aplican en orden estricto. El orden refleja las dependencias topológicas: extensiones primero, tablas antes que constraints, funciones antes que triggers, permisos al final.
 
-| Directorio | Contenido | Cantidad |
+| Módulo | Contenido | Cantidad |
 | ----- | ----- | :---: |
-| `schema/00_extensions.sql` | `pgcrypto`, `btree_gist`, `pg_cron` | 3 |
-| `schema/01_tables/` | Tablas de catálogos, negocio, auditoría | 19 |
-| `schema/02_constraints/` | Unique compuestos, FKs explícitas, `EXCLUDE USING gist` | 14 |
-| `schema/03_indexes/` | Índices `btree`, parciales y compuestos | 11 |
-| `schema/04_functions/` | Validaciones (`fn_*`), orquestadores (`pa_*`), lifecycle | 22 |
-| `schema/05_views/` | Vistas para consulta y reportes | 6 |
-| `schema/06_permissions/` | Roles, RLS, grants por sprint | 10 |
-| `schema/07_triggers/` | Triggers de auditoría + append-only | 8 |
-| `schema/08_seeds/` | Datos iniciales para los casos de uso | 17 |
+| `00_extensions.sql` | `pgcrypto`, `btree_gist`, `pg_cron` | 3 |
+| `01_tables/` | Tablas de catálogos, negocio, auditoría | 19 |
+| `02_constraints/` | Unique compuestos, FKs explícitas, `EXCLUDE USING gist` | 14 |
+| `03_indexes/` | Índices `btree`, parciales y compuestos | 11 |
+| `04_functions/` | Validaciones (`fn_*`), orquestadores (`pa_*`), lifecycle | 22 |
+| `05_views/` | Vistas para consulta y reportes | 6 |
+| `06_permissions/` | Roles, RLS, grants por sprint | 10 |
+| `07_triggers/` | Triggers de auditoría + append-only | 8 |
+| `08_seeds/` | Datos iniciales para los casos de uso | 17 |
 
 La separación entre `04_functions/` (lógica reutilizable y RPC) y `07_triggers/` (auditoría y lifecycle) responde a un criterio de mantenibilidad: las funciones de ciclo de vida del vehículo (`fn_alquiler_start`, `fn_alquiler_close`, `fn_mantenimiento_envio`, `fn_mantenimiento_devolucion`) viven en `04_functions/` junto con sus `CREATE TRIGGER` correspondientes, porque ambos elementos son inseparables del comportamiento de la entidad. En `07_triggers/` se ubican únicamente los triggers de auditoría genérica y el bloqueo *append-only* sobre `audit_log`, que son ortogonales a la lógica de negocio.
 
@@ -800,31 +800,31 @@ A las 17 tablas modeladas en la Etapa 1 se suman dos tablas nuevas introducidas 
 
 | Tabla | Propósito | Archivo |
 | ----- | ----- | ----- |
-| `usuario` | Credenciales de acceso online (puente con `auth.users` de Supabase). | `schema/01_tables/01_usuario.sql` |
-| `cliente` | Datos personales del titular de alquileres y reservas. | `schema/01_tables/02_cliente.sql` |
-| `sucursal` | Sede física de la empresa donde residen los vehículos. | `schema/01_tables/03_sucursal.sql` |
-| `taller` | Proveedor externo de mantenimiento mecánico. | `schema/01_tables/04_taller.sql` |
-| `tipo_vehiculo` | Catálogo de carrocerías (Sedán, SUV, Cupé, etc.). | `schema/01_tables/05_tipo_vehiculo.sql` |
-| `estado_vehiculo` | Catálogo de estados operativos (`disponible`, `alquilado`, `en_mantenimiento`, ...). | `schema/01_tables/06_estado_vehiculo.sql` |
-| `tipo_reserva` | Catálogo de modalidades de reserva con flags `requiere_garantia` y `antelacion_max_dias`. | `schema/01_tables/07_tipo_reserva.sql` |
-| `vehiculo` | Unidad física que se alquila. Referencia origen, tipo y estado actual. | `schema/01_tables/08_vehiculo.sql` |
-| `imagen_vehiculo` | Entre 1 y 5 imágenes por vehículo (mínimo enforced por aplicación, máximo por trigger). | `schema/01_tables/09_imagen_vehiculo.sql` |
-| `ubicacion_vehiculo` | Historial de sucursal donde se encuentra físicamente el vehículo. | `schema/01_tables/10_ubicacion_vehiculo.sql` |
-| `historial_estado_vehiculo` | Línea de tiempo de transiciones de estado. | `schema/01_tables/11_historial_estado_vehiculo.sql` |
-| `tarifa` | Precio diario y porcentaje de recargo por par (sucursal, tipo). | `schema/01_tables/12_tarifa.sql` |
-| `reserva` | Reserva online con validación de superposición. | `schema/01_tables/13_reserva.sql` |
-| `garantia_reserva` | Datos sensibles de la tarjeta de crédito que respalda una reserva. | `schema/01_tables/14_garantia_reserva.sql` |
-| `alquiler` | Alquiler efectivo. Lleva el FSM principal del vehículo. | `schema/01_tables/15_alquiler.sql` |
-| `mantenimiento` | Envío y devolución a taller. | `schema/01_tables/16_mantenimiento.sql` |
-| `factura` | Comprobante con snapshot de tarifa al cierre del alquiler. | `schema/01_tables/17_factura.sql` |
-| `audit_log` *(nueva)* | Bitácora *append-only* con triple identidad (usuario_db, rol_sesion, usuario_app). | `schema/01_tables/18_audit_log.sql` |
-| `devolucion_vencida` *(nueva)* | Tabla histórica poblada por el job de detección de devoluciones tardías (R9). | `schema/01_tables/19_devolucion_vencida.sql` |
+| `usuario` | Credenciales de acceso online (puente con `auth.users` de Supabase). | `01_tables/01_usuario.sql` |
+| `cliente` | Datos personales del titular de alquileres y reservas. | `01_tables/02_cliente.sql` |
+| `sucursal` | Sede física de la empresa donde residen los vehículos. | `01_tables/03_sucursal.sql` |
+| `taller` | Proveedor externo de mantenimiento mecánico. | `01_tables/04_taller.sql` |
+| `tipo_vehiculo` | Catálogo de carrocerías (Sedán, SUV, Cupé, etc.). | `01_tables/05_tipo_vehiculo.sql` |
+| `estado_vehiculo` | Catálogo de estados operativos (`disponible`, `alquilado`, `en_mantenimiento`, ...). | `01_tables/06_estado_vehiculo.sql` |
+| `tipo_reserva` | Catálogo de modalidades de reserva con flags `requiere_garantia` y `antelacion_max_dias`. | `01_tables/07_tipo_reserva.sql` |
+| `vehiculo` | Unidad física que se alquila. Referencia origen, tipo y estado actual. | `01_tables/08_vehiculo.sql` |
+| `imagen_vehiculo` | Entre 1 y 5 imágenes por vehículo (mínimo enforced por aplicación, máximo por trigger). | `01_tables/09_imagen_vehiculo.sql` |
+| `ubicacion_vehiculo` | Historial de sucursal donde se encuentra físicamente el vehículo. | `01_tables/10_ubicacion_vehiculo.sql` |
+| `historial_estado_vehiculo` | Línea de tiempo de transiciones de estado. | `01_tables/11_historial_estado_vehiculo.sql` |
+| `tarifa` | Precio diario y porcentaje de recargo por par (sucursal, tipo). | `01_tables/12_tarifa.sql` |
+| `reserva` | Reserva online con validación de superposición. | `01_tables/13_reserva.sql` |
+| `garantia_reserva` | Datos sensibles de la tarjeta de crédito que respalda una reserva. | `01_tables/14_garantia_reserva.sql` |
+| `alquiler` | Alquiler efectivo. Lleva el FSM principal del vehículo. | `01_tables/15_alquiler.sql` |
+| `mantenimiento` | Envío y devolución a taller. | `01_tables/16_mantenimiento.sql` |
+| `factura` | Comprobante con snapshot de tarifa al cierre del alquiler. | `01_tables/17_factura.sql` |
+| `audit_log` *(nueva)* | Bitácora *append-only* con triple identidad (usuario_db, rol_sesion, usuario_app). | `01_tables/18_audit_log.sql` |
+| `devolucion_vencida` *(nueva)* | Tabla histórica poblada por el job de detección de devoluciones tardías (R9). | `01_tables/19_devolucion_vencida.sql` |
 
 #### Constraints destacados
 
 Más allá de las claves primarias y foráneas habituales, el schema utiliza restricciones avanzadas para hacer cumplir reglas de negocio a nivel de motor:
 
-- **`EXCLUDE USING gist` con `btree_gist`** sobre `alquiler` y `reserva` (`schema/02_constraints/14_exclude_alquiler_reserva.sql`). **GIST** (*tipo de índice de PostgreSQL que soporta operadores no triviales como el solapamiento de rangos temporales `tsrange`*) combinado con **`btree_gist`** (*extensión que permite mezclar columnas de tipo entero como `id_vehiculo` con rangos dentro del mismo índice GIST*) hace cumplir la restricción `id_vehiculo WITH =` y `tsrange(fecha_inicio, fecha_fin_prevista, '[)') WITH &&`. Esto impide que dos períodos del mismo vehículo se solapen, validándolo atómicamente en el índice. Así se cierra la *race condition* que un trigger basado en `SELECT EXISTS` no puede evitar entre dos transacciones concurrentes.
+- **`EXCLUDE USING gist` con `btree_gist`** sobre `alquiler` y `reserva` (`02_constraints/14_exclude_alquiler_reserva.sql`). **GIST** (*tipo de índice de PostgreSQL que soporta operadores no triviales como el solapamiento de rangos temporales `tsrange`*) combinado con **`btree_gist`** (*extensión que permite mezclar columnas de tipo entero como `id_vehiculo` con rangos dentro del mismo índice GIST*) hace cumplir la restricción `id_vehiculo WITH =` y `tsrange(fecha_inicio, fecha_fin_prevista, '[)') WITH &&`. Esto impide que dos períodos del mismo vehículo se solapen, validándolo atómicamente en el índice. Así se cierra la *race condition* que un trigger basado en `SELECT EXISTS` no puede evitar entre dos transacciones concurrentes.
 - **`CHECK` sobre `alquiler`**: `chk_alquiler_km` exige `km_inicio < km_fin` cuando ambos están presentes.
 - **`UNIQUE (id_vehiculo, orden)`** sobre `imagen_vehiculo`: garantiza que no haya dos imágenes con la misma posición para el mismo vehículo.
 - **`UNIQUE (id_sucursal, id_tipo)`** sobre `tarifa`: refuerza la cardinalidad declarada en Etapa 1.
@@ -863,10 +863,10 @@ En las tablas siguientes la columna *Tipo* distingue entre `FUNCTION` (lógica r
 | `pa_finalizar_alquiler` | CU-06 | IN `p_id_alquiler`, `p_km_fin`, `p_id_sucursal_devolucion` y 3 IN opcionales para mantenimiento al cierre; OUT estándar + `p_id_factura`. |
 | `pa_enviar_mantenimiento_programado` | CU-07 | IN `p_id_vehiculo`, `p_id_taller`, `p_observaciones`; OUT estándar (`p_estado`, `p_mensaje`). Valida que el vehículo esté en estado `disponible` antes de insertar la orden. |
 | `pa_registrar_devolucion_mantenimiento` | CU-08 | IN `p_id_vehiculo`, `p_km_salida_taller` *(NULL si no se reportan km)*; OUT estándar (`p_estado`, `p_mensaje`). Localiza la orden abierta del vehículo automáticamente y, si se proveen km, valida que sean mayores o iguales a los actuales. |
-| `pa_crear_vehiculo` / `pa_actualizar_vehiculo` / `pa_baja_vehiculo` | CRUD R3 | CRUD completo de la entidad `vehiculo` con sus tres operaciones declaradas como `FUNCTION` independientes en `schema/04_functions/19_pa_crud_vehiculo.sql`. |
+| `pa_crear_vehiculo` / `pa_actualizar_vehiculo` / `pa_baja_vehiculo` | CRUD R3 | CRUD completo de la entidad `vehiculo` con sus tres operaciones declaradas como `FUNCTION` independientes en `04_functions/19_pa_crud_vehiculo.sql`. |
 | `pa_detectar_devoluciones_vencidas` | Job R9 | Sin parámetros. Único objeto declarado como `PROCEDURE` (lo invoca `pg_cron` con `CALL`). |
 
-**Decisión arquitectónica — R11: `FUNCTION` en lugar de `PROCEDURE`.** PostgREST solo expone como endpoint RPC los objetos con `pg_proc.prokind = 'f'` (funciones). Por esa razón se reconvirtieron a `FUNCTION RETURNS RECORD` los 10 orquestadores que el enunciado denomina genéricamente "procedimientos almacenados", manteniendo idéntica semántica: cada uno declara parámetros `OUT (p_estado, p_mensaje, p_id_*)` y envuelve la lógica en un bloque `BEGIN … EXCEPTION WHEN … END`. El único `PROCEDURE` real es `pa_detectar_devoluciones_vencidas`, porque su invocador es `pg_cron` (que ejecuta `CALL`) y no necesita ser expuesto a PostgREST. Esta decisión se justifica con detalle en los comentarios in-line del archivo `schema/04_functions/07_pa_finalizar_alquiler.sql` y de los restantes `pa_*`.
+**Decisión arquitectónica — R11: `FUNCTION` en lugar de `PROCEDURE`.** PostgREST solo expone como endpoint RPC los objetos con `pg_proc.prokind = 'f'` (funciones). Por esa razón se reconvirtieron a `FUNCTION RETURNS RECORD` los 10 orquestadores que el enunciado denomina genéricamente "procedimientos almacenados", manteniendo idéntica semántica: cada uno declara parámetros `OUT (p_estado, p_mensaje, p_id_*)` y envuelve la lógica en un bloque `BEGIN … EXCEPTION WHEN … END`. El único `PROCEDURE` real es `pa_detectar_devoluciones_vencidas`, porque su invocador es `pg_cron` (que ejecuta `CALL`) y no necesita ser expuesto a PostgREST. Esta decisión se justifica con detalle en los comentarios in-line del archivo `04_functions/07_pa_finalizar_alquiler.sql` y de los restantes `pa_*`.
 
 #### Triggers
 
@@ -881,7 +881,7 @@ En las tablas siguientes la columna *Tipo* distingue entre `FUNCTION` (lógica r
 | `trg_audit_devolucion_vencida` | `devolucion_vencida` | INSERT / UPDATE / DELETE | Persiste en `audit_log`. |
 | `trg_audit_log_no_update` | `audit_log` | BEFORE UPDATE OR DELETE | Lanza excepción `insufficient_privilege` — hace la tabla *append-only*. |
 
-A estos se suman los triggers de ciclo de vida del vehículo, declarados en `schema/04_functions/` junto con la función que ejecutan, por estar acoplados a la entidad de negocio: `trg_alquiler_set_cerrado` (BEFORE UPDATE), `trg_alquiler_start` (AFTER INSERT), `trg_alquiler_close` (AFTER UPDATE), `trg_mantenimiento_envio` (AFTER INSERT) y `trg_mantenimiento_devolucion` (AFTER UPDATE).
+A estos se suman los triggers de ciclo de vida del vehículo, declarados en `04_functions/` junto con la función que ejecutan, por estar acoplados a la entidad de negocio: `trg_alquiler_set_cerrado` (BEFORE UPDATE), `trg_alquiler_start` (AFTER INSERT), `trg_alquiler_close` (AFTER UPDATE), `trg_mantenimiento_envio` (AFTER INSERT) y `trg_mantenimiento_devolucion` (AFTER UPDATE).
 
 #### Vistas (6) — todas nuevas en Etapa 2
 
@@ -904,11 +904,11 @@ Las vistas reducen consultas **N+1** (*patrón anti-rendimiento donde una consul
 - **Schedule**: `0 */6 * * *` (cada 6 horas — 00:00, 06:00, 12:00, 18:00).
 - **Comando**: `CALL pa_detectar_devoluciones_vencidas();`
 - **Comportamiento**: inserta o actualiza en `devolucion_vencida` los alquileres con `estado='activo'`, `fecha_fin_prevista < NOW()` y `fecha_devolucion_real IS NULL`. La cláusula `ON CONFLICT (id_alquiler) DO UPDATE` garantiza idempotencia entre corridas sucesivas.
-- **Registro defensivo**: el script `schema/04_functions/21_schedule_jobs.sql` envuelve `cron.schedule()` en un bloque `DO … EXCEPTION` que permite aplicar el schema en clusters donde `pg_cron` no esté disponible (sin abortar el deploy completo).
+- **Registro defensivo**: el script `04_functions/21_schedule_jobs.sql` envuelve `cron.schedule()` en un bloque `DO … EXCEPTION` que permite aplicar el schema en clusters donde `pg_cron` no esté disponible (sin abortar el deploy completo).
 
 #### Seeds (17 archivos)
 
-Los seeds en `schema/08_seeds/` proveen un dataset funcional para los casos de uso: usuarios demo (`giuliano`, `marcia`, etc.) ligados a clientes ficticios; sucursales reales del escenario (Posadas, Eldorado, Iguazú); catálogos completos (5 tipos de vehículo, 5 estados, 3 tipos de reserva); 12 vehículos con sus imágenes referenciadas desde Wikimedia Commons (URL pública estable); una grilla de tarifas que cubre cada combinación sucursal × tipo; reservas, alquileres y mantenimientos que ejercitan los triggers de ciclo de vida y dejan datos consistentes para los reportes y la auditoría.
+Los seeds en `08_seeds/` proveen un dataset funcional para los casos de uso: usuarios demo (`giuliano`, `marcia`, etc.) ligados a clientes ficticios; sucursales reales del escenario (Posadas, Eldorado, Iguazú); catálogos completos (5 tipos de vehículo, 5 estados, 3 tipos de reserva); 12 vehículos con sus imágenes referenciadas desde Wikimedia Commons (URL pública estable); una grilla de tarifas que cubre cada combinación sucursal × tipo; reservas, alquileres y mantenimientos que ejercitan los triggers de ciclo de vida y dejan datos consistentes para los reportes y la auditoría.
 
 <a id="impl-cu"></a>
 
@@ -961,7 +961,7 @@ El requisito R1 exige registrar "qué usuario realizó cada operación". En un s
 
 **Append-only en dos niveles**. La tabla está protegida por:
 
-1. Una política RLS `USING(FALSE)` para roles `authenticated` y `anon` (`schema/06_permissions/04_rls_policies.sql`), que bloquea UPDATE/DELETE desde la API PostgREST.
+1. Una política RLS `USING(FALSE)` para roles `authenticated` y `anon` (`06_permissions/04_rls_policies.sql`), que bloquea UPDATE/DELETE desde la API PostgREST.
 2. El trigger `trg_audit_log_no_update` (BEFORE UPDATE OR DELETE) ejecuta `RAISE EXCEPTION … USING ERRCODE = 'insufficient_privilege'` para los roles con `BYPASSRLS` (e.g. `service_role`, `postgres` directo). Solo un superuser con `SET session_replication_role = replica` podría saltearlo, y ese comando es auditable a nivel de `pg_stat_statements`.
 
 **Operaciones registradas**. `fn_audit_generic` distingue:
@@ -993,17 +993,17 @@ La siguiente tabla cruza cada requerimiento numerado del enunciado (ver subsecci
 
 | R | Requerimiento | Objetos que lo cumplen | Archivo |
 | :---: | ----- | ----- | ----- |
-| R1 | Auditoría con triggers | `audit_log` + `fn_audit_generic` + 7 triggers `trg_audit_*` + `vw_audit_log_legible` | `schema/01_tables/18_audit_log.sql`, `schema/04_functions/12_fn_audit_generic.sql`, `schema/07_triggers/01-07_*.sql` |
-| R2 | Excepciones + COMMIT/ROLLBACK | Patrón OUT `(p_estado, p_mensaje, p_id_*)` en todos los `pa_*` | `schema/04_functions/` (todos los `pa_*`) |
-| R3 | CRUD entidades | `pa_crear_vehiculo` / `pa_actualizar_vehiculo` / `pa_baja_vehiculo`, `pa_registrar_cliente_con_usuario`, `pa_registrar_cliente_walkin` | `schema/04_functions/19_pa_crud_vehiculo.sql`, `schema/04_functions/11_*.sql`, `schema/04_functions/22_*.sql` |
+| R1 | Auditoría con triggers | `audit_log` + `fn_audit_generic` + 7 triggers `trg_audit_*` + `vw_audit_log_legible` | `01_tables/18_audit_log.sql`, `04_functions/12_fn_audit_generic.sql`, `07_triggers/01-07_*.sql` |
+| R2 | Excepciones + COMMIT/ROLLBACK | Patrón OUT `(p_estado, p_mensaje, p_id_*)` en todos los `pa_*` | `04_functions/` (todos los `pa_*`) |
+| R3 | CRUD entidades | `pa_crear_vehiculo` / `pa_actualizar_vehiculo` / `pa_baja_vehiculo`, `pa_registrar_cliente_con_usuario`, `pa_registrar_cliente_walkin` | `04_functions/19_pa_crud_vehiculo.sql`, `04_functions/11_*.sql`, `04_functions/22_*.sql` |
 | R4 | PL/pgSQL para insert/update/delete con retorno | Mismo patrón OUT documentado en R2 | idem |
-| R5 | Parámetros IN/OUT | `pa_finalizar_alquiler` (6 IN + 3 OUT), `pa_registrar_reserva`, `pa_registrar_alquiler` | `schema/04_functions/07_pa_finalizar_alquiler.sql`, `schema/04_functions/16_pa_registrar_reserva.sql` |
-| R6 | Alquileres con/sin reserva | `pa_registrar_alquiler` acepta `p_id_reserva` opcional | `schema/04_functions/18_pa_registrar_alquiler.sql` |
-| R7 | Procedimiento de reserva con validaciones | `pa_registrar_reserva` + `fn_check_vehiculo_overlap` + `excl_reserva_overlap` | `schema/04_functions/16_pa_registrar_reserva.sql`, `schema/02_constraints/14_*.sql` |
-| R8 | Cancelación de reservas con validaciones | `pa_cancelar_reserva` (valida `estado='pendiente'`, marca `garantia_reserva.activa=FALSE`) | `schema/04_functions/17_pa_cancelar_reserva.sql` |
-| R9 | Jobs programados | `pg_cron` invoca `pa_detectar_devoluciones_vencidas` cada 6 h → `devolucion_vencida` | `schema/04_functions/20_pa_detectar_devoluciones_vencidas.sql`, `schema/04_functions/21_schedule_jobs.sql` |
-| R10 | Finalización de alquiler con triggers + programación | `pa_finalizar_alquiler` + `trg_alquiler_set_cerrado` + `trg_alquiler_close` + `fn_calcular_factura` | `schema/04_functions/07_pa_finalizar_alquiler.sql`, `schema/04_functions/03_fn_alquiler_lifecycle.sql`, `schema/04_functions/05_fn_calcular_factura.sql` |
-| R11 | (Decisión del equipo) `PROCEDURE` → `FUNCTION` por PostgREST | 10 orquestadores migrados a `FUNCTION RETURNS RECORD` | Comentarios in-line en `schema/04_functions/*.sql` |
+| R5 | Parámetros IN/OUT | `pa_finalizar_alquiler` (6 IN + 3 OUT), `pa_registrar_reserva`, `pa_registrar_alquiler` | `04_functions/07_pa_finalizar_alquiler.sql`, `04_functions/16_pa_registrar_reserva.sql` |
+| R6 | Alquileres con/sin reserva | `pa_registrar_alquiler` acepta `p_id_reserva` opcional | `04_functions/18_pa_registrar_alquiler.sql` |
+| R7 | Procedimiento de reserva con validaciones | `pa_registrar_reserva` + `fn_check_vehiculo_overlap` + `excl_reserva_overlap` | `04_functions/16_pa_registrar_reserva.sql`, `02_constraints/14_*.sql` |
+| R8 | Cancelación de reservas con validaciones | `pa_cancelar_reserva` (valida `estado='pendiente'`, marca `garantia_reserva.activa=FALSE`) | `04_functions/17_pa_cancelar_reserva.sql` |
+| R9 | Jobs programados | `pg_cron` invoca `pa_detectar_devoluciones_vencidas` cada 6 h → `devolucion_vencida` | `04_functions/20_pa_detectar_devoluciones_vencidas.sql`, `04_functions/21_schedule_jobs.sql` |
+| R10 | Finalización de alquiler con triggers + programación | `pa_finalizar_alquiler` + `trg_alquiler_set_cerrado` + `trg_alquiler_close` + `fn_calcular_factura` | `04_functions/07_pa_finalizar_alquiler.sql`, `04_functions/03_fn_alquiler_lifecycle.sql`, `04_functions/05_fn_calcular_factura.sql` |
+| R11 | (Decisión del equipo) `PROCEDURE` → `FUNCTION` por PostgREST | 10 orquestadores migrados a `FUNCTION RETURNS RECORD` | Comentarios in-line en `04_functions/*.sql` |
 
 <a id="der-etapa2"></a>
 
