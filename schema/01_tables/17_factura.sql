@@ -1,6 +1,13 @@
--- Secuencia para autonumerar facturas en formato correlativo.
--- Aporte original: Marcia Viera (commit 257d86f, "funcionalidad finalizar alquiler"),
--- adaptado al schema actual.
+-- Tabla factura (R10).
+--
+-- Documento contable emitido por fn_calcular_factura cuando finaliza un
+-- alquiler. Materializa el resultado de la facturacion: precio aplicado,
+-- recargo por horas excedidas, costo base y total. La secuencia
+-- seq_numero_factura provee la numeracion correlativa (campo
+-- numero_factura) independiente del id_factura interno.
+--
+-- Aporte original: Marcia Viera (commit 257d86f, "funcionalidad finalizar
+-- alquiler"), adaptado al schema actual.
 CREATE SEQUENCE IF NOT EXISTS seq_numero_factura START WITH 1;
 
 CREATE TABLE IF NOT EXISTS factura (

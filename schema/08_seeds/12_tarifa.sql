@@ -1,6 +1,7 @@
 -- 10 tarifas por (id_sucursal, id_tipo). UNIQUE(id_sucursal, id_tipo) impide
 -- duplicados. Valores 2026 representativos del mercado argentino NEA, en pesos.
--- porcentaje_recargo en formato fraccion (0.10 = 10%) segun doc Etapa 1.
+-- porcentaje_recargo en formato fraccion (0.10 = 10%), el mismo formato
+-- que consume fn_calcular_factura al emitir la factura.
 --
 -- Estrategia de precios:
 --   * Pickups en Iguazu/Resistencia: premium (turismo aventura + uso rural)

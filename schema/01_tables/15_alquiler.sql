@@ -1,3 +1,17 @@
+-- Tabla alquiler (R6, R10).
+--
+-- Representa cada contrato de alquiler efectivamente concretado. Diseno:
+--   * id_reserva es NULL UNIQUE: cubre R6 (alquileres con o sin reserva
+--     previa). Si proviene de una reserva, apunta a la fila correspondiente
+--     en reserva; si es walk-in, queda NULL. El UNIQUE evita que una misma
+--     reserva genere mas de un alquiler.
+--   * id_sucursal_devolucion NULL: se completa al cerrar el alquiler; si
+--     difiere de la sucursal de origen del vehiculo, el trigger de cierre
+--     actualiza la ubicacion en ubicacion_vehiculo.
+--   * estado actua como FSM ('activo' -> 'cerrado'). La transicion la
+--     dispara pa_finalizar_alquiler y el trigger fn_alquiler_lifecycle se
+--     encarga de actualizar el estado del vehiculo, registrar en el
+--     historial y emitir la factura (R10).
 CREATE TABLE IF NOT EXISTS alquiler (
     id_alquiler              BIGSERIAL PRIMARY KEY,
     id_reserva               BIGINT    NULL UNIQUE,

@@ -1,4 +1,7 @@
 -- Trigger de auditoria para `alquiler` (R1).
+-- Se dispara AFTER INSERT/UPDATE/DELETE y delega a fn_audit_generic. Cubre
+-- los hitos del lifecycle R10: apertura del contrato, modificaciones
+-- intermedias y cierre con devolucion.
 DROP TRIGGER IF EXISTS trg_audit_alquiler ON alquiler;
 CREATE TRIGGER trg_audit_alquiler
     AFTER INSERT OR UPDATE OR DELETE ON alquiler

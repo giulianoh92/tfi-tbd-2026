@@ -1,3 +1,16 @@
+-- Tabla reserva (R6, R7, R8).
+--
+-- Registra cada solicitud de reserva de un vehiculo por parte de un cliente
+-- para un periodo determinado. Eje de tres requisitos:
+--   * R6: el alquiler puede originarse en una reserva previa (alquiler
+--     .id_reserva apunta aca) o ser walk-in (sin reserva).
+--   * R7: pa_registrar_reserva valida disponibilidad, superposicion
+--     temporal y limites del tipo_reserva antes de insertar aca.
+--   * R8: pa_cancelar_reserva valida estado y pasa la fila de 'pendiente'
+--     a 'cancelada' segun reglas de negocio.
+-- La superposicion temporal entre reservas y alquileres del mismo vehiculo
+-- la garantiza una constraint EXCLUDE definida en 02_constraints (no en
+-- esta tabla, porque cruza reserva + alquiler).
 CREATE TABLE IF NOT EXISTS reserva (
     id_reserva          BIGSERIAL PRIMARY KEY,
     id_cliente          BIGINT    NOT NULL,

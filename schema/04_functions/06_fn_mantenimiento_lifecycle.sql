@@ -1,4 +1,22 @@
--- AFTER INSERT: move vehicle FSM to 'en_mantenimiento'.
+-- Lifecycle del mantenimiento.
+--
+-- Dos trigger functions que reflejan en la FSM del vehiculo los hitos del
+-- envio y la devolucion de un mantenimiento:
+--
+--   1) fn_mantenimiento_envio (AFTER INSERT): cuando se inserta una fila
+--      en mantenimiento (apertura del servicio), mueve al vehiculo a
+--      estado 'en_mantenimiento', cierra la fila vigente del historial y
+--      abre una nueva.
+--   2) fn_mantenimiento_devolucion (AFTER UPDATE): cuando se completa la
+--      devolucion (fecha_devolucion NULL -> no-NULL), mueve al vehiculo
+--      de vuelta a 'disponible' y vuelve a rotar el historial.
+--
+-- En conjunto cubren parte del flujo R10 (el vehiculo se reintegra al
+-- inventario operativo luego de un servicio) y mantienen consistente la
+-- maquina de estados con el resto de los procesos.
+
+-- fn_mantenimiento_envio (AFTER INSERT): mueve la FSM del vehiculo a
+-- 'en_mantenimiento' cuando se abre una orden de mantenimiento.
 CREATE OR REPLACE FUNCTION fn_mantenimiento_envio()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -15,17 +33,17 @@ BEGIN
         RAISE EXCEPTION 'Estado vehiculo "en_mantenimiento" no encontrado en catalogo';
     END IF;
 
-    -- Close current open historial row
+    -- Cierra la fila vigente del historial de estados del vehiculo.
     UPDATE historial_estado_vehiculo
     SET fecha_fin = NOW()
     WHERE id_vehiculo = NEW.id_vehiculo
       AND fecha_fin IS NULL;
 
-    -- Insert new historial row
+    -- Inserta la nueva fila vigente: el vehiculo entra a mantenimiento.
     INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
     VALUES (NEW.id_vehiculo, v_id_estado, NOW(), NULL, 'Envio a mantenimiento');
 
-    -- Mirror current state on vehiculo
+    -- Mirror del estado vigente sobre la cache denormalizada de vehiculo.
     UPDATE vehiculo
     SET id_estado = v_id_estado
     WHERE id_vehiculo = NEW.id_vehiculo;
@@ -42,8 +60,9 @@ CREATE TRIGGER trg_mantenimiento_envio
     EXECUTE FUNCTION fn_mantenimiento_envio();
 
 
--- AFTER UPDATE: when fecha_devolucion transitions NULL -> non-NULL,
--- move vehicle FSM back to 'disponible'.
+-- fn_mantenimiento_devolucion (AFTER UPDATE): cuando fecha_devolucion
+-- pasa de NULL a no-NULL, mueve la FSM del vehiculo de vuelta a
+-- 'disponible' y rota la fila vigente del historial.
 CREATE OR REPLACE FUNCTION fn_mantenimiento_devolucion()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -56,17 +75,17 @@ BEGIN
         RAISE EXCEPTION 'Estado vehiculo "disponible" no encontrado en catalogo';
     END IF;
 
-    -- Close current open historial row
+    -- Cierra la fila vigente del historial de estados.
     UPDATE historial_estado_vehiculo
     SET fecha_fin = NOW()
     WHERE id_vehiculo = NEW.id_vehiculo
       AND fecha_fin IS NULL;
 
-    -- Insert new historial row for 'disponible'
+    -- Inserta la nueva fila vigente: vehiculo nuevamente 'disponible'.
     INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
     VALUES (NEW.id_vehiculo, v_id_estado, NOW(), NULL, 'Devolucion de mantenimiento');
 
-    -- Mirror current state on vehiculo
+    -- Mirror del estado vigente sobre la cache denormalizada de vehiculo.
     UPDATE vehiculo
     SET id_estado = v_id_estado
     WHERE id_vehiculo = NEW.id_vehiculo;

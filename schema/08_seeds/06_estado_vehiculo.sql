@@ -1,3 +1,8 @@
+-- Datos demo del catalogo estado_vehiculo (R10).
+-- Carga los cinco estados que reconocen los triggers de FSM
+-- (fn_alquiler_lifecycle y fn_mantenimiento_lifecycle) y el procedure
+-- pa_baja_vehiculo. Los nombres deben ir en minusculas: el CHECK de la
+-- tabla y los lookups con lower(nombre) lo exigen.
 INSERT INTO estado_vehiculo (nombre, descripcion) VALUES
     ('disponible',      'Vehiculo disponible para alquiler'),
     ('alquilado',       'Vehiculo entregado a cliente en alquiler vigente'),

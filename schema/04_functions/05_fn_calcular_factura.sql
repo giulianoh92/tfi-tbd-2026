@@ -4,10 +4,14 @@
 -- e inserta la factura tomando snapshot del precio_por_dia y porcentaje_recargo
 -- vigentes en tarifa al momento de la emision.
 --
+-- fn_calcular_factura cubre la pieza de R10 que liquida el alquiler:
+-- toma el snapshot de tarifa, calcula los recargos correspondientes y
+-- emite la factura con numero correlativo.
+--
 -- Aporte original: Marcia Viera (commit 257d86f del 2026-05-16,
 -- "funcionalidad finalizar alquiler"). Adaptaciones al schema reescrito:
---   * porcentaje_recargo asumido como fraccion (0.20 = 20%) segun doc Etapa 1
---     (la version original lo trataba igual; se conserva).
+--   * porcentaje_recargo asumido como fraccion (0.20 = 20%) — convencion
+--     uniforme con la columna tarifa.porcentaje_recargo y con los seeds.
 --   * fecha_emision se inserta como DATE (CURRENT_DATE) coherente con el cambio
 --     de tipo en la tabla factura.
 --   * Numerador de factura via seq_numero_factura (creada en 17_factura.sql).
@@ -65,8 +69,9 @@ BEGIN
     END IF;
     v_costo_base := v_dias_pactados * v_precio_por_dia;
 
-    -- 3. Recargo por horas excedidas (formula del doc Etapa 1):
+    -- 3. Recargo por horas excedidas (formula de negocio del enunciado):
     --    horas * (precio_por_dia / 24) * porcentaje_recargo
+    --    Convierte el costo diario a horario y aplica el % de recargo.
     IF v_fecha_devolucion_real > v_fecha_fin_prevista THEN
         v_horas_excedidas   := CEIL(EXTRACT(EPOCH FROM (v_fecha_devolucion_real - v_fecha_fin_prevista)) / 3600);
         v_recargo_excedente := v_horas_excedidas * (v_precio_por_dia / 24.0) * v_porcentaje_recargo;

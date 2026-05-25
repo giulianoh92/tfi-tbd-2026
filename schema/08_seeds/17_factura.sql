@@ -3,7 +3,7 @@
 -- produciria fn_calcular_factura(id_alquiler) si se invocara post-seed:
 --   horas_excedidas redondeadas hacia arriba (CEIL), como hace la funcion.
 --   porcentaje_recargo_aplicado en formato fraccion (0.10 = 10%).
--- Formulas (doc Etapa 1):
+-- Formulas de facturacion (las mismas que aplica fn_calcular_factura):
 --   costo_base        = dias_pactados * precio_por_dia_aplicado
 --   recargo_excedente = horas_excedidas * (precio_por_dia_aplicado / 24) * porcentaje_recargo_aplicado
 --   total             = costo_base + recargo_excedente

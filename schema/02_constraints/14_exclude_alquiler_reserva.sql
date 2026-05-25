@@ -1,4 +1,8 @@
--- Garantia de NO-SUPERPOSICION temporal a nivel indice.
+-- EXCLUDE constraints excl_alquiler_overlap y excl_reserva_overlap (R7).
+--
+-- Garantia de NO-SUPERPOSICION temporal a nivel indice para los periodos
+-- de un mismo vehiculo. Sostiene la validacion de R7 desde la BD, mas
+-- alla del procedure pa_registrar_reserva.
 --
 -- Problema que resuelve: el trigger fn_check_vehiculo_overlap es best-effort.
 -- Dos transacciones concurrentes pueden colarse en la ventana entre el
@@ -25,12 +29,12 @@
 --   * reserva.estado IN ('pendiente','concretada') -> reservas canceladas
 --                                             dejan libre el slot.
 --
--- Nota academica (defensa): este archivo es la unica linea del schema que
--- contiene la palabra ALTER. El README dicta que las constraints
--- multi-columna se declaran en 02_constraints/, no inline en el CREATE
--- TABLE. NO es una migracion versionada: como toda la DB es efimera y se
--- reaplica desde cero, este ALTER se ejecuta sobre una tabla recien
--- creada en el mismo deploy.
+-- Nota academica (defensa): este archivo concentra constraints
+-- multi-columna que dependen de tipos de rango y de la extension
+-- btree_gist; por su complejidad se mantienen separadas del CREATE TABLE.
+-- NO es una migracion versionada: como toda la DB se reaplica desde cero
+-- en cada deploy, el ALTER se ejecuta sobre una tabla recien creada en el
+-- mismo despliegue.
 
 ALTER TABLE alquiler
     ADD CONSTRAINT excl_alquiler_overlap

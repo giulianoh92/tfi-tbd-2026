@@ -1,3 +1,10 @@
+-- Tabla ubicacion_vehiculo.
+--
+-- Historial de ubicaciones fisicas de un vehiculo a lo largo del tiempo.
+-- Cuando un alquiler se cierra con sucursal de devolucion distinta a la
+-- de origen, el trigger del lifecycle deja registrado el cambio de plaza.
+-- La tupla (fecha_desde, fecha_hasta NULL = vigente) permite reconstruir
+-- donde estaba un vehiculo en cualquier momento del pasado.
 CREATE TABLE IF NOT EXISTS ubicacion_vehiculo (
     id_ubicacion  BIGSERIAL PRIMARY KEY,
     id_vehiculo   BIGINT    NOT NULL,

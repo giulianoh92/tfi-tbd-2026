@@ -1,3 +1,12 @@
+-- Tabla garantia_reserva (R7).
+--
+-- Datos de la tarjeta de credito presentada como garantia cuando el
+-- tipo_reserva.requiere_garantia es TRUE. El procedure pa_registrar_reserva
+-- inserta aca en la misma transaccion en que crea la reserva, garantizando
+-- atomicidad (R2): si la insercion de garantia falla, la reserva no se
+-- persiste. El numero de tarjeta NUNCA se guarda en claro: se almacena un
+-- hash (numero_tarjeta_hash) calculado por la aplicacion. El flag `activa`
+-- permite invalidar una garantia sin borrarla (soft delete con trazabilidad).
 CREATE TABLE IF NOT EXISTS garantia_reserva (
     id_garantia          BIGSERIAL    PRIMARY KEY,
     id_reserva           BIGINT       NOT NULL,

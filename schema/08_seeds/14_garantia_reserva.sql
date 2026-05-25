@@ -1,5 +1,9 @@
--- Garantias for reservas that require it (tipo_reserva.requiere_garantia = TRUE).
--- Reservas 1, 3, 5 are tipo 'estandar' (requiere_garantia = TRUE).
+-- Datos demo de garantia_reserva (R7).
+-- Tres garantias asociadas a las reservas 1, 3 y 5 (las del tipo
+-- 'estandar', que tiene requiere_garantia = TRUE). El numero de tarjeta
+-- se guarda con bcrypt (crypt + gen_salt('bf'), de pgcrypto): el seed
+-- demuestra que la columna numero_tarjeta_hash nunca recibe el numero en
+-- claro, en linea con la politica de la tabla.
 INSERT INTO garantia_reserva (id_reserva, tipo, titular, numero_tarjeta_hash, vencimiento, activa) VALUES
     (1, 'Visa',       'Luis Rodriguez', crypt('4111111111111111', gen_salt('bf')), '2028-12-31', TRUE),
     (3, 'Mastercard', 'Juan Perez',     crypt('5500000000000004', gen_salt('bf')), '2027-09-30', TRUE),

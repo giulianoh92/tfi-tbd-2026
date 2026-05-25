@@ -1,3 +1,10 @@
+-- Tabla estado_vehiculo (R10).
+--
+-- Catalogo de estados operativos de un vehiculo (disponible, alquilado,
+-- en_mantenimiento, fuera_de_servicio). Forma una maquina de estados (FSM)
+-- consumida por los triggers de ciclo de vida del alquiler (R10) y del
+-- mantenimiento. La transicion entre estados se persiste en
+-- historial_estado_vehiculo para tener trazabilidad temporal.
 CREATE TABLE IF NOT EXISTS estado_vehiculo (
     id_estado    BIGSERIAL PRIMARY KEY,
     -- CHECK (nombre = lower(nombre)) cierra la puerta a nivel constraint a
