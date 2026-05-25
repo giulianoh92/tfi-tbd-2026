@@ -20,6 +20,11 @@ export default function LoginPage() {
   const [tab, setTab] = useState<Tab>('ingresar')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [nombre, setNombre] = useState('')
+  const [apellido, setApellido] = useState('')
+  const [dni, setDni] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [direccion, setDireccion] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -39,7 +44,36 @@ export default function LoginPage() {
         router.refresh()
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password })
+      // Validacion basica: DNI numerico, campos obligatorios.
+      const dniLimpio = dni.replace(/\s+/g, '')
+      if (!/^\d{7,9}$/.test(dniLimpio)) {
+        setError('El DNI debe tener entre 7 y 9 dígitos.')
+        setLoading(false)
+        return
+      }
+      if (!nombre.trim() || !apellido.trim()) {
+        setError('Nombre y apellido son obligatorios.')
+        setLoading(false)
+        return
+      }
+
+      // Los datos personales viajan en `options.data` y quedan disponibles en
+      // raw_user_meta_data del registro de auth.users. El trigger
+      // fn_handle_new_auth_user los lee al crear la fila correspondiente en
+      // public.cliente, asi se popula el perfil real en lugar de placeholders.
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nombre: nombre.trim(),
+            apellido: apellido.trim(),
+            dni: dniLimpio,
+            telefono: telefono.trim() || null,
+            direccion: direccion.trim() || null,
+          },
+        },
+      })
       if (error) {
         setError(traducirError(error.message))
       } else {
@@ -128,6 +162,84 @@ export default function LoginPage() {
                 aria-describedby={error ? 'login-error' : undefined}
               />
             </div>
+
+            {tab === 'registrarse' && (
+              <fieldset className="space-y-4 rounded-lg border border-slate-200 p-4">
+                <legend className="px-2 text-sm font-medium text-slate-700">
+                  Datos personales
+                </legend>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nombre" required>
+                      Nombre
+                    </Label>
+                    <Input
+                      id="nombre"
+                      type="text"
+                      required
+                      autoComplete="given-name"
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      placeholder="Juan"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="apellido" required>
+                      Apellido
+                    </Label>
+                    <Input
+                      id="apellido"
+                      type="text"
+                      required
+                      autoComplete="family-name"
+                      value={apellido}
+                      onChange={(e) => setApellido(e.target.value)}
+                      placeholder="Pérez"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="dni" required>
+                    DNI
+                  </Label>
+                  <Input
+                    id="dni"
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={dni}
+                    onChange={(e) => setDni(e.target.value)}
+                    placeholder="38123456"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="telefono">Teléfono</Label>
+                  <Input
+                    id="telefono"
+                    type="tel"
+                    autoComplete="tel"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    placeholder="+54 11 1234-5678 (opcional)"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="direccion">Dirección</Label>
+                  <Input
+                    id="direccion"
+                    type="text"
+                    autoComplete="street-address"
+                    value={direccion}
+                    onChange={(e) => setDireccion(e.target.value)}
+                    placeholder="Av. Siempreviva 742 (opcional)"
+                  />
+                </div>
+              </fieldset>
+            )}
 
             {error && (
               <div
