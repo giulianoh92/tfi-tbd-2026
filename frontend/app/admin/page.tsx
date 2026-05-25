@@ -8,6 +8,7 @@ import {
   AlarmClock,
   Plus,
   ArrowRight,
+  CarFront,
   type LucideIcon,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -27,6 +28,7 @@ export default async function AdminPage() {
     auditoriaRes,
     vehiculosRes,
     devolucionesVencidasRes,
+    mantenimientosVigentesRes,
   ] = await Promise.all([
     supabase
       .from('alquiler')
@@ -45,6 +47,10 @@ export default async function AdminPage() {
       .from('devolucion_vencida')
       .select('id_devolucion_vencida', { count: 'exact', head: true })
       .eq('notificado', false),
+    supabase
+      .from('mantenimiento')
+      .select('id_mantenimiento', { count: 'exact', head: true })
+      .is('fecha_devolucion', null),
   ])
 
   const totalActivos = alquileresRes.count ?? 0
@@ -52,6 +58,7 @@ export default async function AdminPage() {
   const totalAuditoria = auditoriaRes.count ?? 0
   const totalVehiculos = vehiculosRes.count ?? 0
   const totalVencidasPendientes = devolucionesVencidasRes.count ?? 0
+  const totalMantenimientosVigentes = mantenimientosVigentesRes.count ?? 0
 
   return (
     <div>
@@ -91,11 +98,21 @@ export default async function AdminPage() {
         />
         <AdminCard
           href="/admin/vehiculos"
-          icon={Wrench}
+          icon={CarFront}
           eyebrow="Flota"
           metric={totalVehiculos.toString()}
           description="Gestiona altas, ediciones y bajas de la flota."
           cta="Ver flota"
+        />
+        <AdminCard
+          href="/admin/mantenimientos"
+          icon={Wrench}
+          eyebrow="Mantenimientos"
+          metric={totalMantenimientosVigentes.toString()}
+          metricSubtitle="en taller"
+          description="Envíos a taller y registro de devoluciones."
+          cta="Ver mantenimientos"
+          accent={totalMantenimientosVigentes > 0 ? 'warning' : 'neutral'}
         />
         <AdminCard
           href="/admin/devoluciones-vencidas"

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Car,
+  CarFront,
   Receipt,
   History,
   Wrench,
@@ -26,7 +27,8 @@ const NAV: NavItem[] = [
   { href: '/admin/alquileres',            label: 'Alquileres',            icon: Car },
   { href: '/admin/facturas',              label: 'Facturas',              icon: Receipt },
   { href: '/admin/auditoria',             label: 'Auditoria',             icon: History },
-  { href: '/admin/vehiculos',             label: 'Flota',                 icon: Wrench },
+  { href: '/admin/vehiculos',             label: 'Flota',                 icon: CarFront },
+  { href: '/admin/mantenimientos',        label: 'Mantenimientos',        icon: Wrench },
   { href: '/admin/devoluciones-vencidas', label: 'Devoluciones vencidas', icon: AlarmClock },
 ]
 
