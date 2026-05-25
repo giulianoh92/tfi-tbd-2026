@@ -23,8 +23,8 @@ echo "=== V4 — audit_log append-only desde quique ==="
 # Insertar una fila de audit_log "manual" como postgres (la unica via valida es
 # por trigger; aca lo hacemos directo para tener algo que intentar modificar).
 LAST_AUDIT_ID=$(${PSQL_ADMIN} -tAc "
-    INSERT INTO audit_log (tabla, id_registro, tipo_op, usuario_db)
-    VALUES ('cliente', '1', 'I', 'postgres')
+    INSERT INTO audit_log (tabla, id_registro, tipo_op, usuario_db, rol_sesion)
+    VALUES ('cliente', '1', 'I', 'postgres', 'postgres')
     RETURNING id_audit;
 ")
 echo "Insertado audit_log id=${LAST_AUDIT_ID} desde postgres."

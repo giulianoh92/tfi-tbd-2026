@@ -97,10 +97,17 @@ export default async function AuditoriaDetallePage({
         <div>
           <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Usuario DB</p>
           <p className="text-sm text-slate-700 font-mono mt-1">{row.usuario_db}</p>
+          <p className="text-xs text-muted-fg mt-1">Rol Postgres efectivo tras SET ROLE del JWT.</p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Rol sesion</p>
+          <p className="text-sm text-slate-700 font-mono mt-1">{row.rol_sesion}</p>
+          <p className="text-xs text-muted-fg mt-1">Rol que abrio la conexion fisica (no falsificable salvo re-login).</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Usuario app</p>
           <p className="text-xs text-slate-700 font-mono mt-1 break-all">{row.usuario_app ?? '—'}</p>
+          <p className="text-xs text-muted-fg mt-1">UUID del JWT.sub (identidad logica en auth.users).</p>
         </div>
       </Card>
 

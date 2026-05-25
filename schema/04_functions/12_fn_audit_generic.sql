@@ -106,11 +106,31 @@ BEGIN
     -- Doble identidad documentada en TFI:
     --   usuario_db  = rol Postgres aplicado (authenticated/anon/quique/postgres)
     --   usuario_app = sub del JWT = UUID del usuario logico en auth.users
+    -- TRIPLE IDENTIDAD (ver header de schema/01_tables/18_audit_log.sql):
+    --
+    --   usuario_db -> rol Postgres EFECTIVO (manipulable, lleva semantica
+    --                 de RLS/GRANTs aplicada). Lo derivamos del JWT.role
+    --                 con fallback a session_user para sesiones sin JWT.
+    --
+    --   rol_sesion -> session_user crudo, NO falsificable salvo re-login.
+    --                 En Supabase via PostgREST es siempre 'authenticator'
+    --                 (porque el pool abre la conexion con ese rol antes
+    --                 de hacer SET ROLE por request). En psql directo del
+    --                 profesor o cron job: quique / postgres / etc.
+    --                 Inmune a SET ROLE y a manipulacion de GUCs del JWT.
+    --
+    --   usuario_app -> JWT.sub = identidad humana, ya capturada arriba.
+    --
+    -- La combinacion (rol_sesion, usuario_db) permite detectar
+    -- inconsistencias: ej. rol_sesion='quique' + usuario_db='authenticated'
+    -- delata un SET ROLE manual sospechoso. Sin la columna rol_sesion esta
+    -- deteccion seria imposible.
     INSERT INTO audit_log (
         tabla,
         id_registro,
         tipo_op,
         usuario_db,
+        rol_sesion,
         usuario_app,
         valores_anteriores,
         valores_nuevos
@@ -127,6 +147,7 @@ BEGIN
             ),
             session_user
         ),
+        session_user,
         v_usuario_app,
         v_old_jsonb,
         v_new_jsonb

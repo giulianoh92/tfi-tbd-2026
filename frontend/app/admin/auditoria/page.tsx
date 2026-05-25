@@ -170,6 +170,7 @@ export default async function AuditoriaPage({
                   <Th>Tabla</Th>
                   <Th>Id registro</Th>
                   <Th>Usuario DB</Th>
+                  <Th>Rol sesion</Th>
                   <Th>Usuario app</Th>
                   <Th align="right">Detalle</Th>
                 </tr>
@@ -191,6 +192,7 @@ export default async function AuditoriaPage({
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{row.tabla}</td>
                       <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.id_registro ?? '—'}</td>
                       <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.usuario_db}</td>
+                      <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.rol_sesion}</td>
                       <td className="px-4 py-3 text-xs text-muted-fg font-mono">{row.usuario_app ?? '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <Link

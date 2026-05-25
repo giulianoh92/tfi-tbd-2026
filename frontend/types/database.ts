@@ -100,6 +100,7 @@ export type Database = {
           fecha_hora: string
           id_audit: number
           id_registro: string | null
+          rol_sesion: string
           tabla: string
           tipo_op: string
           usuario_app: string | null
@@ -111,6 +112,7 @@ export type Database = {
           fecha_hora?: string
           id_audit?: number
           id_registro?: string | null
+          rol_sesion: string
           tabla: string
           tipo_op: string
           usuario_app?: string | null
@@ -122,6 +124,7 @@ export type Database = {
           fecha_hora?: string
           id_audit?: number
           id_registro?: string | null
+          rol_sesion?: string
           tabla?: string
           tipo_op?: string
           usuario_app?: string | null
@@ -999,3 +1002,47 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// -----------------------------------------------------------------------------
+// Aliases ergonomicos (Row de cada tabla auditada / consultada por UI).
+// No los regenera supabase gen types — mantener manual al sumar tablas nuevas.
+// -----------------------------------------------------------------------------
+
+export type AuditLog =
+  Database["public"]["Tables"]["audit_log"]["Row"]
+export type Cliente =
+  Database["public"]["Tables"]["cliente"]["Row"]
+export type Vehiculo =
+  Database["public"]["Tables"]["vehiculo"]["Row"]
+export type Reserva =
+  Database["public"]["Tables"]["reserva"]["Row"]
+export type Alquiler =
+  Database["public"]["Tables"]["alquiler"]["Row"]
+export type Factura =
+  Database["public"]["Tables"]["factura"]["Row"]
+export type DevolucionVencida =
+  Database["public"]["Tables"]["devolucion_vencida"]["Row"]
+export type Sucursal =
+  Database["public"]["Tables"]["sucursal"]["Row"]
+export type TipoVehiculo =
+  Database["public"]["Tables"]["tipo_vehiculo"]["Row"]
+export type TipoReserva =
+  Database["public"]["Tables"]["tipo_reserva"]["Row"]
+export type EstadoVehiculo =
+  Database["public"]["Tables"]["estado_vehiculo"]["Row"]
+export type ImagenVehiculo =
+  Database["public"]["Tables"]["imagen_vehiculo"]["Row"]
+export type Tarifa =
+  Database["public"]["Tables"]["tarifa"]["Row"]
+export type Taller =
+  Database["public"]["Tables"]["taller"]["Row"]
+export type Mantenimiento =
+  Database["public"]["Tables"]["mantenimiento"]["Row"]
+export type Usuario =
+  Database["public"]["Tables"]["usuario"]["Row"]
+export type HistorialEstadoVehiculo =
+  Database["public"]["Tables"]["historial_estado_vehiculo"]["Row"]
+export type UbicacionVehiculo =
+  Database["public"]["Tables"]["ubicacion_vehiculo"]["Row"]
+export type GarantiaReserva =
+  Database["public"]["Tables"]["garantia_reserva"]["Row"]

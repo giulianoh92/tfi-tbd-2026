@@ -87,21 +87,52 @@ por el runtime (PostgREST).
 mecanismo (triggers AFTER INS/UPD/DEL) y al contenido del log (usuario, fecha,
 op, valores). La única traducción técnica es **qué se entiende por "usuario"**.
 
-**Decisión técnica:** la columna `usuario` del log registra **dos identidades**:
+**Decisión técnica:** el "usuario" del log se descompone en **TRES
+identidades** complementarias, cada una con distinta resistencia a
+falsificación, para tener forensics real ante manipulación de datos
+tanto desde la aplicación como directamente sobre el motor:
 
-1. `usuario_db` ← `session_user` (rol Postgres con el que se autenticó la
-   sesión HTTP: `authenticated`, `anon`, `quique`, `postgres`, etc).
-2. `usuario_app` ← `auth.uid()` extraído del JWT de Supabase (UUID lógico del
-   cliente o staff que disparó la operación).
+1. `usuario_app` ← `auth.uid()` extraído del JWT de Supabase (UUID lógico
+   del cliente o staff que disparó la operación, persistido en
+   `auth.users`). Anti-tampering por la firma criptográfica del JWT con
+   la project key. NULL para operaciones sin sesión HTTP.
+2. `usuario_db` ← rol Postgres **efectivo** tras `SET ROLE` del JWT
+   (`authenticated`, `anon`, `service_role`, `quique`, `postgres`). Lleva
+   la semántica de privilegios efectivamente aplicada (RLS, GRANTs). Se
+   deriva leyendo la GUC `request.jwt.claim.role` que PostgREST setea
+   por request, con fallback a `session_user` para conexiones sin JWT.
+   **Falsificable** si un atacante con acceso al motor manipula la GUC
+   o ejecuta `SET ROLE`.
+3. `rol_sesion` ← `session_user` crudo, el rol con el que se **abrió
+   físicamente la conexión** al motor. **No falsificable** salvo
+   re-autenticación con credenciales válidas a Postgres: ni `SET ROLE`
+   ni la GUC del JWT lo afectan. En Supabase vía PostgREST siempre vale
+   `authenticator` (el rol del pool de conexiones). En `psql` directo
+   del profesor vale `quique`; en `apply.sh` vale `postgres`.
 
-**Por qué `session_user` y no `current_user` (Sprint 6, B2.2):** el trigger
-`fn_audit_generic` está marcado `SECURITY DEFINER` para poder insertar en
-`audit_log` saltándose RLS. Dentro de un `SECURITY DEFINER`, `current_user`
-toma el valor del **owner** (`postgres`), lo que hacía que `usuario_db`
-siempre registrara `'postgres'` y la mitad de DB de la doble identidad
-perdiera valor. `session_user` mantiene el rol con el que se abrió la
-sesión incluso dentro del DEFINER (`authenticated` para tráfico HTTP,
-`quique` para conexiones psql del profesor, `postgres` para `apply.sh`).
+**Combinatoria forensic:** la combinación `(rol_sesion, usuario_db)`
+detecta inconsistencias que ninguna columna individual revela. Por
+ejemplo, `rol_sesion='quique'` con `usuario_db='authenticated'` delata
+un `SET ROLE` manual sospechoso; `rol_sesion='authenticator'` con
+`usuario_db='postgres'` denuncia escalación de privilegios. Sin
+`rol_sesion`, esa detección es imposible.
+
+**Por qué necesitamos las tres y no nos alcanza con `current_user` o
+`session_user` solos:**
+
+- `current_user` dentro de `SECURITY DEFINER` (modo en que corre
+  `fn_audit_generic` para poder bypassear RLS sobre `audit_log`)
+  devuelve siempre el owner (`postgres`), perdiendo la información
+  del rol efectivo. Por eso no se usa directo.
+- `session_user` no se ve afectado por `SECURITY DEFINER` pero en
+  Supabase devuelve siempre `authenticator` (el pool de conexiones
+  PostgREST abre con ese rol), perdiendo la info del rol JWT-derivado.
+- El GUC `request.jwt.claim.role` es request-scope (no role-scope),
+  sobrevive el `SECURITY DEFINER` y refleja el rol asignado por SET
+  ROLE en el request — pero es modificable por cualquiera con acceso
+  al motor.
+- La única forma de tener TODAS las facetas (privilegios efectivos,
+  identidad humana y rol físico no falsificable) es persistir las tres.
 
 **Append-only real (Sprint 6, B2.1):** la policy RLS sobre `audit_log` ya
 bloqueaba `UPDATE`/`DELETE` para `authenticated`/`anon`, pero **no** para
