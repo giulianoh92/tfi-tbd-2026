@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<!-- marked (parser de Markdown) vendorizado e inyectado inline por render.mjs:
+     el render no depende de la red. mermaid/katex se quitaron porque este
+     documento no usa diagramas mermaid ni formulas LaTeX. -->
+<script>{{MARKED_JS}}</script>
+<style>
+:root {
+  --bg: #fafaf7;
+  --bg-elev: #ffffff;
+  --bg-sidebar: #f4f1ea;
+  --text: #1f2328;
+  --text-muted: #57606a;
+  --border: #d8d4cb;
+  --accent: #1f4c87;
+  --accent-soft: #e7eef9;
+  --link: #1f5a9c;
+  --link-hover: #0b3d7a;
+  --code-bg: #f3f0e9;
+  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+
+  --info: #3b82f6;
+  --info-bg: #eff6ff;
+  --tip: #0ea5e9;
+  --tip-bg: #e0f2fe;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --important: #8b5cf6;
+  --important-bg: #f3e8ff;
+  --example: #06b6d4;
+  --example-bg: #cffafe;
+  --question: #eab308;
+  --question-bg: #fef9c3;
+  --done: #10b981;
+  --done-bg: #d1fae5;
+  --note: #64748b;
+  --note-bg: #f1f5f9;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  padding: 24px 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.sidebar-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 24px 0;
+  line-height: 1.3;
+}
+
+.sidebar-section {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 20px 0 8px 0;
+  padding-left: 10px;
+}
+
+.meta-list {
+  list-style: none;
+  padding: 0 10px;
+  margin: 0 0 16px 0;
+  font-size: 0.86rem;
+}
+
+.meta-list li {
+  margin: 4px 0;
+  color: var(--text-muted);
+}
+
+.meta-list strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-list li { margin: 2px 0; }
+
+.nav-list a {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  transition: background 0.12s, color 0.12s;
+}
+
+.nav-list a:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nav-list a.lvl-3 {
+  padding-left: 24px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.content {
+  padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.article {
+  padding: 40px 60px 80px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.article h1 {
+  font-size: 2.1rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.article .subtitle {
+  color: var(--text-muted);
+  font-size: 1.02rem;
+  margin: 0 0 36px 0;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.article h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 42px 0 14px;
+  padding-top: 8px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.article h3 {
+  font-size: 1.18rem;
+  font-weight: 600;
+  margin: 28px 0 10px;
+  color: var(--text);
+}
+
+.article h4 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin: 22px 0 8px;
+  color: var(--text);
+}
+
+.article p { margin: 0 0 14px; }
+
+.article a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(31, 90, 156, 0.25);
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.article a:hover {
+  color: var(--link-hover);
+  border-bottom-color: var(--link-hover);
+}
+
+.article ul, .article ol { padding-left: 24px; margin: 0 0 14px; }
+.article li { margin: 4px 0; }
+
+.article strong { font-weight: 700; color: #111; }
+
+.article code {
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+  color: #8b3a3a;
+}
+
+.article pre {
+  background: #f7f4ec;
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.article pre code {
+  background: none;
+  padding: 0;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.article pre.mermaid {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 8px;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.article .run-python-plot {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 16px 0;
+  page-break-inside: avoid;
+}
+
+.article .run-python-plot svg.run-python-svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.article .run-python-error {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.article .run-python-error pre {
+  background: transparent;
+  padding: 8px 0 0;
+  font-size: 0.82rem;
+  color: #7f1d1d;
+}
+
+.article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 22px;
+  font-size: 0.93rem;
+  box-shadow: var(--shadow);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.article table thead {
+  background: var(--accent);
+  color: white;
+}
+
+.article table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.article table td {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+  vertical-align: top;
+}
+
+.article table tr:nth-child(even) td { background: #fbfaf6; }
+
+.article blockquote {
+  border-left: 3px solid var(--border);
+  padding: 0 0 0 18px;
+  margin: 16px 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.callout {
+  border-radius: 8px;
+  padding: 14px 18px 14px 18px;
+  margin: 18px 0;
+  border-left: 4px solid var(--info);
+  background: var(--info-bg);
+}
+
+.callout-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  color: var(--info);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.callout-title::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+.callout > :first-child { margin-top: 0; }
+
+.callout.callout-info { border-color: var(--info); background: var(--info-bg); }
+.callout.callout-info .callout-title { color: var(--info); }
+
+.callout.callout-tip { border-color: var(--tip); background: var(--tip-bg); }
+.callout.callout-tip .callout-title { color: var(--tip); }
+
+.callout.callout-warning { border-color: var(--warning); background: var(--warning-bg); }
+.callout.callout-warning .callout-title { color: #b45309; }
+
+.callout.callout-danger, .callout.callout-error { border-color: var(--danger); background: var(--danger-bg); }
+.callout.callout-danger .callout-title, .callout.callout-error .callout-title { color: var(--danger); }
+
+.callout.callout-important { border-color: var(--important); background: var(--important-bg); }
+.callout.callout-important .callout-title { color: #6d28d9; }
+
+.callout.callout-example { border-color: var(--example); background: var(--example-bg); }
+.callout.callout-example .callout-title { color: #0e7490; }
+
+.callout.callout-question { border-color: var(--question); background: var(--question-bg); }
+.callout.callout-question .callout-title { color: #a16207; }
+
+.callout.callout-done, .callout.callout-success { border-color: var(--done); background: var(--done-bg); }
+.callout.callout-done .callout-title, .callout.callout-success .callout-title { color: #047857; }
+
+.callout.callout-note { border-color: var(--note); background: var(--note-bg); }
+.callout.callout-note .callout-title { color: var(--note); }
+
+.sidebar-footer {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.hashtag {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 0.8em;
+  margin: 0 2px;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar {
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .article { padding: 28px 22px 60px; }
+}
+
+/* ============= Cover Page ============= */
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  min-height: calc(100vh - 4rem);
+  padding: 2rem 1rem;
+  gap: 2.5rem;
+}
+.cover-logo {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 1rem;
+}
+.cover-logo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.cover-title {
+  width: 100%;
+  margin-top: 1rem;
+}
+.cover-title p strong {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+}
+.cover-title h1 {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin: 0;
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 0.8rem;
+  display: inline-block;
+  line-height: 1.2;
+}
+.cover-meta {
+  width: 100%;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.cover-meta p {
+  margin: 0.4rem 0;
+}
+.cover-meta ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.3rem 0 0.8rem;
+}
+.cover-meta ul li {
+  margin: 0.2rem 0;
+}
+.cover-group {
+  width: 100%;
+  max-width: 560px;
+}
+.cover-group p strong {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.cover-group table {
+  width: 100%;
+  margin: 0 auto;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+.cover-group table th,
+.cover-group table td {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+}
+.cover-group table th {
+  background: var(--bg-subtle, rgba(127,127,127,0.08));
+  font-weight: 600;
+}
+
+@media print {
+  /* Sin size explícito: deja que Playwright controle vía la opción landscape. */
+  @page {
+    margin: 18mm 16mm 22mm 16mm;
+  }
+  /* Los números de página se stampean post-render con pdf-lib (skipea la
+     portada y arranca en "1" en la página siguiente). Chromium no permite
+     resetear el page counter de manera confiable, por eso se hace por fuera. */
+  .cover-page {
+    min-height: calc(297mm - 40mm); /* margin top 18mm + bottom 22mm = 40mm */
+    page-break-after: always;
+    break-after: page;
+    justify-content: space-around;
+  }
+  .cover-page h1 { font-size: 26pt; }
+  .cover-title p strong { font-size: 13pt; }
+  html, body { background: white; font-size: 11.5pt; line-height: 1.5; }
+  .layout { display: block; }
+  .sidebar { display: none; }
+  .content { padding: 0; }
+  .article { padding: 0; max-width: 100%; }
+  .article h1 { font-size: 22pt; }
+  .article h2 { font-size: 15pt; page-break-after: avoid; }
+  .article h3 { font-size: 12pt; page-break-after: avoid; }
+  .article pre, .callout, .article pre.mermaid, .article .run-python-plot {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .article table { page-break-inside: auto; break-inside: auto; }
+  .article tr    { page-break-inside: avoid; break-inside: avoid; }
+  .article thead { display: table-header-group; }
+  .article table {
+    table-layout: fixed;
+    width: 100%;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-size: 9.5pt;
+  }
+  .article table th,
+  .article table td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  .article table code {
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    font-size: 0.9em;
+  }
+  .article a { color: var(--text); border-bottom: none; }
+  /* A4 261x178mm util tras margins 18/16. Limito a 24cm de alto para dejar */
+  /* margen al titulo/parrafo previo y forzar escalado proporcional. */
+  /* !important porque mermaid inyecta style inline en el svg generado. */
+  .article pre.mermaid svg,
+  .article .run-python-plot svg {
+    max-width: 100% !important;
+    max-height: 24cm !important;
+    width: auto !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto;
+  }
+  /* Página apaisada: marcado para render landscape por dual-pass en render.mjs.
+     Aplica a `pre.mermaid` (DER) y a cualquier `<div class="landscape-page">`
+     (e.g. para embeber un SVG/PNG ancho como imagen). */
+  .article .landscape-page {
+    page-break-before: always;
+    page-break-after: always;
+    break-before: page;
+    break-after: page;
+  }
+  /* Modo segment-render: solo los elementos con clase .render-active son visibles. */
+  body.segment-render-mode .layout > .sidebar,
+  body.segment-render-mode .article > *:not(.render-active) {
+    display: none !important;
+  }
+  body.segment-render-mode .article {
+    padding: 0 !important;
+  }
+  body.segment-render-mode .landscape-page.render-active {
+    page-break-before: auto;
+    page-break-after: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.segment-render-mode .landscape-page.render-active svg,
+  body.segment-render-mode .landscape-page.render-active img {
+    max-width: 100% !important;
+    /* A4 landscape height (210mm) - 8mm top - 8mm bottom = 194mm de área útil.
+       Reservamos un margen interno mínimo para evitar overflow por el `<p>`
+       wrapper que mete `marked` cuando la imagen es markdown `![](...)`. */
+    max-height: 170mm !important;
+    width: auto !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto !important;
+  }
+  /* También aplica a SVG/IMG dentro de un `<p>` (caso típico cuando markdown
+     parsea `![...](...)` dentro de un div). */
+  body.segment-render-mode .landscape-page.render-active p {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">{{MATERIA_LABEL}}</div>
+    <div class="sidebar-title">{{MATERIA}}</div>
+
+    <div class="sidebar-section">Metadata</div>
+    <ul class="meta-list">
+      {{META_ITEMS}}
+    </ul>
+
+    <div class="sidebar-section">Contenido</div>
+    <ul class="nav-list" id="toc"></ul>
+
+    <div class="sidebar-footer">
+      Renderizado desde el archivo Markdown del vault.
+    </div>
+  </aside>
+
+  <main class="content">
+    <article class="article" id="view"></article>
+  </main>
+</div>
+
+<script type="text/markdown" id="md-content">
+{{MARKDOWN}}
+</script>
+
+<script>
+// ============= Preprocesado de Markdown =============
+
+function preprocessWikilinks(md) {
+  // [[file#section|alias]] -> **alias** (no hay otras pages en single-file mode)
+  return md.replace(/!?\[\[([^\]|#]+?)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (match, file, section, alias) => {
+    const isEmbed = match.startsWith('!');
+    const display = alias || file.split('/').pop().replace(/\.(md|pdf|ppt|pptx|png|jpg|jpeg|gif|svg)$/i, '');
+    if (isEmbed) {
+      return `*[Embed: ${display}]*`;
+    }
+    return `**${display}**`;
+  });
+}
+
+function protectLatex(md) {
+  const blocks = [];
+  md = md.replace(/\$\$([\s\S]+?)\$\$/g, (m, p1) => {
+    blocks.push({ type: 'display', content: p1 });
+    return `@@LATEX${blocks.length - 1}@@`;
+  });
+  md = md.replace(/\$([^\$\n]+?)\$/g, (m, p1) => {
+    blocks.push({ type: 'inline', content: p1 });
+    return `@@LATEX${blocks.length - 1}@@`;
+  });
+  return { md, blocks };
+}
+
+function restoreLatex(html, blocks) {
+  return html.replace(/@@LATEX(\d+)@@/g, (m, idx) => {
+    const block = blocks[+idx];
+    if (!block) return m;
+    try {
+      return katex.renderToString(block.content, {
+        displayMode: block.type === 'display',
+        throwOnError: false,
+        output: 'html'
+      });
+    } catch (e) {
+      return block.type === 'display' ? `$$${block.content}$$` : `$${block.content}$`;
+    }
+  });
+}
+
+marked.setOptions({ breaks: false, gfm: true, headerIds: true });
+
+function fixMermaidBlocks(containerEl) {
+  containerEl.querySelectorAll('pre > code.language-mermaid').forEach(code => {
+    const pre = code.parentElement;
+    const content = code.textContent;
+    const newPre = document.createElement('pre');
+    newPre.className = 'mermaid';
+    newPre.textContent = content;
+    pre.replaceWith(newPre);
+  });
+  containerEl.querySelectorAll('pre.mermaid').forEach(pre => {
+    const code = pre.querySelector('code');
+    if (code) {
+      pre.textContent = code.textContent;
+    }
+    // DER (erDiagram) → página apaisada propia.
+    if (/^\s*erDiagram\b/.test(pre.textContent)) {
+      pre.classList.add('landscape-page');
+    }
+  });
+}
+
+function postprocessCallouts(containerEl) {
+  const blockquotes = Array.from(containerEl.querySelectorAll('blockquote'));
+  blockquotes.forEach(bq => {
+    const firstP = bq.querySelector('p');
+    if (!firstP) return;
+    const text = firstP.textContent;
+    const match = text.match(/^\[!(\w+)\][+\-]?\s*(.*?)(?:\n|$)/);
+    if (!match) return;
+
+    const type = match[1].toLowerCase();
+    const title = match[2].trim();
+
+    const innerHTML = firstP.innerHTML;
+    const cleanedHTML = innerHTML.replace(/^\[!\w+\][+\-]?[^\n<]*(\s*<br\s*\/?>\s*)?/, '');
+
+    if (cleanedHTML.trim() === '' || cleanedHTML.trim() === '<br>') {
+      firstP.remove();
+    } else {
+      firstP.innerHTML = cleanedHTML;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = `callout callout-${type}`;
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'callout-title';
+    titleEl.textContent = title || typeToLabel(type);
+    wrapper.appendChild(titleEl);
+
+    while (bq.firstChild) {
+      wrapper.appendChild(bq.firstChild);
+    }
+
+    bq.replaceWith(wrapper);
+  });
+}
+
+function typeToLabel(type) {
+  const labels = {
+    info: 'Información', tip: 'Tip', warning: 'Atención',
+    danger: 'Peligro', error: 'Error', important: 'Importante',
+    example: 'Ejemplo', question: 'Pregunta', done: 'Listo',
+    success: 'Listo', note: 'Nota', summary: 'Resumen',
+    abstract: 'Abstract', cite: 'Cita', quote: 'Cita',
+    bug: 'Bug', failure: 'Falla', fail: 'Falla',
+    todo: 'Por hacer', hint: 'Tip'
+  };
+  return labels[type] || type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function postprocessTags(containerEl) {
+  const walker = document.createTreeWalker(containerEl, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) {
+    if (n.parentElement && !['CODE', 'PRE', 'A'].includes(n.parentElement.tagName)) {
+      nodes.push(n);
+    }
+  }
+  nodes.forEach(textNode => {
+    const text = textNode.textContent;
+    if (!/#[a-zA-Z][\w\/-]*/.test(text)) return;
+    const parts = text.split(/(#[a-zA-Z][\w\/-]*)/);
+    if (parts.length === 1) return;
+    const frag = document.createDocumentFragment();
+    parts.forEach(part => {
+      if (/^#[a-zA-Z][\w\/-]*$/.test(part)) {
+        const span = document.createElement('span');
+        span.className = 'hashtag';
+        span.textContent = part;
+        frag.appendChild(span);
+      } else if (part) {
+        frag.appendChild(document.createTextNode(part));
+      }
+    });
+    textNode.replaceWith(frag);
+  });
+}
+
+function postprocessSubtitle(containerEl) {
+  const h1 = containerEl.querySelector('h1');
+  if (!h1) return;
+  const next = h1.nextElementSibling;
+  if (next && next.tagName === 'BLOCKQUOTE' && !next.querySelector('.callout-title')) {
+    next.classList.add('subtitle-quote');
+  }
+}
+
+function hoistAnchorIds(containerEl) {
+  // Move id from `<a id="x"></a>` (with no href) onto the next heading.
+  // This is required for PDF internal links to work correctly:
+  // Chromium generates proper "GoTo" PDF link annotations when the id sits
+  // on the heading element itself, not on an adjacent empty anchor.
+  const anchors = Array.from(containerEl.querySelectorAll('a[id]:not([href])'));
+  anchors.forEach(a => {
+    const id = a.id;
+    if (!id) return;
+    // Marked usually wraps the bare <a> in a <p>. Find the heading that follows.
+    let probe = a.parentElement && a.parentElement.tagName === 'P' && a.parentElement.children.length === 1
+      ? a.parentElement
+      : a;
+    let next = probe.nextElementSibling;
+    if (next && /^H[1-6]$/.test(next.tagName)) {
+      if (!next.id) next.id = id;
+      probe.remove();
+    }
+  });
+}
+
+function buildToc(containerEl) {
+  const toc = document.getElementById('toc');
+  if (!toc) return;
+  const headings = containerEl.querySelectorAll('h2, h3');
+  headings.forEach((h, i) => {
+    if (!h.id) h.id = `h-${i}`;
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = `#${h.id}`;
+    a.textContent = h.textContent;
+    a.className = h.tagName === 'H3' ? 'lvl-3' : 'lvl-2';
+    li.appendChild(a);
+    toc.appendChild(li);
+  });
+}
+
+// ============= Render =============
+
+function render() {
+  const view = document.getElementById('view');
+  const script = document.getElementById('md-content');
+  let md = script.textContent;
+
+  md = preprocessWikilinks(md);
+  const { md: protectedMd, blocks: latexBlocks } = protectLatex(md);
+
+  let html = marked.parse(protectedMd);
+  html = restoreLatex(html, latexBlocks);
+
+  view.innerHTML = html;
+
+  fixMermaidBlocks(view);
+  postprocessCallouts(view);
+  postprocessSubtitle(view);
+  postprocessTags(view);
+  hoistAnchorIds(view);
+  buildToc(view);
+
+  // Mermaid (con flag para PDF)
+  window.__renderState = { mermaidDone: false };
+  const mermaidPres = view.querySelectorAll('pre.mermaid');
+  if (mermaidPres.length > 0) {
+    mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+    mermaid.run({ querySelector: '#view pre.mermaid' })
+      .then(() => { window.__renderState.mermaidDone = true; })
+      .catch(e => { console.warn('Mermaid error:', e); window.__renderState.mermaidDone = true; });
+  } else {
+    window.__renderState.mermaidDone = true;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

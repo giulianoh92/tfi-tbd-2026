@@ -1,0 +1,190 @@
+erDiagram
+    usuario ||--o| cliente : "autentica"
+    cliente ||--o{ reserva : "realiza"
+    cliente ||--o{ alquiler : "realiza"
+    cliente ||--o{ factura : "recibe"
+    tipo_reserva ||--o{ reserva : "clasifica"
+    reserva ||--o| garantia_reserva : "respalda"
+    reserva |o--o| alquiler : "se concreta en"
+    sucursal ||--o{ vehiculo : "posee (origen)"
+    sucursal ||--o{ tarifa : "define"
+    sucursal ||--o{ ubicacion_vehiculo : "aloja"
+    sucursal ||--o{ alquiler : "recibe devolución"
+    tipo_vehiculo ||--o{ vehiculo : "clasifica"
+    tipo_vehiculo ||--o{ tarifa : "tarifica"
+    tarifa ||--o{ alquiler : "se aplica a"
+    estado_vehiculo ||--o{ vehiculo : "estado actual"
+    estado_vehiculo ||--o{ historial_estado_vehiculo : "transiciones"
+    vehiculo ||--o{ alquiler : "se alquila en"
+    vehiculo ||--o{ reserva : "es reservado en"
+    vehiculo ||--|{ imagen_vehiculo : "tiene"
+    vehiculo ||--o{ mantenimiento : "envía a"
+    vehiculo ||--o{ ubicacion_vehiculo : "se ubica en"
+    vehiculo ||--o{ historial_estado_vehiculo : "registra"
+    taller ||--o{ mantenimiento : "recibe"
+    alquiler ||--|| factura : "genera"
+    alquiler ||--o{ devolucion_vencida : "detectada por cron"
+
+    usuario {
+        int id_usuario PK
+        string username
+        string password_hash
+        string email
+        timestamp created_at
+    }
+    cliente {
+        int id_cliente PK
+        int id_usuario FK
+        string nombre
+        string apellido
+        string dni
+        string telefono
+        string direccion
+    }
+    sucursal {
+        int id_sucursal PK
+        string nombre
+        string direccion
+        string ciudad
+        string telefono
+    }
+    tipo_vehiculo {
+        int id_tipo PK
+        string nombre
+        string descripcion
+    }
+    estado_vehiculo {
+        int id_estado PK
+        string nombre
+        string descripcion
+    }
+    tipo_reserva {
+        int id_tipo_reserva PK
+        string nombre
+        string descripcion
+        boolean requiere_garantia
+        int antelacion_max_dias
+    }
+    tarifa {
+        int id_tarifa PK
+        int id_sucursal FK
+        int id_tipo FK
+        decimal precio_por_dia
+        decimal porcentaje_recargo
+    }
+    vehiculo {
+        int id_vehiculo PK
+        int id_sucursal_origen FK
+        int id_tipo FK
+        int id_estado FK
+        string marca
+        string modelo
+        int anio
+        string patente
+        int km_actuales
+        string detalle_confort
+    }
+    ubicacion_vehiculo {
+        int id_ubicacion PK
+        int id_vehiculo FK
+        int id_sucursal FK
+        timestamp fecha_desde
+        timestamp fecha_hasta
+    }
+    historial_estado_vehiculo {
+        int id_historial PK
+        int id_vehiculo FK
+        int id_estado FK
+        timestamp fecha_inicio
+        timestamp fecha_fin
+        string motivo
+    }
+    imagen_vehiculo {
+        int id_imagen PK
+        int id_vehiculo FK
+        string url_imagen
+        int orden
+    }
+    reserva {
+        int id_reserva PK
+        int id_cliente FK
+        int id_vehiculo FK
+        int id_tipo_reserva FK
+        timestamp fecha_inicio
+        timestamp fecha_fin_prevista
+        string estado
+        timestamp fecha_creacion
+    }
+    garantia_reserva {
+        int id_garantia PK
+        int id_reserva FK
+        string tipo
+        string titular
+        string numero_tarjeta_hash
+        date vencimiento
+        timestamp fecha_registro
+        boolean activa
+    }
+    alquiler {
+        int id_alquiler PK
+        int id_reserva FK
+        int id_cliente FK
+        int id_vehiculo FK
+        int id_tarifa FK
+        int id_sucursal_devolucion FK
+        timestamp fecha_inicio
+        timestamp fecha_fin_prevista
+        timestamp fecha_devolucion_real
+        int km_inicio
+        int km_fin
+        string estado
+    }
+    factura {
+        int id_factura PK
+        int id_alquiler FK
+        int id_cliente FK
+        string numero_factura
+        date fecha_emision
+        decimal precio_por_dia_aplicado
+        decimal porcentaje_recargo_aplicado
+        decimal costo_base
+        int horas_excedidas
+        decimal recargo_excedente
+        decimal total
+    }
+    taller {
+        int id_taller PK
+        string nombre
+        string direccion
+        string telefono
+    }
+    mantenimiento {
+        int id_mantenimiento PK
+        int id_vehiculo FK
+        int id_taller FK
+        date fecha_envio
+        date fecha_devolucion
+        string observaciones
+    }
+    audit_log {
+        bigint id_audit PK
+        string tabla
+        string id_registro
+        string tipo_op
+        string usuario_db
+        string rol_sesion
+        uuid usuario_app
+        timestamp fecha_hora
+        jsonb valores_anteriores
+        jsonb valores_nuevos
+    }
+    devolucion_vencida {
+        bigint id_devolucion_vencida PK
+        bigint id_alquiler FK
+        bigint id_vehiculo
+        bigint id_cliente
+        timestamp fecha_fin_prevista
+        timestamp fecha_deteccion
+        decimal horas_excedidas
+        boolean notificado
+    }

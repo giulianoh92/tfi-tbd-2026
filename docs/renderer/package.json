@@ -1,0 +1,14 @@
+{
+  "name": "tfi-render",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Script unico para renderizar el documento del TFI (.md) a PDF con el estilo del vault.",
+  "scripts": {
+    "render": "node render.mjs \"../TFI-2026 - Alquiler de Vehículos.md\""
+  },
+  "dependencies": {
+    "pdf-lib": "1.17.1",
+    "playwright": "1.59.1"
+  }
+}

@@ -1,0 +1,71 @@
+@startuml
+left to right direction
+
+' Tema acorde al CSS del documento (template.html del clase-html-renderer)
+skinparam backgroundColor transparent
+skinparam DefaultFontName "Segoe UI"
+skinparam DefaultFontColor #1f2328
+skinparam DefaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam padding 4
+skinparam packageStyle rectangle
+
+skinparam ArrowColor #57606a
+skinparam ArrowThickness 1.1
+skinparam ArrowFontColor #57606a
+skinparam ArrowFontSize 10
+
+skinparam Actor {
+  BorderColor #1f4c87
+  BorderThickness 1.4
+  FontColor #1f2328
+  FontSize 12
+  FontStyle plain
+}
+
+skinparam Usecase {
+  BackgroundColor #e7eef9
+  BorderColor #1f4c87
+  BorderThickness 1.2
+  FontColor #1f2328
+  FontSize 11
+  FontStyle plain
+  StereotypeFontColor #57606a
+}
+
+skinparam Rectangle {
+  BackgroundColor #fafaf7
+  BorderColor #d8d4cb
+  BorderThickness 1.0
+  FontColor #57606a
+  FontSize 11
+  FontStyle italic
+  roundCorner 16
+}
+
+actor "Cliente\nanónimo" as A1
+actor "Cliente\nregistrado" as A2
+actor "Empleado\nde sucursal" as A3
+
+rectangle "Sistema de Alquiler de Vehículos" {
+  usecase "CU-01\nRegistrar cuenta" as UC01
+  usecase "CU-02\nConsultar catálogo\ny disponibilidad" as UC02
+  usecase "CU-03\nReservar\nvehículo online" as UC03
+  usecase "CU-04\nCancelar\nreserva" as UC04
+  usecase "CU-05\nIniciar alquiler\n(retiro)" as UC05
+  usecase "CU-06\nFinalizar alquiler\ny generar factura" as UC06
+  usecase "CU-07\nEnviar vehículo\na mantenimiento" as UC07
+  usecase "CU-08\nRegistrar devolución\nde mantenimiento" as UC08
+}
+
+A1 --> UC01
+A1 --> UC02
+A2 --> UC02
+A2 --> UC03
+A2 --> UC04
+A3 --> UC05
+A3 --> UC06
+A3 --> UC07
+A3 --> UC08
+@enduml
