@@ -49,9 +49,8 @@ BEGIN
     GRANT SELECT ON vw_audit_log_legible
         TO quique, authenticated, service_role;
 
-    -- vw_usuario_legible -- resolucion UUID a nombre legible (solo staff, no anon)
-    GRANT SELECT ON vw_usuario_legible
-        TO quique, authenticated, service_role;
+    -- vw_usuario_legible -- su GRANT vive en 10_vw_usuario_legible.sql, dentro del
+    -- mismo bloque condicional que crea la vista (depende de auth.users / Supabase).
 
     -- vw_stock_por_modelo -- conteo publico de unidades disponibles por modelo
     GRANT SELECT ON vw_stock_por_modelo
