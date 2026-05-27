@@ -9,12 +9,13 @@ import { cn } from '@/lib/cn'
 interface VehiculoCardProps {
   vehiculo: VehiculoConDetalles
   priority?: boolean
+  unidadesDisponibles?: number
 }
 
 const PLACEHOLDER_URL =
   'https://raw.githubusercontent.com/giulianoh92/tfi-tbd-2026/main/assets/vehiculos/placeholder.jpg'
 
-export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProps) {
+export function VehiculoCard({ vehiculo: v, priority = false, unidadesDisponibles }: VehiculoCardProps) {
   const imageSrc = v.imagen_portada ?? PLACEHOLDER_URL
   const detalleHref = `/vehiculos/${v.id_vehiculo}`
 
@@ -52,6 +53,11 @@ export function VehiculoCard({ vehiculo: v, priority = false }: VehiculoCardProp
               {v.marca} {v.modelo}
             </h2>
             <p className="text-muted-fg text-sm">{v.anio}</p>
+            {unidadesDisponibles != null && unidadesDisponibles > 0 && (
+              <Badge variant="success" className="mt-1">
+                {unidadesDisponibles} disponible{unidadesDisponibles !== 1 ? 's' : ''} de este modelo
+              </Badge>
+            )}
           </div>
           {v.tipo_vehiculo && (
             <Badge variant="brand">{v.tipo_vehiculo.nombre}</Badge>

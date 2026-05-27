@@ -47,7 +47,7 @@ export default function LoginPage() {
       // Validacion basica: DNI numerico, campos obligatorios.
       const dniLimpio = dni.replace(/\s+/g, '')
       if (!/^\d{7,9}$/.test(dniLimpio)) {
-        setError('El DNI debe tener entre 7 y 9 dígitos.')
+        setError('El DNI debe ser solo dígitos, sin puntos ni espacios (ej: 38123456).')
         setLoading(false)
         return
       }
@@ -213,6 +213,7 @@ export default function LoginPage() {
                     onChange={(e) => setDni(e.target.value)}
                     placeholder="38123456"
                   />
+                  <p className="text-xs text-muted-fg mt-1">Solo dígitos, sin puntos ni espacios.</p>
                 </div>
 
                 <div>

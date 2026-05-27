@@ -86,6 +86,22 @@ export default async function AuditoriaPage({
   const total = count ?? 0
   const totalPaginas = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
+  // Resolver UUID → nombre legible para la columna usuario_app.
+  const idsDistintos = Array.from(
+    new Set(filas.map((r) => r.usuario_app).filter(Boolean)),
+  ) as string[]
+  const mapaUsuarios = new Map<string, string>()
+  if (idsDistintos.length > 0) {
+    const { data: usuarios } = await supabase
+      .from('vw_usuario_legible')
+      .select('id, nombre')
+      .in('id', idsDistintos)
+      .returns<{ id: string; nombre: string | null }[]>()
+    for (const u of usuarios ?? []) {
+      if (u.id && u.nombre) mapaUsuarios.set(u.id, u.nombre)
+    }
+  }
+
   const buildHref = (nuevaPagina: number) => {
     const qs = new URLSearchParams()
     if (filtroTabla) qs.set('tabla', filtroTabla)
@@ -108,6 +124,7 @@ export default async function AuditoriaPage({
       {/* Filtros */}
       <Card variant="raised" className="p-4 mb-6">
         <form
+          key={`${filtroTabla}|${filtroTipoOp}|${filtroDesde}|${filtroHasta}`}
           method="get"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
         >
@@ -193,7 +210,12 @@ export default async function AuditoriaPage({
                       <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.id_registro ?? '—'}</td>
                       <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.usuario_db}</td>
                       <td className="px-4 py-3 text-sm text-muted-fg font-mono">{row.rol_sesion}</td>
-                      <td className="px-4 py-3 text-xs text-muted-fg font-mono">{row.usuario_app ?? '—'}</td>
+                      <td
+                        className="px-4 py-3 text-xs text-muted-fg font-mono"
+                        title={row.usuario_app ?? undefined}
+                      >
+                        {(row.usuario_app && mapaUsuarios.get(row.usuario_app)) ?? row.usuario_app ?? '—'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/admin/auditoria/${row.id_audit}`}

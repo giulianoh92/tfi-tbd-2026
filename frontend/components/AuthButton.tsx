@@ -7,11 +7,16 @@ import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
+interface AuthButtonProps {
+  displayName?: string
+}
+
 /**
  * Botón de autenticación.
  * Escucha onAuthStateChange para mantenerse sincronizado con la sesión.
+ * Acepta displayName opcional para mostrar nombre en lugar del email.
  */
-export function AuthButton() {
+export function AuthButton({ displayName }: AuthButtonProps = {}) {
   const supabase = createClient()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -60,7 +65,7 @@ export function AuthButton() {
         className="text-sm text-slate-600 hover:text-brand-700 hover:underline transition-colors hidden sm:block max-w-[14ch] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
         title={`Editar perfil (${user.email})`}
       >
-        {user.email}
+        {displayName ?? user.email}
       </Link>
       <button
         type="button"

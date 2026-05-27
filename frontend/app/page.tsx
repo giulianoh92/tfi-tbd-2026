@@ -79,11 +79,12 @@ export default async function HomePage({
     vehiculoQuery = vehiculoQuery.eq('id_sucursal_origen', Number(filtroSucursal))
   }
 
-  const [vehiculosRes, tarifasRes, tiposRes, sucursalesRes] = await Promise.all([
+  const [vehiculosRes, tarifasRes, tiposRes, sucursalesRes, stockRes] = await Promise.all([
     vehiculoQuery,
     supabase.from('tarifa').select('precio_por_dia, id_sucursal, id_tipo'),
     supabase.from('tipo_vehiculo').select('id_tipo, nombre').order('nombre'),
     supabase.from('sucursal').select('id_sucursal, nombre').order('nombre'),
+    supabase.from('vw_stock_por_modelo').select('marca, modelo, anio, unidades_disponibles'),
   ])
 
   // Tipamos manualmente la respuesta de la query con joins embedded: el
@@ -99,6 +100,14 @@ export default async function HomePage({
   const tipos = (tiposRes.data ?? []) as Pick<TipoVehiculo, 'id_tipo' | 'nombre'>[]
   const sucursales = (sucursalesRes.data ?? []) as Pick<Sucursal, 'id_sucursal' | 'nombre'>[]
   const error = vehiculosRes.error ?? tarifasRes.error
+
+  // Mapa de stock por modelo: clave `marca|modelo|anio` → unidades_disponibles
+  type StockRow = { marca: string; modelo: string; anio: number; unidades_disponibles: number }
+  const stockRows = (stockRes.data ?? []) as StockRow[]
+  const mapaStock = new Map<string, number>()
+  for (const s of stockRows) {
+    mapaStock.set(`${s.marca}|${s.modelo}|${s.anio}`, s.unidades_disponibles)
+  }
 
   if (error) {
     return (
@@ -173,6 +182,7 @@ export default async function HomePage({
       {/* Filtros */}
       <Card variant="raised" className="p-4 mb-6">
         <form
+          key={`${filtroTipo}|${filtroSucursal}|${params.precio_min ?? ''}|${params.precio_max ?? ''}`}
           method="get"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end"
         >
@@ -247,7 +257,12 @@ export default async function HomePage({
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtrados.map((v, idx) => (
-              <VehiculoCard key={v.id_vehiculo} vehiculo={v} priority={idx < 3} />
+              <VehiculoCard
+                key={v.id_vehiculo}
+                vehiculo={v}
+                priority={idx < 3}
+                unidadesDisponibles={mapaStock.get(`${v.marca}|${v.modelo}|${v.anio}`) ?? undefined}
+              />
             ))}
           </div>
 

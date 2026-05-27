@@ -16,6 +16,17 @@ export async function Nav() {
 
   const isStaff = user?.app_metadata?.role === 'staff'
 
+  let displayName: string | undefined
+  if (user) {
+    const { data: clienteRow } = await supabase
+      .from('cliente')
+      .select('nombre, apellido')
+      .eq('auth_user_id', user.id)
+      .maybeSingle<{ nombre: string; apellido: string }>()
+    const nombre = [clienteRow?.nombre, clienteRow?.apellido].filter(Boolean).join(' ')
+    displayName = nombre || undefined
+  }
+
   return (
     <nav className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-slate-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,7 +63,7 @@ export async function Nav() {
             )}
           </div>
 
-          <AuthButton />
+          <AuthButton displayName={displayName} />
         </div>
       </div>
     </nav>

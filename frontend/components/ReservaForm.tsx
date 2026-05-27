@@ -158,11 +158,11 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
 
     if (!result || result.p_estado !== 'OK') {
       const mensaje = result?.p_mensaje ?? 'No se pudo registrar la reserva.'
-      // ERROR_VALIDACION + mensaje de superposicion -> toast amigable;
+      // ERROR_VALIDACION/ERROR_SUPERPOSICION + mensaje de superposicion -> toast amigable;
       // resto -> error principal.
       if (
-        result?.p_estado === 'ERROR_VALIDACION' &&
-        /superpone|overlap/i.test(mensaje)
+        (result?.p_estado === 'ERROR_VALIDACION' && /superpone|overlap/i.test(mensaje)) ||
+        result?.p_estado === 'ERROR_SUPERPOSICION'
       ) {
         setToast('El vehículo ya está reservado en esas fechas. Probá con otras fechas.')
       } else {
@@ -259,8 +259,8 @@ export function ReservaForm({ idVehiculo, vehiculoNombre, tiposReserva }: Reserv
             </legend>
             <p className="text-xs text-muted-fg">
               Este tipo de reserva exige una tarjeta como garantía. No se cobra ningún
-              monto al reservar; sólo se valida la tarjeta. El número se almacena
-              hasheado, nunca en texto plano.
+              monto al reservar; sólo se valida la tarjeta. El número de tarjeta se
+              protege con encriptación antes de guardarse.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

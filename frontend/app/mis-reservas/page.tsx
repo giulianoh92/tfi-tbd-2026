@@ -10,6 +10,7 @@ import { formatDateAR, formatDateTimeAR } from '@/lib/format'
 type ReservaConDetalles = Reserva & {
   vehiculo: Pick<Vehiculo, 'marca' | 'modelo' | 'patente'> | null
   tipo_reserva: Pick<TipoReserva, 'nombre'> | null
+  motivo_cancelacion?: string | null
 }
 
 type BadgeVariant = 'warning' | 'success' | 'danger' | 'muted'
@@ -33,17 +34,21 @@ export default async function MisReservasPage() {
 
   const { data: clienteRow } = await supabase
     .from('cliente')
-    .select('id_cliente')
+    .select('id_cliente, nombre, apellido')
     .eq('auth_user_id', user.id)
-    .maybeSingle<{ id_cliente: number }>()
+    .maybeSingle<{ id_cliente: number; nombre: string; apellido: string }>()
 
   const idCliente = clienteRow?.id_cliente ?? null
+  const clienteNombre = clienteRow
+    ? [clienteRow.nombre, clienteRow.apellido].filter(Boolean).join(' ') || undefined
+    : undefined
 
   const { data: reservas, error } = idCliente
     ? await supabase
         .from('reserva')
         .select(`
           *,
+          motivo_cancelacion,
           vehiculo ( marca, modelo, patente ),
           tipo_reserva ( nombre )
         `)
@@ -66,7 +71,7 @@ export default async function MisReservasPage() {
     <div>
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-slate-900">Mis reservas</h1>
-        <p className="text-muted-fg mt-1 text-sm">{user.email}</p>
+        <p className="text-muted-fg mt-1 text-sm">{clienteNombre ?? user.email}</p>
       </div>
 
       {reservasTyped.length === 0 ? (
@@ -126,6 +131,12 @@ function ReservaRow({ reserva: r }: { reserva: ReservaConDetalles }) {
           <p className="capitalize">{r.tipo_reserva?.nombre ?? '—'}</p>
         </div>
       </div>
+
+      {r.estado === 'cancelada' && r.motivo_cancelacion && (
+        <p className="mt-2 text-xs text-muted-fg">
+          <span className="font-medium">Motivo:</span> {r.motivo_cancelacion}
+        </p>
+      )}
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <p className="text-muted-fg text-xs tabular-nums">

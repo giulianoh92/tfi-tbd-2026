@@ -54,6 +54,17 @@ export default async function AuditoriaDetallePage({
   }
   const fecha = formatDateTimeAR(row.fecha_hora)
 
+  // Resolver nombre del usuario_app si existe.
+  let usuarioNombre: string | null = null
+  if (row.usuario_app) {
+    const { data: uRow } = await supabase
+      .from('vw_usuario_legible')
+      .select('nombre')
+      .eq('id', row.usuario_app)
+      .maybeSingle<{ nombre: string | null }>()
+    usuarioNombre = uRow?.nombre ?? null
+  }
+
   const anterior = (row.valores_anteriores ?? {}) as Record<string, Json>
   const nuevo = (row.valores_nuevos ?? {}) as Record<string, Json>
 
@@ -106,7 +117,14 @@ export default async function AuditoriaDetallePage({
         </div>
         <div>
           <p className="text-xs font-semibold text-muted-fg uppercase tracking-wider">Usuario app</p>
-          <p className="text-xs text-slate-700 font-mono mt-1 break-all">{row.usuario_app ?? '—'}</p>
+          <p className="text-sm text-slate-700 font-medium mt-1">
+            {usuarioNombre ?? row.usuario_app ?? '—'}
+          </p>
+          {usuarioNombre && row.usuario_app && (
+            <p className="text-xs text-muted-fg font-mono mt-0.5 break-all" title={row.usuario_app}>
+              {row.usuario_app}
+            </p>
+          )}
           <p className="text-xs text-muted-fg mt-1">UUID del JWT.sub (identidad logica en auth.users).</p>
         </div>
       </Card>
