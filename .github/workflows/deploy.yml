@@ -1,3 +1,5 @@
+# Workflow para desplegar el schema a Supabase
+
 name: Deploy Schema to Supabase
 
 on:

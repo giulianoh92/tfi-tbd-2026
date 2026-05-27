@@ -1,22 +1,5 @@
 services:
   db:
-    # Sprint 4 (R9): se usa la imagen de Supabase que viene con pg_cron
-    # precargado en shared_preload_libraries. La imagen oficial postgres:16
-    # tambien lo soporta pero requiere recompilar el entrypoint para activar
-    # la extension; supabase/postgres lo deja listo de fabrica y replica el
-    # comportamiento del entorno managed de Supabase Cloud.
-    #
-    # NOTA: la imagen Supabase corre Postgres 15 (no 16). El schema del
-    # proyecto es compatible con ambas versiones (no usa features 16-only).
-    # Las env vars (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB) las
-    # respeta el mismo entrypoint, asi que el env_file existente sigue
-    # funcionando sin cambios.
-    #
-    # pg_cron por defecto se instala en la database `postgres`. Si en .env
-    # POSTGRES_DB != postgres (por ejemplo `tbd_tfi`), el bloque DO de
-    # schema/00_extensions.sql captura el error y deja un RAISE NOTICE
-    # explicativo. En Supabase managed la extension viene instalada
-    # automaticamente en la database del proyecto.
     image: supabase/postgres:15.1.0.147
     container_name: tbd_tfi_db
     restart: unless-stopped
