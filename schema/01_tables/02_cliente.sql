@@ -7,7 +7,7 @@
 --
 -- auth_user_id: bridge con Supabase Auth (auth.users.id, tipo UUID). Sin
 -- FK formal a auth.users para mantener el schema portable fuera de
--- Supabase (un docker postgres puro tampoco tiene el schema auth).
+-- Supabase.
 -- UNIQUE garantiza mapping 1:1 con la identidad. El trigger
 -- fn_handle_new_auth_user crea automaticamente la fila cliente en cada
 -- signUp; pa_registrar_cliente_walkin la crea con auth_user_id NULL para
