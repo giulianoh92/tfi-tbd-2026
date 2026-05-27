@@ -48,6 +48,14 @@ BEGIN
     -- vw_audit_log_legible -- panel auditoria staff
     GRANT SELECT ON vw_audit_log_legible
         TO quique, authenticated, service_role;
+
+    -- vw_usuario_legible -- resolucion UUID a nombre legible (solo staff, no anon)
+    GRANT SELECT ON vw_usuario_legible
+        TO quique, authenticated, service_role;
+
+    -- vw_stock_por_modelo -- conteo publico de unidades disponibles por modelo
+    GRANT SELECT ON vw_stock_por_modelo
+        TO quique, authenticated, anon, service_role;
 EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Grants sobre vistas omitidos: %', SQLERRM;
 END

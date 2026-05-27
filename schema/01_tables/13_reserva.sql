@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS reserva (
     fecha_fin_prevista  TIMESTAMP NOT NULL,
     estado              VARCHAR(20) NOT NULL DEFAULT 'pendiente',
     fecha_creacion      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    motivo_cancelacion  TEXT,
     CONSTRAINT chk_reserva_estado  CHECK (estado IN ('pendiente', 'concretada', 'cancelada')),
     CONSTRAINT chk_reserva_fechas  CHECK (fecha_fin_prevista > fecha_inicio)
 );
+
+-- Idempotente: agrega la columna en bases ya existentes (R8 motivo de cancelacion).
+ALTER TABLE reserva ADD COLUMN IF NOT EXISTS motivo_cancelacion TEXT;

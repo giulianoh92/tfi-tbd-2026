@@ -105,9 +105,11 @@ BEGIN
         RETURN;
     END IF;
 
-    -- 4) Aplicar la transicion.
+    -- 4) Aplicar la transicion. Persiste motivo_cancelacion (R8) para que
+    --    quede registrado en la fila sin depender solo del audit_log.
     UPDATE reserva
-       SET estado = 'cancelada'
+       SET estado             = 'cancelada',
+           motivo_cancelacion = v_motivo_limpio
      WHERE id_reserva = p_id_reserva;
 
     -- 5) Inactivar la garantia asociada (si existia). No se borra la fila:

@@ -171,11 +171,12 @@ EXCEPTION
         -- la EXCLUDE (rama exclusion_violation arriba); esta rama solo
         -- existe para mensajes mas claros en el camino feliz.
         IF SQLERRM ILIKE '%superpone%' OR SQLERRM ILIKE '%overlap%' THEN
-            p_estado := 'ERROR_SUPERPOSICION';
+            p_estado  := 'ERROR_SUPERPOSICION';
+            p_mensaje := 'El vehiculo ya esta reservado en ese periodo. Proba con otras fechas.';
         ELSE
-            p_estado := 'ERROR';
+            p_estado  := 'ERROR';
+            p_mensaje := SQLERRM;
         END IF;
-        p_mensaje     := SQLERRM;
         p_id_generado := NULL;
 END;
 $$;

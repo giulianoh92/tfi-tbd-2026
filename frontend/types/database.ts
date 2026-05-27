@@ -749,6 +749,7 @@ export type Database = {
           id_reserva: number
           id_tipo_reserva: number
           id_vehiculo: number
+          motivo_cancelacion: string | null
         }
         Insert: {
           estado?: string
@@ -759,6 +760,7 @@ export type Database = {
           id_reserva?: number
           id_tipo_reserva: number
           id_vehiculo: number
+          motivo_cancelacion?: string | null
         }
         Update: {
           estado?: string
@@ -769,6 +771,7 @@ export type Database = {
           id_reserva?: number
           id_tipo_reserva?: number
           id_vehiculo?: number
+          motivo_cancelacion?: string | null
         }
         Relationships: [
           {
@@ -1331,6 +1334,45 @@ export type Database = {
           patente: string | null
           requiere_garantia: boolean | null
           tipo_reserva: string | null
+        }
+        Relationships: []
+      }
+      vw_stock_por_modelo: {
+        Row: {
+          marca: string
+          modelo: string
+          anio: number
+          unidades_disponibles: number
+        }
+        Insert: {
+          marca?: never
+          modelo?: never
+          anio?: never
+          unidades_disponibles?: never
+        }
+        Update: {
+          marca?: never
+          modelo?: never
+          anio?: never
+          unidades_disponibles?: never
+        }
+        Relationships: []
+      }
+      vw_usuario_legible: {
+        Row: {
+          id: string
+          nombre: string | null
+          email: string | null
+        }
+        Insert: {
+          id?: never
+          nombre?: never
+          email?: never
+        }
+        Update: {
+          id?: never
+          nombre?: never
+          email?: never
         }
         Relationships: []
       }
