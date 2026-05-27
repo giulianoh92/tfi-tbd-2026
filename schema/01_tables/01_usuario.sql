@@ -1,7 +1,7 @@
 -- NOTA DE DISENIO: esta tabla NO almacena hash de contrasena.
 --
 -- La autenticacion del sistema corre por Supabase Auth (auth.users),
--- que persiste la contrasena bcrypt en auth.users.encrypted_password
+-- que persiste la contrasena en auth.users.encrypted_password
 -- y emite JWTs firmados con la clave del proyecto. El vinculo entre
 -- public.cliente y la identidad de Auth se resuelve via cliente.auth_user_id
 -- (UUID), poblado por el trigger fn_handle_new_auth_user al crear un user.
