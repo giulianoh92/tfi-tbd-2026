@@ -28,13 +28,13 @@ erDiagram
     usuario {
         int id_usuario PK
         string username
-        string password_hash
         string email
         timestamp created_at
     }
     cliente {
         int id_cliente PK
         int id_usuario FK
+        uuid auth_user_id
         string nombre
         string apellido
         string dni
@@ -114,6 +114,7 @@ erDiagram
         timestamp fecha_fin_prevista
         string estado
         timestamp fecha_creacion
+        text motivo_cancelacion
     }
     garantia_reserva {
         int id_garantia PK
