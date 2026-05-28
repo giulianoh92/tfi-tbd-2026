@@ -1,19 +1,20 @@
 -- vw_alquileres_activos -- alquileres con estado='activo' enriquecidos con cliente, vehiculo, sucursal y tarifa
 --
 -- Etapa 2 (R3): vista para el panel /admin/alquileres y la operativa de cierre.
--- Resuelve en una sola query lo que el frontend hacia con varios fetches en
--- cascada (cliente + vehiculo + sucursal_origen del vehiculo + tarifa aplicada).
+-- Resuelve en una sola consulta lo que la aplicacion cliente realizaba con
+-- varias peticiones en cascada (cliente + vehiculo + sucursal_origen del
+-- vehiculo + tarifa aplicada).
 --
 -- Columnas calculadas:
 --   duracion_actual   = NOW() - fecha_inicio
 --   tiempo_restante   = fecha_fin_prevista - NOW()  (negativo si esta vencido)
 --
--- "Sucursal origen" aca refiere a la sucursal de alta del vehiculo. No
--- modelamos una sucursal "de retiro" del alquiler porque el dominio no la
+-- "Sucursal origen" aqui refiere a la sucursal de alta del vehiculo. No
+-- se modela una sucursal "de retiro" del alquiler porque el dominio no la
 -- guarda como columna propia (la devolucion si tiene id_sucursal_devolucion).
 --
--- Acceso: SELECT a staff, authenticated (cliente final ve solo SUS alquileres
--- via la RLS de la tabla alquiler), service_role y quique.
+-- Acceso: SELECT a staff, authenticated (el cliente final ve solo SUS
+-- alquileres via la RLS de la tabla alquiler), service_role y quique.
 
 CREATE OR REPLACE VIEW vw_alquileres_activos AS
 SELECT
@@ -53,4 +54,4 @@ JOIN tarifa    t ON t.id_tarifa    = a.id_tarifa
 WHERE a.estado = 'activo';
 
 COMMENT ON VIEW vw_alquileres_activos IS
-'R3 Etapa 2: alquileres activos con JOIN cliente + vehiculo + sucursal_origen del vehiculo + tarifa aplicada. duracion_actual y tiempo_restante calculados contra NOW().';
+'R3 Etapa 2: alquileres activos con combinacion cliente + vehiculo + sucursal_origen del vehiculo + tarifa aplicada. duracion_actual y tiempo_restante calculados contra NOW().';

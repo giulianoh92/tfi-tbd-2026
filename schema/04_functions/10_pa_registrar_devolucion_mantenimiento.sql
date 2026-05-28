@@ -1,10 +1,10 @@
--- pa_registrar_devolucion_mantenimiento(...) — Cierra la orden de
--- mantenimiento abierta para un vehiculo. El trigger
--- trg_mantenimiento_devolucion (sobre mantenimiento) mirrorea el estado
+-- pa_registrar_devolucion_mantenimiento(...) -- Cierra la orden de
+-- mantenimiento abierta para un vehiculo. El disparador
+-- trg_mantenimiento_devolucion (sobre mantenimiento) refleja el estado
 -- 'disponible' al vehiculo via catalogo.
 --
 -- Diseno transaccional (R2): cuerpo envuelto en BEGIN ... EXCEPTION WHEN
--- ... THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
+-- ... THEN ... END, con parametros OUT estandarizados (p_estado, p_mensaje)
 -- segun el contrato R4.
 --
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
@@ -35,7 +35,7 @@ BEGIN
     -- siempre retornaba NULL).
 
     -- 2. CONTROL DE PRECONDICIONES (VALIDACION DE FLOTA Y ORDEN)
-    -- Bloqueamos la fila del vehiculo para la transaccion.
+    -- Se bloquea la fila del vehiculo para la duracion de la transaccion.
     SELECT id_estado, km_actuales INTO v_id_estado_actual, v_km_actuales
     FROM vehiculo
     WHERE id_vehiculo = p_id_vehiculo
@@ -86,10 +86,10 @@ BEGIN
     END IF;
 
     -- Cerramos la orden de mantenimiento asignando la fecha de hoy. Si el
-    -- caller proveyo observaciones nuevas (resumen del taller, repuestos
-    -- cambiados, etc.), las apendea a las observaciones existentes
-    -- separadas por salto de linea, preservando el historial.
-    -- NOTA: Esto dispara de forma automatica el trigger trg_mantenimiento_devolucion.
+    -- invocador proveyo observaciones nuevas (resumen del taller, repuestos
+    -- cambiados, etc.), se agregan a las observaciones existentes separadas
+    -- por salto de linea, preservando el historial.
+    -- NOTA: Esto activa de forma automatica el disparador trg_mantenimiento_devolucion.
     UPDATE mantenimiento
     SET fecha_devolucion = CURRENT_DATE,
         observaciones    = CASE

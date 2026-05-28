@@ -1,28 +1,29 @@
 -- Functions: pa_crear_vehiculo, pa_actualizar_vehiculo, pa_baja_vehiculo
--- (R3, R4, R5). CRUD de vehiculo via SP, con retorno estandarizado.
+-- (R3, R4, R5). Operaciones de alta, modificacion y baja de vehiculo via
+-- procedimiento almacenado, con retorno estandarizado.
 --
--- Decision de diseno: los tres SPs viven en un mismo archivo porque
--- comparten el dominio y el codigo de validacion de rol staff. Cada uno
--- expone su firma independiente.
+-- Decision de diseno: los tres procedimientos viven en un mismo archivo porque
+-- comparten el dominio y el codigo de validacion de rol del personal. Cada
+-- uno expone su firma independiente.
 --
 -- R11: declarados como FUNCTIONs (no PROCEDUREs) para que PostgREST los
 -- exponga via /rest/v1/rpc.
 --
 -- Acceso (R3 / Anexo A): las mutaciones de flota son responsabilidad
--- exclusiva del staff. No hay un rol PostgreSQL `staff` separado en este
--- proyecto (los staff se distinguen por claim app_metadata.role = 'staff'
+-- exclusiva del personal. No hay un rol PostgreSQL `staff` separado en este
+-- proyecto (el personal se distingue por el atributo app_metadata.role = 'staff'
 -- del JWT). Por eso el GRANT EXECUTE se da a `authenticated` y cada
--- procedure verifica internamente `fn_es_staff()` (definida en
--- schema/06_permissions/02_rls_helpers.sql). Si no es staff -> ERROR_ESTADO.
--- Esta linea de defensa se suma a las RLS sobre `vehiculo` (no via SP).
+-- procedimiento verifica internamente `fn_es_staff()` (definida en
+-- schema/06_permissions/02_rls_helpers.sql). Si no es personal -> ERROR_ESTADO.
+-- Esta linea de defensa se suma a las politicas RLS sobre `vehiculo` (no via SP).
 --
 -- Contrato de retorno (R4): p_estado, p_mensaje, p_id_generado donde aplica.
 
 ------------------------------------------------------------------------
 -- pa_crear_vehiculo
 ------------------------------------------------------------------------
--- Estado inicial: lookup en estado_vehiculo WHERE nombre = 'disponible'.
--- Si no existe en el catalogo, retorna ERROR (el seed deberia poblarlo).
+-- Estado inicial: consulta en estado_vehiculo WHERE nombre = 'disponible'.
+-- Si no existe en el catalogo, retorna ERROR (los datos iniciales deben poblarlo).
 CREATE OR REPLACE FUNCTION pa_crear_vehiculo(
     p_id_sucursal_origen BIGINT,
     p_id_tipo            BIGINT,
@@ -46,7 +47,7 @@ BEGIN
     p_mensaje     := NULL;
     p_id_generado := NULL;
 
-    -- Solo staff puede crear vehiculos (defensa en profundidad sobre RLS).
+    -- Solo el personal puede crear vehiculos (defensa en profundidad sobre RLS).
     IF NOT fn_es_staff() THEN
         p_estado  := 'ERROR_ESTADO';
         p_mensaje := 'Operacion permitida solo a usuarios staff.';
@@ -120,7 +121,7 @@ $$;
 -- pa_actualizar_vehiculo
 ------------------------------------------------------------------------
 -- Solo se actualizan campos descriptivos. El id_estado se gobierna por los
--- triggers de lifecycle (fn_alquiler_start / fn_alquiler_close /
+-- disparadores del ciclo de vida (fn_alquiler_start / fn_alquiler_close /
 -- fn_mantenimiento_*). La sucursal de origen tampoco se cambia desde aqui:
 -- los traslados se manejan via ubicacion_vehiculo.
 CREATE OR REPLACE FUNCTION pa_actualizar_vehiculo(
@@ -191,8 +192,8 @@ $$;
 ------------------------------------------------------------------------
 -- pa_baja_vehiculo
 ------------------------------------------------------------------------
--- "Baja logica": como el schema no tiene flag activo/inactivo sobre
--- vehiculo, transicionamos id_estado al estado 'baja' (agregado en
+-- "Baja logica": como el esquema no tiene indicador activo/inactivo sobre
+-- vehiculo, se transiciona id_estado al estado 'baja' (agregado en
 -- 05_seeds/06_estado_vehiculo.sql). Esto saca al vehiculo de cualquier
 -- listado operativo (fn_validar_vehiculo_operativo exige 'disponible').
 --
@@ -202,9 +203,9 @@ $$;
 --      baja no deberian poder concretarse).
 --   3) Si ya esta en 'baja' -> ERROR_ESTADO (idempotencia explicita).
 --
--- INOUT p_motivo: entra el motivo del staff, sale enriquecido con timestamp
--- + uuid del autor (mismo patron que pa_cancelar_reserva). Quedara visible
--- al caller y se persistira en historial_estado_vehiculo.
+-- INOUT p_motivo: entra el motivo del personal, sale enriquecido con
+-- marca de tiempo + uuid del autor (mismo patron que pa_cancelar_reserva).
+-- Quedara visible al invocador y se persistira en historial_estado_vehiculo.
 CREATE OR REPLACE FUNCTION pa_baja_vehiculo(
     p_id_vehiculo   BIGINT,
     INOUT p_motivo  TEXT,
@@ -232,7 +233,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Normalizar motivo y enriquecer (mismo patron que pa_cancelar_reserva).
+    -- Normalizar motivo y enriquecer con metadatos (mismo patron que pa_cancelar_reserva).
     v_motivo_limpio := COALESCE(NULLIF(trim(p_motivo), ''), '(sin motivo informado)');
 
     BEGIN
@@ -260,7 +261,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Bloquear la fila para evitar carrera con un alquiler/reserva concurrente.
+    -- Bloquear la fila para evitar condicion de carrera con un alquiler/reserva concurrente.
     SELECT v.id_estado, lower(ev.nombre)
       INTO v_id_estado_actual, v_estado_actual
       FROM vehiculo v
@@ -323,13 +324,13 @@ BEGIN
         id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo
     )
     VALUES (
-        -- historial_estado_vehiculo.motivo es VARCHAR(255); truncamos el
+        -- historial_estado_vehiculo.motivo es VARCHAR(255); se trunca el
         -- motivo enriquecido para evitar string_too_long. El INOUT p_motivo
-        -- sigue conteniendo el texto completo para que el caller lo vea.
+        -- sigue conteniendo el texto completo para que el invocador lo vea.
         p_id_vehiculo, v_id_estado_baja, NOW(), NULL, left(p_motivo, 255)
     );
 
-    -- Espejar estado actual en vehiculo.
+    -- Reflejar estado actual en vehiculo.
     UPDATE vehiculo
        SET id_estado = v_id_estado_baja
      WHERE id_vehiculo = p_id_vehiculo;

@@ -1,31 +1,33 @@
--- Usuario staff para el panel /admin del frontend.
+-- Usuario de personal para el panel /admin de la interfaz de administracion.
 --
--- Crea un user de Supabase Auth (auth.users) con app_metadata.role='staff'.
--- El claim viaja en el JWT que PostgREST inyecta en request.jwt.claims, y
--- las policies de RLS lo leen via fn_es_staff() (ver 02_rls_helpers.sql).
+-- Crea un usuario en Supabase Auth (auth.users) con app_metadata.role='staff'.
+-- El atributo viaja en el JWT que PostgREST inyecta en la variable de
+-- configuracion `request.jwt.claims`, y las politicas de RLS lo leen via
+-- fn_es_staff() (ver 02_rls_helpers.sql).
 --
 -- Por que app_metadata y no user_metadata:
---   * user_metadata es editable por el propio user (updateUser desde el
---     frontend) -> trivial elevarse a staff.
---   * app_metadata solo es modificable por service_role / desde el server.
+--   * user_metadata es editable por el propio usuario (updateUser desde la
+--     aplicacion cliente) -> trivial elevarse a personal.
+--   * app_metadata solo es modificable por service_role / desde el servidor.
 --
 -- Idempotente:
---   * Se ejecuta solo si existe el schema 'auth' (entorno Supabase). En
---     postgres puro (CI, docker compose sin GoTrue) se saltea silenciosamente.
---   * Si el user ya existe (match por email) actualiza password + metadata;
---     si no existe inserta auth.users + auth.identities.
---   * El trigger fn_handle_new_auth_user encadena la fila en public.cliente.
+--   * Se ejecuta solo si existe el esquema 'auth' (entorno Supabase). En
+--     Postgres puro (CI, docker compose sin GoTrue) se omite silenciosamente.
+--   * Si el usuario ya existe (coincidencia por email) actualiza contrasena +
+--     metadatos; si no existe inserta en auth.users + auth.identities.
+--   * El disparador fn_handle_new_auth_user encadena la fila en public.cliente.
 --
 -- Credenciales por defecto (cambiar antes de compartir):
 --   email:    staff@tbd-tfi.local
 --   password: tbd-staff-2026
 
--- Deploy fix: la imagen supabase/postgres:15.1.0.147 trae una version vieja
--- de auth.users (sin email_confirmed_at / email_change_token_new). Hacemos el
--- INSERT y UPDATE dinamicos para que el mismo archivo funcione en:
---   * Supabase managed (auth moderno)            -> usa email_confirmed_at
---   * supabase/postgres viejo                    -> usa confirmed_at
---   * Postgres puro / CI sin schema auth         -> skipea
+-- Correccion de compatibilidad: la imagen supabase/postgres:15.1.0.147 trae
+-- una version anterior de auth.users (sin email_confirmed_at /
+-- email_change_token_new). Se construyen el INSERT y UPDATE de forma dinamica
+-- para que el mismo archivo funcione en:
+--   * Supabase administrado (auth moderno)        -> usa email_confirmed_at
+--   * supabase/postgres version anterior          -> usa confirmed_at
+--   * Postgres puro / CI sin esquema auth         -> se omite
 DO $$
 DECLARE
     v_email          TEXT := 'staff@tbd-tfi.local';
@@ -77,8 +79,8 @@ BEGIN
         v_user_id := gen_random_uuid();
 
         -- Columnas obligatorias en TODAS las versiones de auth.users.
-        -- Columnas opcionales (timestamp de confirmacion y token de cambio de email)
-        -- se inyectan via concatenacion si existen en esta version.
+        -- Columnas opcionales (marca de tiempo de confirmacion y token de cambio
+        -- de email) se inyectan via concatenacion si existen en esta version.
         EXECUTE
             'INSERT INTO auth.users ('
             ||  'instance_id, id, aud, role, email, encrypted_password,'
@@ -104,8 +106,9 @@ BEGIN
             NOW();
 
         -- auth.identities solo existe en versiones recientes de GoTrue.
-        -- En la imagen vieja supabase/postgres:15.1.0.147 no existe; el login
-        -- igual funciona porque la sesion se valida contra auth.users.
+        -- En la imagen anterior supabase/postgres:15.1.0.147 no existe; el
+        -- inicio de sesion igual funciona porque la sesion se valida contra
+        -- auth.users.
         IF EXISTS (
             SELECT 1 FROM information_schema.tables
             WHERE table_schema='auth' AND table_name='identities'

@@ -1,8 +1,8 @@
 -- Habilita Row Level Security en todas las tablas de dominio.
--- IMPORTANTE: por defecto el rol postgres (owner del schema, usado por apply.sh
--- y por el rol quique con grants explicitos) sigue pudiendo todo - RLS solo
--- aplica a roles SIN el atributo BYPASSRLS (los roles authenticator/anon/
--- authenticated de Supabase si lo respetan).
+-- IMPORTANTE: por defecto el rol postgres (propietario del esquema, usado por
+-- apply.sh y por el rol quique con permisos explicitos) puede operar sin
+-- restricciones; RLS solo aplica a roles SIN el atributo BYPASSRLS (los roles
+-- authenticator/anon/authenticated de Supabase si lo respetan).
 --
 -- Idempotente: ENABLE ROW LEVEL SECURITY no falla si ya esta habilitado.
 

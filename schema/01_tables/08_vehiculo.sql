@@ -2,12 +2,12 @@
 --
 -- Entidad central del dominio: cada fila representa una unidad fisica de la
 -- flota. Referencia a su sucursal de origen, a su tipo comercial y a su
--- estado operativo vigente (cache denormalizada del ultimo estado de la
--- FSM; el historial completo vive en historial_estado_vehiculo). Soporta
--- CRUD por programacion en BD mediante pa_crud_vehiculo (R3, R4) y
--- participa en la validacion de overlap temporal de alquileres y reservas
--- (fn_check_vehiculo_overlap, R7) y en la maquina de estados del lifecycle
--- de alquiler (R10).
+-- estado operativo vigente (valor denormalizado que refleja el ultimo estado
+-- de la maquina de estados; el historial completo vive en
+-- historial_estado_vehiculo). Soporta CRUD por programacion en BD mediante
+-- pa_crud_vehiculo (R3, R4) y participa en la validacion de superposicion
+-- temporal de alquileres y reservas (fn_check_vehiculo_overlap, R7) y en la
+-- maquina de estados del ciclo de vida del alquiler (R10).
 CREATE TABLE IF NOT EXISTS vehiculo (
     id_vehiculo        BIGSERIAL PRIMARY KEY,
     id_sucursal_origen BIGINT       NOT NULL,

@@ -1,17 +1,17 @@
 -- fn_calcular_factura(id_alquiler) -> id_factura
 --
 -- Liquida un alquiler cerrado: calcula costo base, recargo por horas excedidas
--- e inserta la factura tomando snapshot del precio_por_dia y porcentaje_recargo
+-- e inserta la factura tomando una instantanea del precio_por_dia y porcentaje_recargo
 -- vigentes en tarifa al momento de la emision.
 --
 -- fn_calcular_factura cubre la pieza de R10 que liquida el alquiler:
--- toma el snapshot de tarifa, calcula los recargos correspondientes y
+-- toma la instantanea de tarifa, calcula los recargos correspondientes y
 -- emite la factura con numero correlativo.
 --
 -- Aporte original: Marcia Viera (commit 257d86f del 2026-05-16,
--- "funcionalidad finalizar alquiler"). Adaptaciones al schema reescrito:
---   * porcentaje_recargo asumido como fraccion (0.20 = 20%) — convencion
---     uniforme con la columna tarifa.porcentaje_recargo y con los seeds.
+-- "funcionalidad finalizar alquiler"). Adaptaciones al esquema reescrito:
+--   * porcentaje_recargo asumido como fraccion (0.20 = 20%); convencion
+--     uniforme con la columna tarifa.porcentaje_recargo y con los datos iniciales.
 --   * fecha_emision se inserta como DATE (CURRENT_DATE) coherente con el cambio
 --     de tipo en la tabla factura.
 --   * Numerador de factura via seq_numero_factura (creada en 17_factura.sql).
@@ -36,7 +36,7 @@ DECLARE
     v_numero_factura        VARCHAR(30);
     v_id_factura            BIGINT;
 BEGIN
-    -- 1. Snapshot de tarifa y datos del alquiler
+    -- 1. Instantanea de tarifa y datos del alquiler
     SELECT
         a.id_cliente,
         a.id_tarifa,
@@ -61,8 +61,8 @@ BEGIN
         RAISE EXCEPTION 'fn_calcular_factura: no se encontraron datos para el alquiler %', p_id_alquiler;
     END IF;
 
-    -- 2. Costo base: dias pactados (no la devolucion real). Politica rent-a-car
-    --    estandar: el cliente paga los dias acordados aunque devuelva antes.
+    -- 2. Costo base: dias pactados (no la devolucion real). Politica estandar
+    --    de alquiler: el cliente paga los dias acordados aunque devuelva antes.
     v_dias_pactados := CEIL(EXTRACT(EPOCH FROM (v_fecha_fin_prevista - v_fecha_inicio)) / 86400);
     IF v_dias_pactados <= 0 THEN
         v_dias_pactados := 1;
@@ -79,17 +79,17 @@ BEGIN
 
     v_total := v_costo_base + v_recargo_excedente;
 
-    -- 4. Emision con numero correlativo y snapshot historico.
+    -- 4. Emision con numero correlativo e instantanea historica.
     --
-    -- numero_factura puede tener huecos. Si una transaccion hace ROLLBACK
+    -- numero_factura puede tener huecos. Si una transaccion se revierte
     -- (ej. el INSERT siguiente captura una excepcion), Postgres NO retrocede
     -- la secuencia: el comportamiento estandar de NEXTVAL es mantener
-    -- consistencia entre sesiones concurrentes sin lock global, por diseno.
+    -- consistencia entre sesiones concurrentes sin bloqueo global, por diseno.
     -- Para un correlativo fiscal estricto sin huecos haria falta una tabla
-    -- contadora con UPDATE bajo lock (SELECT ... FOR UPDATE + UPDATE ...
+    -- contadora con actualizacion bajo bloqueo (SELECT ... FOR UPDATE + UPDATE ...
     -- SET valor = valor + 1), patron mucho mas lento y que serializa todas
     -- las facturaciones. Como el TFI no requiere correlativo fiscal
-    -- AFIP-grade (R10), mantenemos secuencia y aceptamos la limitacion.
+    -- de nivel AFIP (R10), mantenemos la secuencia y aceptamos la limitacion.
     v_numero_factura := 'FAC-' || LPAD(NEXTVAL('seq_numero_factura')::TEXT, 6, '0');
 
     INSERT INTO factura (

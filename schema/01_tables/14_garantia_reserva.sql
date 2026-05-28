@@ -5,8 +5,9 @@
 -- inserta aca en la misma transaccion en que crea la reserva, garantizando
 -- atomicidad (R2): si la insercion de garantia falla, la reserva no se
 -- persiste. El numero de tarjeta NUNCA se guarda en claro: se almacena un
--- hash (numero_tarjeta_hash) calculado por la aplicacion. El flag `activa`
--- permite invalidar una garantia sin borrarla (soft delete con trazabilidad).
+-- resumen criptografico (numero_tarjeta_hash) calculado por la aplicacion.
+-- El flag `activa` permite invalidar una garantia sin borrarla (baja logica
+-- con trazabilidad).
 CREATE TABLE IF NOT EXISTS garantia_reserva (
     id_garantia          BIGSERIAL    PRIMARY KEY,
     id_reserva           BIGINT       NOT NULL,

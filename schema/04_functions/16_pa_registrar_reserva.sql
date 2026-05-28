@@ -2,9 +2,9 @@
 -- Orquestador unico para alta de reserva.
 --
 -- Diseno modular: la validacion de superposicion de fechas la sigue
--- haciendo el trigger BEFORE INSERT fn_check_vehiculo_overlap sobre la
--- tabla reserva (schema/04_functions/02_*.sql). Este procedure NO la
--- replica: confia en el trigger y captura la excepcion que pueda lanzar
+-- haciendo el disparador BEFORE INSERT fn_check_vehiculo_overlap sobre la
+-- tabla reserva (schema/04_functions/02_*.sql). Este procedimiento NO la
+-- replica: confia en el disparador y captura la excepcion que pueda lanzar
 -- en su bloque EXCEPTION OTHERS (mapeada a ERROR_VALIDACION).
 --
 -- Contrato de retorno estandarizado (R4):
@@ -13,19 +13,20 @@
 --   p_mensaje     : descripcion legible del resultado (en error: SQLERRM)
 --   p_id_generado : id_reserva creado (NULL si error)
 --
--- Validaciones reusables invocadas (R7 - modularizacion):
+-- Validaciones reutilizables invocadas (R7 - modularizacion):
 --   fn_validar_periodo, fn_validar_cliente_activo, fn_validar_vehiculo_operativo.
---   Las tres lanzan RAISE EXCEPTION; se capturan transparentemente en el
---   bloque EXCEPTION WHEN OTHERS y mapean por SQLSTATE.
+--   Las tres lanzan RAISE EXCEPTION; se capturan en el bloque EXCEPTION WHEN
+--   OTHERS y se clasifican por SQLSTATE.
 
 -- Garantia con tarjeta: si el tipo de reserva tiene requiere_garantia=TRUE
 -- (caso "estandar"), la regla del negocio exige que el cliente cargue una
--- tarjeta de credito como garantia al momento de reservar. El procedure
--- recibe los 4 datos sensibles como parametros opcionales y los valida +
+-- tarjeta de credito como garantia al momento de reservar. El procedimiento
+-- recibe los 4 datos sensibles como parametros opcionales, los valida y los
 -- persiste en garantia_reserva dentro de la misma transaccion. El numero
--- de tarjeta se almacena hasheado con bcrypt (pgcrypto) para no guardar
--- el PAN en claro. El frontend nunca debe ver el hash; solo envia el
--- numero en texto plano por HTTPS y se descarta del lado servidor.
+-- de tarjeta se almacena con resumen criptografico (hash) bcrypt via pgcrypto
+-- para no guardar el numero en texto legible. La aplicacion cliente nunca debe
+-- ver el resumen; solo envia el numero en texto plano por HTTPS y se descarta
+-- del lado del servidor.
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
 -- via /rest/v1/rpc.
@@ -50,16 +51,16 @@ DECLARE
     v_requiere_garantia BOOLEAN;
     v_numero_hash       TEXT;
 BEGIN
-    -- Inicializacion defensiva por si alguna rama no asigna.
+    -- Inicializacion preventiva por si alguna rama no asigna valor.
     p_estado      := 'ERROR';
     p_mensaje     := NULL;
     p_id_generado := NULL;
 
     -- 1) Validaciones modulares (lanzan EXCEPTION ante fallo).
-    --    NULL en p_tolerancia_pasado activa modo "granularidad dia": el
-    --    form de reserva online manda timestamp con hora 00:00:00, y la
-    --    regla de negocio real es "la reserva debe ser para hoy o un dia
-    --    futuro", no "para un timestamp futuro".
+    --    NULL en p_tolerancia_pasado activa el modo "granularidad dia": el
+    --    formulario de reserva en linea envia marca de tiempo con hora 00:00:00,
+    --    y la regla de negocio real es "la reserva debe ser para hoy o un dia
+    --    futuro", no "para una marca de tiempo futura".
     PERFORM fn_validar_periodo(p_fecha_inicio, p_fecha_fin, NULL);
     PERFORM fn_validar_cliente_activo(p_id_cliente);
     PERFORM fn_validar_vehiculo_operativo(p_id_vehiculo);
@@ -95,7 +96,7 @@ BEGIN
         END IF;
     END IF;
 
-    -- 3) INSERT en reserva. El trigger trg_reserva_no_overlap valida
+    -- 3) INSERT en reserva. El disparador trg_reserva_no_overlap valida
     --    superposicion contra otras reservas y alquileres activos.
     INSERT INTO reserva (
         id_cliente,
@@ -113,9 +114,9 @@ BEGIN
     )
     RETURNING id_reserva INTO p_id_generado;
 
-    -- 4) Si el tipo exige garantia, persistirla con el numero hasheado
-    --    (bcrypt via pgcrypto). El INSERT esta dentro de la misma
-    --    transaccion del procedure: si falla, la reserva del paso 3
+    -- 4) Si el tipo exige garantia, persistirla con el numero con resumen
+    --    criptografico (bcrypt via pgcrypto). El INSERT esta dentro de la misma
+    --    transaccion del procedimiento: si falla, la reserva del paso 3
     --    tambien se revierte.
     IF v_requiere_garantia THEN
         v_numero_hash := crypt(p_garantia_numero_tarjeta, gen_salt('bf'));
@@ -148,9 +149,10 @@ EXCEPTION
     WHEN exclusion_violation THEN
         -- 23P01 = exclusion_violation. Lo dispara la EXCLUDE constraint
         -- excl_reserva_overlap cuando otra transaccion ya ocupo el rango
-        -- con un id_vehiculo + tsrange solapado. Es el "lock optimista"
-        -- idiomatico: el indice GiST valida atomicamente, sin ventana de
-        -- carrera entre SELECT y INSERT como tenia el trigger.
+        -- con un id_vehiculo + tsrange solapado. Es el mecanismo idiomatico
+        -- de exclusion optimista: el indice GiST valida atomicamente, sin
+        -- ventana de condicion de carrera entre SELECT e INSERT como tenia
+        -- el disparador.
         p_estado      := 'ERROR_SUPERPOSICION';
         p_mensaje     := 'El vehiculo ya esta reservado/alquilado en ese periodo.';
         p_id_generado := NULL;
@@ -159,17 +161,17 @@ EXCEPTION
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN check_violation THEN
-        -- Disparado por fn_validar_periodo, fn_validar_vehiculo_operativo
+        -- Activado por fn_validar_periodo, fn_validar_vehiculo_operativo
         -- (cuando estado != disponible) y por chk_reserva_fechas /
         -- chk_reserva_estado.
         p_estado      := 'ERROR_VALIDACION';
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN OTHERS THEN
-        -- Captura el RAISE del trigger best-effort fn_check_vehiculo_overlap
-        -- (mensaje legible antes de llegar al EXCLUDE). La garantia dura es
-        -- la EXCLUDE (rama exclusion_violation arriba); esta rama solo
-        -- existe para mensajes mas claros en el camino feliz.
+        -- Captura el RAISE del disparador fn_check_vehiculo_overlap, que actua
+        -- como validacion preventiva (mensaje claro antes de llegar al EXCLUDE).
+        -- La garantia formal es la EXCLUDE (rama exclusion_violation arriba);
+        -- esta rama existe solo para mensajes mas claros en el flujo habitual.
         IF SQLERRM ILIKE '%superpone%' OR SQLERRM ILIKE '%overlap%' THEN
             p_estado  := 'ERROR_SUPERPOSICION';
             p_mensaje := 'El vehiculo ya esta reservado en ese periodo. Proba con otras fechas.';

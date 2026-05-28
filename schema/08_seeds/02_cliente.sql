@@ -1,7 +1,7 @@
--- Clientes 1-5 con cuenta online (id_usuario), 6-7 walk-in sin login.
+-- Clientes 1-5 con cuenta en la aplicacion (id_usuario), 6-7 presenciales sin inicio de sesion.
 -- Direcciones y telefonos coherentes con un perfil de operacion en el NEA:
 -- mezcla de clientes locales (Posadas, Obera, Corrientes, Resistencia, Iguazu)
--- y un turista porteño que opera online (cliente 2).
+-- y un turista porteno que opera desde la aplicacion (cliente 2).
 INSERT INTO cliente (id_usuario, nombre, apellido, dni, telefono, direccion) VALUES
     (1,    'Juan',   'Perez',     '30123456', '0376-455-1111', 'Av. Roque Saenz Peña 1234, Posadas'),
     (2,    'Maria',  'Gomez',     '28987654', '011-4555-2222', 'Av. Santa Fe 4321, CABA'),

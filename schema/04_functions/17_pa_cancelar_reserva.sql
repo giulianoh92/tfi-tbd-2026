@@ -1,11 +1,11 @@
 -- Procedure: pa_cancelar_reserva (R8)
--- Cancela una reserva validando transicion de estado.
+-- Cancela una reserva validando la transicion de estado.
 --
 -- Uso de modos de parametro (R5):
 --   IN    p_id_reserva : id de la reserva a cancelar.
 --   INOUT p_motivo     : entra el motivo del cliente; sale enriquecido con
---                        prefijo "[timestamp | usuario uuid]" para dejar
---                        rastro auditable de quien/cuando cancelo.
+--                        prefijo "[marca de tiempo | usuario uuid]" para
+--                        dejar rastro auditable de quien/cuando cancelo.
 --   OUT   p_estado     : codigo estandarizado.
 --   OUT   p_mensaje    : descripcion legible.
 --
@@ -18,9 +18,9 @@
 -- reserva no puede cancelarse desde aqui aunque su estado siga 'pendiente'
 -- (caso degenerado, pero defensa en profundidad).
 --
--- Manejo transaccional (R2): no usamos COMMIT/ROLLBACK literales: el bloque
--- EXCEPTION hace rollback al savepoint implicito y el caller (PostgREST)
--- commitea al cerrar la transaccion HTTP si no se relanza.
+-- Manejo transaccional (R2): no se usan COMMIT/ROLLBACK literales: el bloque
+-- EXCEPTION revierte al savepoint implicito y PostgREST confirma la
+-- transaccion al cerrar la peticion HTTP si no se relanza.
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
 -- exponga via /rest/v1/rpc.
@@ -45,14 +45,14 @@ BEGIN
     -- 0) Normalizacion del motivo (INOUT: lo modificamos para retornarlo).
     v_motivo_limpio := COALESCE(NULLIF(trim(p_motivo), ''), '(sin motivo informado)');
 
-    -- Capturar usuario logico desde el JWT con fallback seguro.
+    -- Capturar usuario logico desde el JWT con valor de respaldo seguro.
     BEGIN
         v_uuid_app := (current_setting('request.jwt.claims', true)::jsonb ->> 'sub')::UUID;
     EXCEPTION WHEN OTHERS THEN
         v_uuid_app := NULL;
     END;
 
-    -- Enriquecer p_motivo (forma del retorno INOUT) con metadata audit.
+    -- Enriquecer p_motivo (como retorno INOUT) con metadatos de auditoria.
     p_motivo := format(
         '[%s | usuario %s] %s',
         to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SSOF'),
@@ -60,7 +60,7 @@ BEGIN
         v_motivo_limpio
     );
 
-    -- 1) Localizar reserva y bloquear la fila para evitar carrera.
+    -- 1) Localizar reserva y bloquear la fila para evitar condicion de carrera.
     SELECT estado
       INTO v_estado_actual
       FROM reserva
@@ -114,7 +114,7 @@ BEGIN
 
     -- 5) Inactivar la garantia asociada (si existia). No se borra la fila:
     --    el diseno conserva el historial de tarjetas que el cliente cargo
-    --    para auditoria fiscal. El flag activa = FALSE indica que la
+    --    para trazabilidad fiscal. El indicador activa = FALSE senala que la
     --    autorizacion sobre esa tarjeta ya no esta vigente.
     UPDATE garantia_reserva
        SET activa = FALSE

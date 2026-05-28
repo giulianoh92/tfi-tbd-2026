@@ -3,7 +3,7 @@
 -- Etapa 2 (R3, R9): vista para el panel /admin/devoluciones-vencidas y para
 -- recordatorios al cliente. Lee la tabla historica devolucion_vencida (poblada
 -- por pa_detectar_devoluciones_vencidas via pg_cron) y la enriquece con
--- JOINs legibles: cliente (nombre completo, dni, telefono, email del
+-- combinaciones legibles: cliente (nombre completo, dni, telefono, email del
 -- usuario asociado), vehiculo (patente, marca, modelo) y sucursal_origen.
 --
 -- Filtra alquileres SIN devolucion real (a.fecha_devolucion_real IS NULL):
@@ -11,11 +11,11 @@
 -- "vencido pendiente" y la fila desaparece de la vista (aunque siga
 -- registrada en devolucion_vencida con fines historicos).
 --
--- El email viene de usuario.email via cliente.id_usuario; cliente no tiene
--- columna email propia (la fuente de credencial es auth.users y el alias
--- humano es public.usuario.email).
+-- El email proviene de usuario.email via cliente.id_usuario; cliente no tiene
+-- columna email propia (la fuente de credencial es el esquema `auth` y el alias
+-- humano es `public`.usuario.email).
 --
--- Acceso: SELECT a staff, authenticated (cliente final ve solo SUS filas
+-- Acceso: SELECT a staff, authenticated (el cliente final ve solo SUS filas
 -- via RLS sobre devolucion_vencida si esta configurada), service_role y
 -- quique.
 

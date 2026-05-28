@@ -3,7 +3,7 @@
 -- Registra cada solicitud de reserva de un vehiculo por parte de un cliente
 -- para un periodo determinado. Eje de tres requisitos:
 --   * R6: el alquiler puede originarse en una reserva previa (alquiler
---     .id_reserva apunta aca) o ser walk-in (sin reserva).
+--     .id_reserva apunta aca) o ser presencial (sin reserva).
 --   * R7: pa_registrar_reserva valida disponibilidad, superposicion
 --     temporal y limites del tipo_reserva antes de insertar aca.
 --   * R8: pa_cancelar_reserva valida estado y pasa la fila de 'pendiente'

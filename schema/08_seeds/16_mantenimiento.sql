@@ -1,8 +1,8 @@
 -- Patron de dos pasos para mantenimientos cerrados: INSERT con fecha_devolucion=NULL,
--- luego UPDATE seteando la fecha. Los triggers fn_mantenimiento_envio y
+-- luego UPDATE asignando la fecha. Los disparadores fn_mantenimiento_envio y
 -- fn_mantenimiento_devolucion propagan el estado del vehiculo via catalogo.
 --
--- Talleres asignados por cercania geografica con la sucursal origen del vehiculo.
+-- Talleres asignados por proximidad geografica a la sucursal de origen del vehiculo.
 
 -- Mantenimiento 1: v8 Renault Kangoo (Corrientes), cerrado.
 -- Taller 2 (Mecanica Corrientes Centro) - service de rutina.

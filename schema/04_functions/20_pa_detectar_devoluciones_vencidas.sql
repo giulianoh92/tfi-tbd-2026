@@ -1,17 +1,17 @@
 -- Procedure: pa_detectar_devoluciones_vencidas (R9)
--- Job: detecta alquileres con devolucion vencida y los persiste en la
--- tabla historica `devolucion_vencida`.
+-- Tarea programada: detecta alquileres con devolucion vencida y los
+-- persiste en la tabla historica `devolucion_vencida`.
 --
--- Schedulado via pg_cron (ver schema/04_functions/21_schedule_jobs.sql)
--- cada 6 horas. Al ser un job no hay caller HTTP, asi que no devuelve
--- p_estado/p_mensaje (no habria quien los lea). Los errores se capturan
--- con un bloque EXCEPTION OTHERS + RAISE NOTICE para que queden en el
--- log del cron sin abortar la transaccion del proximo job.
+-- Programada via pg_cron (ver schema/04_functions/21_schedule_jobs.sql)
+-- cada 6 horas. Al ser una tarea automatica no hay peticion HTTP, por lo
+-- que no retorna p_estado/p_mensaje (nadie los leeria). Los errores se
+-- capturan con un bloque EXCEPTION OTHERS + RAISE NOTICE para que queden
+-- en el registro del cron sin abortar la transaccion de la proxima ejecucion.
 --
 -- Idempotencia: se usa INSERT ... ON CONFLICT (id_alquiler) DO UPDATE.
--- Si el alquiler ya estaba detectado, se refresca `horas_excedidas` y
--- `fecha_deteccion` pero NO se toca `notificado` (asi no se "desnotifica"
--- una fila que el staff ya marco como atendida).
+-- Si el alquiler ya estaba detectado, se actualiza `horas_excedidas` y
+-- `fecha_deteccion` pero NO se toca `notificado` (asi no se revierte la
+-- notificacion de una fila que el personal ya marco como atendida).
 --
 -- Criterio de seleccion (mismo que el PDF):
 --   * estado = 'activo'                  -> no esta cerrado.
@@ -23,16 +23,16 @@
 -- centesima de hora.
 
 -- SECURITY DEFINER + search_path = public:
---   * SECURITY DEFINER: el job corre como owner (postgres) cuando lo invoca
---     pg_cron. Lo declaramos explicitamente para que, si en el futuro se
---     llama desde otro rol con privilegios menores (manual debugging, RPC
+--   * SECURITY DEFINER: la tarea corre como propietario (postgres) cuando la
+--     invoca pg_cron. Se declara explicitamente para que, si en el futuro se
+--     llama desde otro rol con privilegios menores (depuracion manual, RPC
 --     desde service_role), el INSERT en devolucion_vencida siga
 --     funcionando sin depender de RLS o GRANT especificos.
---   * SET search_path = public: defensa contra "function hijacking" via
---     schemas en el PATH del invocador (mitigation estandar contra
+--   * SET search_path = public: defensa contra la suplantacion de funcion
+--     mediante esquemas en el PATH del invocador (practica estandar contra
 --     CVE-2007-2138 y la familia de ataques que reemplazan funciones
---     built-in como `format` o `lower` desde un schema temporal del
---     atacante). Best practice oficial de Supabase para toda function
+--     incorporadas como `format` o `lower` desde un esquema temporal del
+--     atacante). Practica recomendada por Supabase para toda funcion
 --     SECURITY DEFINER.
 CREATE OR REPLACE PROCEDURE pa_detectar_devoluciones_vencidas()
 LANGUAGE plpgsql
@@ -73,8 +73,8 @@ BEGIN
         v_filas_afectadas;
 
 EXCEPTION WHEN OTHERS THEN
-    -- Nunca dejamos que un error del job tumbe el cron. El siguiente
-    -- tick lo reintenta automaticamente.
+    -- Nunca dejamos que un error de la tarea interrumpa el cron. La siguiente
+    -- ejecucion lo reintentara automaticamente.
     RAISE NOTICE
         'pa_detectar_devoluciones_vencidas fallo: % (SQLSTATE: %).',
         SQLERRM, SQLSTATE;

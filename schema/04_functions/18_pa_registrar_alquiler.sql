@@ -5,11 +5,11 @@
 --   1) Con reserva previa: p_id_reserva != NULL. La reserva debe existir,
 --      estar 'pendiente', pertenecer al mismo cliente y vehiculo, y las
 --      fechas deben coincidir con las de la reserva.
---   2) Walk-in (sin reserva): p_id_reserva = NULL. Se validan vehiculo
+--   2) Presencial sin reserva: p_id_reserva = NULL. Se validan vehiculo
 --      operativo, cliente activo y periodo. La superposicion la valida el
---      trigger trg_alquiler_no_overlap (BEFORE INSERT sobre alquiler).
+--      disparador trg_alquiler_no_overlap (BEFORE INSERT sobre alquiler).
 --
--- Triggers asociados (NO se duplican aqui):
+-- Disparadores asociados (NO se replican aqui):
 --   * fn_check_vehiculo_overlap (BEFORE INSERT)  -> superposicion.
 --   * fn_alquiler_start         (AFTER  INSERT)  -> marca reserva como
 --                                                   'concretada' y vehiculo
@@ -21,24 +21,23 @@
 --   p_mensaje     : descripcion legible (SQLERRM en errores).
 --   p_id_generado : id_alquiler creado (NULL si error).
 --
--- fn_validar_periodo soporta tolerancia: en walk-in se invoca con
--- INTERVAL '5 minutes' para que el flujo sea robusto a la latencia HTTP
--- entre el NOW() del frontend y el NOW() del servidor. En
--- pa_registrar_reserva se llama sin parametro (default 0). La
--- responsabilidad de "fecha futura" queda asi siempre en la DB, no en el
--- frontend.
+-- fn_validar_periodo admite tolerancia: en el flujo presencial se invoca con
+-- INTERVAL '5 minutes' para absorber la latencia entre el NOW() de la
+-- aplicacion cliente y el NOW() del servidor. En pa_registrar_reserva se
+-- llama sin parametro (por defecto 0). La responsabilidad de "fecha futura"
+-- queda siempre en la base, no en la aplicacion cliente.
 --
 -- Validacion de ubicacion fisica: el vehiculo debe estar en la sucursal
 -- donde el cliente se presenta a retirarlo. Esto preserva la disociacion
 -- entre pertenencia (vehiculo.id_sucursal_origen, fija para tarifa) y
--- ubicacion fisica (ubicacion_vehiculo, evoluciona por devoluciones
+-- ubicacion fisica (ubicacion_vehiculo, que evoluciona por devoluciones
 -- cruzadas).
 --
--- Resolucion de tarifa: la lookup se hace dentro del procedure por la
+-- Resolucion de tarifa: la consulta se hace dentro del procedimiento por la
 -- pareja (id_sucursal_origen, id_tipo) del vehiculo. La FK aislada
 -- alquiler.id_tarifa -> tarifa no podia asegurar coherencia porque
 -- tarifa.id_sucursal y tarifa.id_tipo son independientes de vehiculo.
--- Al resolver internamente, el caller no puede aplicar una tarifa mas
+-- Al resolver internamente, el invocador no puede aplicar una tarifa mas
 -- barata de otra sucursal/tipo.
 
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la
@@ -87,7 +86,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Cargar datos clave del vehiculo en un solo round-trip. Si no existe,
+    -- Cargar datos clave del vehiculo en una sola consulta. Si no existe,
     -- mas adelante fn_validar_vehiculo_operativo / el FK lanzan el error.
     SELECT km_actuales, id_sucursal_origen, id_tipo
       INTO v_km_actuales, v_id_sucursal_origen, v_id_tipo_vehiculo
@@ -110,9 +109,9 @@ BEGIN
     END IF;
 
     -- Ubicacion fisica vigente: el vehiculo debe estar en la sucursal donde
-    -- el cliente se presenta a retirar. Sin este check, el staff de una
-    -- sucursal podia emitir alquiler de un vehiculo que en realidad esta
-    -- en otra (devolucion cruzada anterior).
+    -- el cliente se presenta a retirarlo. Sin esta verificacion, el personal
+    -- de una sucursal podia emitir un alquiler de un vehiculo que en realidad
+    -- estaba en otra (devolucion cruzada anterior).
     SELECT id_sucursal
       INTO v_id_sucursal_vigente
       FROM ubicacion_vehiculo
@@ -160,9 +159,9 @@ BEGIN
         ------------------------------------------------------------------
         -- Rama "con reserva previa".
         ------------------------------------------------------------------
-        -- Bloquear la fila de la reserva para evitar carrera con un cancel
-        -- en paralelo. Si dos requests intentan concretar la misma reserva,
-        -- la segunda espera y luego ve estado != 'pendiente'.
+        -- Bloquear la fila de la reserva para evitar condicion de carrera
+        -- con una cancelacion paralela. Si dos peticiones intentan concretar
+        -- la misma reserva, la segunda espera y luego ve estado != 'pendiente'.
         SELECT estado, id_cliente, id_vehiculo, fecha_inicio, fecha_fin_prevista
           INTO v_reserva_estado, v_reserva_cliente, v_reserva_vehiculo,
                v_reserva_inicio, v_reserva_fin
@@ -213,29 +212,30 @@ BEGIN
             RETURN;
         END IF;
 
-        -- No invocamos fn_validar_vehiculo_operativo aqui: cuando la reserva
+        -- No se invoca fn_validar_vehiculo_operativo aqui: cuando la reserva
         -- esta 'pendiente', el vehiculo puede estar en 'disponible' o
         -- incluso ya marcado por otro flujo. La superposicion la cuida el
-        -- trigger; la coherencia clienta/vehiculo/fechas ya se valido.
+        -- disparador; la coherencia cliente/vehiculo/fechas ya se valido.
 
     ELSE
         ------------------------------------------------------------------
-        -- Rama "walk-in" (sin reserva previa).
+        -- Rama presencial sin reserva.
         ------------------------------------------------------------------
-        -- Tolerancia de 5 minutos sobre NOW(). En walk-in
-        -- el staff completa la fecha de inicio en el frontend y la envia
-        -- al backend; entre uno y otro pueden pasar varios segundos. Sin
-        -- tolerancia, un click lento generaba un check_violation espureo
-        -- ("la fecha de inicio debe ser futura"). 5 minutos cubre latencia
-        -- razonable sin abrir la puerta a registrar alquileres del pasado.
+        -- Tolerancia de 5 minutos sobre NOW(). En el flujo presencial el
+        -- personal completa la fecha de inicio en la interfaz y la envia
+        -- al servidor; entre uno y otro pueden pasar varios segundos. Sin
+        -- tolerancia, un clic lento generaba un check_violation espureo
+        -- ("la fecha de inicio debe ser futura"). 5 minutos cubre una
+        -- latencia razonable sin abrir la puerta a registrar alquileres
+        -- del pasado.
         PERFORM fn_validar_periodo(p_fecha_inicio, p_fecha_fin, INTERVAL '5 minutes');
         PERFORM fn_validar_cliente_activo(p_id_cliente);
         PERFORM fn_validar_vehiculo_operativo(p_id_vehiculo);
     END IF;
 
-    -- 3) INSERT. El trigger fn_alquiler_start (AFTER INSERT) marca la
+    -- 3) INSERT. El disparador fn_alquiler_start (AFTER INSERT) marca la
     --    reserva como 'concretada' y el vehiculo como 'alquilado'. El
-    --    trigger fn_check_vehiculo_overlap (BEFORE INSERT) valida
+    --    disparador fn_check_vehiculo_overlap (BEFORE INSERT) valida
     --    superposicion contra otros alquileres / reservas.
     INSERT INTO alquiler (
         id_reserva,
@@ -270,9 +270,10 @@ EXCEPTION
     WHEN exclusion_violation THEN
         -- 23P01 = exclusion_violation. Lo dispara la EXCLUDE constraint
         -- excl_alquiler_overlap cuando otra transaccion ya ocupo el rango
-        -- con un id_vehiculo + tsrange solapado. Es el "lock optimista"
-        -- idiomatico: el indice GiST valida atomicamente, sin ventana de
-        -- carrera entre SELECT y INSERT como tenia el trigger.
+        -- con un id_vehiculo + tsrange solapado. Es el mecanismo idiomatico
+        -- de exclusion optimista: el indice GiST valida atomicamente, sin
+        -- ventana de condicion de carrera entre SELECT e INSERT como tenia
+        -- el disparador.
         p_estado      := 'ERROR_SUPERPOSICION';
         p_mensaje     := 'El vehiculo ya esta reservado/alquilado en ese periodo.';
         p_id_generado := NULL;
@@ -290,10 +291,10 @@ EXCEPTION
         p_mensaje     := SQLERRM;
         p_id_generado := NULL;
     WHEN OTHERS THEN
-        -- Captura el RAISE del trigger best-effort fn_check_vehiculo_overlap
-        -- (mensaje legible antes de llegar al EXCLUDE). La garantia dura es
-        -- la EXCLUDE (rama exclusion_violation arriba); esta rama solo
-        -- existe para mensajes mas claros en el camino feliz.
+        -- Captura el RAISE del disparador fn_check_vehiculo_overlap, que actua
+        -- como validacion preventiva (mensaje claro antes de llegar al EXCLUDE).
+        -- La garantia formal es la EXCLUDE (rama exclusion_violation arriba);
+        -- esta rama existe solo para mensajes mas claros en el flujo habitual.
         IF SQLERRM ILIKE '%superpone%' OR SQLERRM ILIKE '%overlap%' THEN
             p_estado := 'ERROR_SUPERPOSICION';
         ELSE

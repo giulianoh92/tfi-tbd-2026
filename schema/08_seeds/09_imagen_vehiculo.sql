@@ -1,9 +1,9 @@
--- 5 imagenes por vehiculo (3 exteriores + 2 interiores), 50 filas total.
--- URLs apuntan al repo publico del proyecto en GitHub (rama main), donde el
--- equipo subira los binarios bajo assets/vehiculos/vNN-marca-modelo/ siguiendo
--- la guia en assets/vehiculos/README.md.
+-- 5 imagenes por vehiculo (3 exteriores + 2 interiores), 50 filas en total.
+-- Las URLs apuntan al repositorio publico del proyecto en GitHub (rama main),
+-- donde el equipo cargara los archivos bajo assets/vehiculos/vNN-marca-modelo/
+-- siguiendo la guia en assets/vehiculos/README.md.
 --
--- El trigger trg_imagen_vehiculo_max (BEFORE INSERT) garantiza maximo 5.
+-- El disparador trg_imagen_vehiculo_max (BEFORE INSERT) garantiza un maximo de 5.
 -- El UNIQUE compuesto (id_vehiculo, orden) impide colisiones de posicion.
 INSERT INTO imagen_vehiculo (id_vehiculo, url_imagen, orden) VALUES
     -- v1 Fiat Cronos

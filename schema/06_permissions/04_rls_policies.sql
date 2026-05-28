@@ -1,27 +1,27 @@
--- Row Level Security policies.
+-- Politicas de Row Level Security.
 --
 -- Modelo de acceso:
---   * anon          (sin JWT)         : lectura publica de catalogos + flota disponible.
---   * authenticated (JWT cliente)     : ve y opera sobre SU propio cliente,
---                                       reservas, alquileres y facturas.
---   * staff         (JWT con claim    : ve y opera sobre todo. Se identifica
---                    app_metadata.role  via fn_es_staff() leyendo el JWT.
+--   * anon          (sin JWT)              : lectura publica de catalogos + flota disponible.
+--   * authenticated (JWT cliente)          : ve y opera sobre SU propio cliente,
+--                                            reservas, alquileres y facturas.
+--   * staff         (JWT con el atributo   : ve y opera sobre todo. Se identifica
+--                    app_metadata.role       via fn_es_staff() leyendo el JWT.
 --                    = 'staff')
 --
 -- DROP POLICY IF EXISTS antes de cada CREATE para idempotencia. La rutina
 -- de despliegue ya hace DROP SCHEMA public CASCADE; estos drops son
--- defensa en profundidad.
+-- defensa adicional por capas.
 --
--- Performance pattern de Supabase para RLS:
---   Las helpers fn_auth_uid(), fn_es_staff(), fn_cliente_del_usuario() se
---   envuelven en (SELECT helper()) dentro de USING/WITH CHECK. El planner
---   de Postgres reconoce el subselect como InitPlan y lo evalua UNA sola
---   vez por query, en lugar de invocar la function por cada fila escaneada.
---   Sin el wrap, sobre una tabla de N filas, fn_*() se llamaria N veces
---   (Function Scan) -> O(n). Con el wrap es O(1) en la function + O(n) en
---   el lookup de fila. Las tres helpers estan declaradas STABLE
---   (06_permissions/02_rls_helpers.sql), requisito imprescindible para que
---   el planner pueda cachear el resultado.
+-- Patron de rendimiento para RLS recomendado por Supabase:
+--   Las funciones auxiliares fn_auth_uid(), fn_es_staff(), fn_cliente_del_usuario()
+--   se envuelven en (SELECT helper()) dentro de USING/WITH CHECK. El
+--   planificador de Postgres reconoce el sub-select como InitPlan y lo evalua
+--   UNA sola vez por consulta, en lugar de invocar la funcion por cada fila
+--   escaneada. Sin esa envoltura, sobre una tabla de N filas, fn_*() se
+--   llamaria N veces (Function Scan) -> O(n). Con la envoltura es O(1) en la
+--   funcion + O(n) en la lectura de filas. Las tres auxiliares estan declaradas
+--   STABLE (06_permissions/02_rls_helpers.sql), requisito para que el
+--   planificador pueda reutilizar el resultado.
 --   Ref: https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select
 
 -- ============================================================
@@ -91,7 +91,7 @@ CREATE POLICY cliente_staff_all ON cliente
     FOR ALL TO authenticated
     USING ((SELECT fn_es_staff())) WITH CHECK ((SELECT fn_es_staff()));
 
--- usuario (modelo de dominio propio, no auth.users): solo staff.
+-- usuario (tabla de dominio propio, no auth.users): solo personal.
 DROP POLICY IF EXISTS usuario_staff_all ON usuario;
 CREATE POLICY usuario_staff_all ON usuario
     FOR ALL TO authenticated
@@ -160,12 +160,12 @@ CREATE POLICY historial_estado_staff_all ON historial_estado_vehiculo FOR ALL TO
 CREATE POLICY mantenimiento_staff_all    ON mantenimiento             FOR ALL TO authenticated USING ((SELECT fn_es_staff())) WITH CHECK ((SELECT fn_es_staff()));
 
 -- ============================================================
--- AUDIT_LOG: solo staff puede leer; nadie puede escribir manualmente.
+-- AUDIT_LOG: solo el personal puede leer; nadie puede escribir manualmente.
 -- ============================================================
--- La unica via de escritura es el trigger fn_audit_generic (declarado
--- SECURITY DEFINER -> corre como owner postgres y bypassea RLS). Cualquier
+-- La unica via de escritura es el disparador fn_audit_generic (declarado
+-- SECURITY DEFINER -> corre como propietario postgres y omite RLS). Cualquier
 -- INSERT/UPDATE/DELETE manual via PostgREST se rechaza porque no hay
--- policy que lo permita y RLS por defecto niega.
+-- politica que lo permita y RLS por defecto deniega.
 
 DROP POLICY IF EXISTS audit_log_staff_read ON audit_log;
 CREATE POLICY audit_log_staff_read ON audit_log
@@ -173,8 +173,9 @@ CREATE POLICY audit_log_staff_read ON audit_log
     USING ((SELECT fn_es_staff()));
 
 -- Bloqueo explicito de escritura manual: politicas FOR INSERT/UPDATE/DELETE
--- con USING/CHECK = FALSE. Defensa en profundidad sobre la ausencia de
--- policy permissive (que ya alcanzaria, pero conviene dejarlo declarativo).
+-- con USING/CHECK = FALSE. Defensa adicional por capas sobre la ausencia de
+-- politica permisiva (que ya seria suficiente, pero conviene dejarlo
+-- declarativo).
 DROP POLICY IF EXISTS audit_log_no_insert ON audit_log;
 DROP POLICY IF EXISTS audit_log_no_update ON audit_log;
 DROP POLICY IF EXISTS audit_log_no_delete ON audit_log;
@@ -189,15 +190,15 @@ CREATE POLICY audit_log_no_delete ON audit_log
     USING (FALSE);
 
 -- ============================================================
--- DEVOLUCION_VENCIDA: solo staff puede leer y togglear `notificado`.
+-- DEVOLUCION_VENCIDA: solo el personal puede leer y actualizar `notificado`.
 -- ============================================================
--- Tabla poblada por pa_detectar_devoluciones_vencidas() (job pg_cron). El
--- procedure corre como rol postgres (owner del schema), que tiene
--- BYPASSRLS -> el INSERT/UPDATE del job no necesita policy.
+-- Tabla poblada por pa_detectar_devoluciones_vencidas() (tarea pg_cron). El
+-- procedure corre como rol postgres (propietario del esquema), que tiene
+-- BYPASSRLS -> el INSERT/UPDATE de la tarea no necesita politica.
 --
--- El staff la lee desde /admin/devoluciones-vencidas y puede marcar como
--- notificado=TRUE. NO se permite INSERT ni DELETE desde la UI (la fuente
--- de verdad es el job).
+-- El personal la lee desde /admin/devoluciones-vencidas y puede marcar como
+-- notificado=TRUE. NO se permite INSERT ni DELETE desde la interfaz (la fuente
+-- de verdad es la tarea programada).
 
 DROP POLICY IF EXISTS devolucion_vencida_staff_read   ON devolucion_vencida;
 DROP POLICY IF EXISTS devolucion_vencida_staff_update ON devolucion_vencida;
@@ -212,9 +213,9 @@ CREATE POLICY devolucion_vencida_staff_update ON devolucion_vencida
 -- ============================================================
 -- GRANTS para roles de Supabase
 -- ============================================================
--- Los roles anon y authenticated necesitan USAGE sobre el schema y
+-- Los roles anon y authenticated necesitan USAGE sobre el esquema y
 -- SELECT/INSERT/UPDATE/DELETE sobre las tablas; RLS recorta el alcance fila
--- por fila. Sin GRANT no llegan ni a evaluar las policies.
+-- por fila. Sin GRANT no llegan ni a evaluar las politicas.
 
 DO $$
 BEGIN
@@ -226,14 +227,14 @@ BEGIN
         EXECUTE 'GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated';
         EXECUTE 'GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA public TO authenticated';
 
-        -- audit_log: revocar escritura para que ni siquiera llegue a evaluar
-        -- la policy. La unica via es el trigger fn_audit_generic via
-        -- SECURITY DEFINER. anon ni siquiera puede SELECT.
+        -- audit_log: se revoca la escritura para que ni siquiera llegue a
+        -- evaluar la politica. La unica via de insercion es el disparador
+        -- fn_audit_generic via SECURITY DEFINER. anon ni siquiera puede SELECT.
         EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON audit_log FROM authenticated';
         EXECUTE 'REVOKE ALL ON audit_log FROM anon';
 
-        -- devolucion_vencida: staff solo lee y actualiza (toggle notificado).
-        -- INSERT/DELETE quedan reservados al job (corre como postgres). anon
+        -- devolucion_vencida: el personal solo lee y actualiza (marcar notificado).
+        -- INSERT/DELETE quedan reservados a la tarea (corre como postgres). anon
         -- no la ve.
         EXECUTE 'REVOKE INSERT, DELETE ON devolucion_vencida FROM authenticated';
         EXECUTE 'REVOKE ALL ON devolucion_vencida FROM anon';

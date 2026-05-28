@@ -4,8 +4,8 @@
 -- contable inmutable; ni el alquiler facturado ni el cliente al que se
 -- emitio se pueden borrar mientras la factura exista. id_cliente se
 -- duplica respecto de alquiler.id_cliente intencionalmente (ver
--- decision de diseno en 01_tables/17_factura.sql) para preservar el
--- snapshot historico.
+-- decision de diseno en 01_tables/17_factura.sql) para preservar la
+-- instantanea historica del dato al momento de emision.
 ALTER TABLE factura
     ADD CONSTRAINT fk_factura_alquiler
         FOREIGN KEY (id_alquiler)

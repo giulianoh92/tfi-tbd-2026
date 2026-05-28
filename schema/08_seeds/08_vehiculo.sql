@@ -3,9 +3,10 @@
 -- pickups para turismo de aventura (Iguazu) y uso rural/forestal, utilitario
 -- Kangoo para segmento corporativo regional.
 --
--- Bootstrap: todos los vehiculos arrancan en 'disponible'. Los seeds posteriores
--- (15_alquiler, 16_mantenimiento) disparan los triggers de ciclo de vida que
--- transicionan vehiculos 3 y 9 a 'alquilado' y el vehiculo 5 a 'en_mantenimiento'.
+-- Carga inicial: todos los vehiculos arrancan en 'disponible'. Los datos
+-- posteriores (15_alquiler, 16_mantenimiento) activan los disparadores de
+-- ciclo de vida que transicionan vehiculos 3 y 9 a 'alquilado' y el
+-- vehiculo 5 a 'en_mantenimiento'.
 --
 -- Patentes en formato Mercosur (AA000AA).
 INSERT INTO vehiculo (id_sucursal_origen, id_tipo, id_estado, marca, modelo, anio, patente, km_actuales, detalle_confort) VALUES

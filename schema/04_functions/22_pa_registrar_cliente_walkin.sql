@@ -1,14 +1,14 @@
--- pa_registrar_cliente_walkin(...) — registro de cliente presencial sin
--- cuenta online (R6 walk-in: "los clientes presenciales no requieren
--- cuenta online").
+-- pa_registrar_cliente_walkin(...) -- registro de cliente presencial sin
+-- cuenta en linea (R6 alta presencial: "los clientes presenciales no requieren
+-- cuenta en linea").
 --
--- Inserta solamente en public.cliente. NO toca auth.users — los clientes
--- walk-in operan sin login. El campo auth_user_id queda NULL. Si despues
--- el cliente decide crear cuenta online, se vincula via el trigger
--- fn_handle_new_auth_user que matchea por DNI.
+-- Inserta solamente en public.cliente. NO toca auth.users: los clientes
+-- presenciales operan sin inicio de sesion. El campo auth_user_id queda NULL.
+-- Si despues el cliente decide crear cuenta en linea, se vincula via el
+-- disparador fn_handle_new_auth_user que busca por DNI.
 --
--- Triple identidad audit: la insercion dispara fn_audit_generic que
--- registra (rol_sesion, usuario_db, usuario_app) — el staff queda como
+-- Trazabilidad de triple identidad: la insercion activa fn_audit_generic
+-- que registra (rol_sesion, usuario_db, usuario_app); el personal queda como
 -- responsable de la operacion via su JWT.
 --
 -- R11: FUNCTION para exposicion via PostgREST RPC.
@@ -30,7 +30,7 @@ BEGIN
     p_mensaje     := NULL;
     p_id_generado := NULL;
 
-    -- Solo staff puede crear clientes walk-in (defensa en profundidad).
+    -- Solo el personal puede crear clientes presenciales (defensa en profundidad).
     IF NOT fn_es_staff() THEN
         p_estado  := 'ERROR_ESTADO';
         p_mensaje := 'Operacion permitida solo a usuarios staff.';
@@ -59,7 +59,7 @@ BEGIN
     RETURNING id_cliente INTO p_id_generado;
 
     p_estado  := 'OK';
-    p_mensaje := format('Cliente walk-in creado (id=%s, dni=%s).', p_id_generado, p_dni);
+    p_mensaje := format('Cliente presencial creado (id=%s, dni=%s).', p_id_generado, p_dni);
 
 EXCEPTION
     WHEN unique_violation THEN

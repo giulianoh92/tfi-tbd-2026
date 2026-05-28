@@ -1,14 +1,14 @@
 -- vw_vehiculos_disponibles -- catalogo de vehiculos en estado 'disponible' con sucursal y tarifa vigente
 --
--- Etapa 2 (R3): vista de consulta para el panel staff y el catalogo del frontend.
--- Materializa el JOIN comun entre vehiculo + estado_vehiculo + ubicacion_vehiculo
--- (vigente, fecha_hasta IS NULL) + sucursal + tipo_vehiculo + tarifa. Reduce
--- queries N+1 desde el cliente y centraliza la formula de "disponible y vigente"
--- en un unico punto.
+-- Etapa 2 (R3): vista de consulta para el panel del personal y el catalogo
+-- de la aplicacion cliente. Consolida la combinacion entre vehiculo +
+-- estado_vehiculo + ubicacion_vehiculo (vigente, fecha_hasta IS NULL) +
+-- sucursal + tipo_vehiculo + tarifa. Evita consultas multiples desde el
+-- cliente y centraliza la regla "disponible y vigente" en un unico punto.
 --
 -- Resolucion de "sucursal actual":
 --   Se prefiere la fila vigente de ubicacion_vehiculo (fecha_hasta IS NULL).
---   Si no hay fila de ubicacion vigente, cae a vehiculo.id_sucursal_origen
+--   Si no hay fila de ubicacion vigente, se usa vehiculo.id_sucursal_origen
 --   (sucursal de alta original del vehiculo). Esto cubre el periodo entre el
 --   alta del vehiculo y la primera relocacion fisica.
 --
@@ -19,7 +19,7 @@
 --
 -- Acceso: SELECT permitido a roles staff, authenticated, anon (catalogo publico)
 -- y al rol del profesor quique. La tabla vehiculo no tiene RLS porque el
--- catalogo se expone publico; las tablas joinadas tampoco filtran por user.
+-- catalogo es de acceso publico; las tablas combinadas tampoco filtran por usuario.
 
 CREATE OR REPLACE VIEW vw_vehiculos_disponibles AS
 SELECT
@@ -57,4 +57,4 @@ LEFT JOIN tarifa t
 WHERE ev.nombre = 'disponible';
 
 COMMENT ON VIEW vw_vehiculos_disponibles IS
-'R3 Etapa 2: vehiculos en estado disponible con su sucursal vigente (ubicacion_vehiculo.fecha_hasta IS NULL, fallback a id_sucursal_origen) y la tarifa actual segun (sucursal, tipo).';
+'R3 Etapa 2: vehiculos en estado disponible con su sucursal vigente (ubicacion_vehiculo.fecha_hasta IS NULL, con valor de respaldo en id_sucursal_origen) y la tarifa actual segun (sucursal, tipo).';

@@ -1,17 +1,17 @@
--- pa_registrar_cliente_con_usuario(...) — Alta atomica de bridge usuario +
--- perfil de cliente.
+-- pa_registrar_cliente_con_usuario(...) -- Alta atomica de usuario + perfil
+-- de cliente.
 --
 -- Notas de diseno:
---   * No recibe password_hash. La unica fuente de verdad para credenciales
---     es Supabase Auth (auth.users). El flujo real de signup pasa por
---     GoTrue + el trigger fn_handle_new_auth_user, que crea automaticamente
---     la fila cliente vinculada por auth_user_id.
---   * Este procedure persiste para casos de carga manual / scripting
---     (seeds, tests), donde se necesita crear el bridge usuario + cliente
+--   * No recibe resumen criptografico de contrasena. La unica fuente de verdad
+--     para credenciales es Supabase Auth (auth.users). El flujo real de registro
+--     pasa por GoTrue + el disparador fn_handle_new_auth_user, que crea
+--     automaticamente la fila cliente vinculada por auth_user_id.
+--   * Este procedimiento se mantiene para carga manual / scripting
+--     (datos iniciales, pruebas), donde se necesita crear usuario + cliente
 --     sin pasar por Auth. NO autentica: si se llama desde la API publica
---     el cliente resultante no podra loguearse hasta vincularse a un
+--     el cliente resultante no podra iniciar sesion hasta vincularse a un
 --     auth.users via auth_user_id.
---   * Las validaciones de formato basicas viven inline:
+--   * Las validaciones de formato basicas se aplican inline:
 --     username/email no vacios, email con '@'.
 --
 
@@ -45,7 +45,7 @@ BEGIN
     v_email_limpio    := lower(trim(p_email));
     v_dni_limpio      := trim(p_dni);
 
-    -- 2. Validaciones inline (antes vivian en fn_validar_credenciales).
+    -- 2. Validaciones directas (antes vivian en fn_validar_credenciales).
     IF length(v_username_limpio) < 4 THEN
         p_estado  := 'ERROR_VALIDACION';
         p_mensaje := 'El username debe tener al menos 4 caracteres.';
@@ -83,7 +83,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- 4. Insercion atomica (BEGIN/EXCEPTION envuelve el procedure entero).
+    -- 4. Insercion atomica (BEGIN/EXCEPTION envuelve el procedimiento completo).
     INSERT INTO usuario (username, email, created_at)
     VALUES (v_username_limpio, v_email_limpio, CURRENT_TIMESTAMP)
     RETURNING id_usuario INTO p_id_generado;

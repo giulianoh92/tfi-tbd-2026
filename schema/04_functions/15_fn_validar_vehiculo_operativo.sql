@@ -8,12 +8,12 @@
 --      (comparacion case-insensitive sobre el catalogo).
 --
 -- La validacion de superposicion de fechas NO se hace aca. Esa regla la
--- aplica el trigger BEFORE INSERT/UPDATE fn_check_vehiculo_overlap
--- (schema/04_functions/02_*.sql), que ya esta vivo sobre reserva y
--- alquiler. Mantener separacion de responsabilidades segun R7.
+-- aplica el disparador BEFORE INSERT/UPDATE fn_check_vehiculo_overlap
+-- (schema/04_functions/02_*.sql), que ya esta activo sobre reserva y
+-- alquiler. Se mantiene la separacion de responsabilidades segun R7.
 --
--- Callers: pa_registrar_reserva y pa_registrar_alquiler (rama "sin reserva
--- previa").
+-- Invocadores: pa_registrar_reserva y pa_registrar_alquiler (rama "sin
+-- reserva previa").
 
 CREATE OR REPLACE FUNCTION fn_validar_vehiculo_operativo(
     p_id_vehiculo BIGINT

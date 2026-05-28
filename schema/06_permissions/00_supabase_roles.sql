@@ -2,11 +2,11 @@
 -- En entornos sin Supabase (CI postgres efimero, docker compose puro) no
 -- existen y las policies con `TO authenticated` fallarian al crearse.
 --
--- Se crean como NOLOGIN/NOINHERIT (PostgREST switchea via SET LOCAL ROLE,
--- no via connect). service_role lleva BYPASSRLS para reflejar el privilegio
--- que ya tiene en Supabase managed.
+-- Se crean como NOLOGIN/NOINHERIT (PostgREST cambia de rol via SET LOCAL ROLE,
+-- no via conexion directa). service_role lleva BYPASSRLS para reflejar el
+-- privilegio que ya tiene en Supabase administrado.
 --
--- Idempotente: chequea pg_roles antes de CREATE ROLE.
+-- Idempotente: consulta pg_roles antes de CREATE ROLE.
 
 DO $$
 BEGIN

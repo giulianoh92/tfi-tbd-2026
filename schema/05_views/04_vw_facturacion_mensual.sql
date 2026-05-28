@@ -2,23 +2,23 @@
 --
 -- Etapa 2 (R3): vista para reportes gerenciales. Por cada mes y sucursal
 -- (resuelta como sucursal_origen del vehiculo del alquiler facturado), suma:
---   * facturas_emitidas    = cuenta de facturas en el mes
+--   * facturas_emitidas    = cantidad de facturas en el mes
 --   * total_costo_base     = SUM(factura.costo_base)
 --   * total_recargos       = SUM(factura.recargo_excedente)
 --   * total_facturado      = SUM(factura.total)
 --   * ticket_promedio      = AVG(factura.total)
 --
 -- mes se devuelve como DATE_TRUNC('month', fecha_emision)::DATE (el primer
--- dia del mes), lo que permite ordenar y filtrar facilmente desde el cliente
--- sin manipular formatos de string.
+-- dia del mes), lo que permite ordenar y filtrar facilmente desde la
+-- aplicacion sin manipular formatos de cadena.
 --
 -- La sucursal usada para agrupar es la sucursal de alta del vehiculo
 -- alquilado (v.id_sucursal_origen). Si en el futuro se decide imputar la
--- facturacion a la sucursal de retiro o de devolucion, la regla cambia aca
+-- facturacion a la sucursal de retiro o de devolucion, la regla cambia aqui
 -- en un solo punto.
 --
--- Acceso: SELECT a staff, authenticated (gerencia/staff), service_role y quique.
--- Cliente final no deberia ver el agregado completo: se restringe via GRANT.
+-- Acceso: SELECT a staff, authenticated (gerencia/personal), service_role y quique.
+-- El cliente final no debe ver el agregado completo: se restringe via GRANT.
 
 CREATE OR REPLACE VIEW vw_facturacion_mensual AS
 SELECT
@@ -37,4 +37,4 @@ JOIN sucursal s ON s.id_sucursal  = v.id_sucursal_origen
 GROUP BY DATE_TRUNC('month', f.fecha_emision), s.id_sucursal, s.nombre;
 
 COMMENT ON VIEW vw_facturacion_mensual IS
-'R3 Etapa 2: facturacion agregada por mes (DATE_TRUNC) y sucursal_origen del vehiculo. Devuelve facturas_emitidas, total_costo_base, total_recargos, total_facturado y ticket_promedio.';
+'R3 Etapa 2: facturacion agregada por mes (DATE_TRUNC) y sucursal_origen del vehiculo. Retorna facturas_emitidas, total_costo_base, total_recargos, total_facturado y ticket_promedio.';

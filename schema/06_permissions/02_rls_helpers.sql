@@ -1,20 +1,22 @@
--- Funciones helper para evaluacion de Row Level Security.
+-- Funciones auxiliares para la evaluacion de Row Level Security.
 --
--- Estrategia: leer el JWT directamente desde la GUC `request.jwt.claims` que
--- PostgREST setea en cada request via SET LOCAL. current_setting(name, true)
--- con missing_ok=true retorna NULL si la GUC no esta seteada, lo que nos
--- permite ejecutar el schema en postgres PURO (CI, docker compose sin
--- Supabase) sin referencias a `auth.uid()` ni al schema auth.
+-- Estrategia: leer el JWT directamente desde la variable de configuracion
+-- `request.jwt.claims` que PostgREST establece en cada solicitud via SET
+-- LOCAL. current_setting(name, true) con missing_ok=true retorna NULL si el
+-- parametro no esta definido, lo que permite ejecutar el esquema en Postgres
+-- puro (CI, docker compose sin Supabase) sin referencias a `auth.uid()` ni
+-- al esquema auth.
 --
--- En postgres puro las funciones devuelven NULL/FALSE -> las policies de
+-- En Postgres puro las funciones devuelven NULL/FALSE -> las policies de
 -- cliente final filtran todas las filas, pero el rol postgres (apply.sh)
--- tiene BYPASSRLS implicito y sigue pudiendo seedear y operar libremente.
+-- tiene BYPASSRLS implicito y puede cargar datos iniciales y operar
+-- libremente.
 --
--- En Supabase Cloud: PostgREST setea la GUC con el JWT decodificado del
--- header Authorization -> estas funciones leen sub y app_metadata.role
--- tal como lo harian auth.uid() y auth.jwt().
+-- En Supabase Cloud: PostgREST establece la variable de configuracion con el
+-- JWT decodificado del encabezado Authorization -> estas funciones leen sub
+-- y app_metadata.role tal como lo harian auth.uid() y auth.jwt().
 
--- Devuelve el UUID del usuario autenticado (claim 'sub' del JWT), o NULL.
+-- Devuelve el UUID del usuario autenticado (campo 'sub' del token JWT), o NULL.
 CREATE OR REPLACE FUNCTION fn_auth_uid()
 RETURNS UUID
 LANGUAGE plpgsql
@@ -52,10 +54,10 @@ BEGIN
 END;
 $$;
 
--- Devuelve true si el JWT del request tiene claim role='staff' bajo
--- app_metadata. app_metadata no es modificable desde el frontend (solo
--- desde service_role) -> garantiza que el usuario no pueda elevarse via
--- signUp / updateUser.
+-- Devuelve true si el JWT de la solicitud contiene el atributo role='staff'
+-- bajo app_metadata. app_metadata no es modificable desde la aplicacion
+-- cliente (solo desde service_role) -> garantiza que el usuario no pueda
+-- elevarse mediante signUp / updateUser.
 CREATE OR REPLACE FUNCTION fn_es_staff()
 RETURNS BOOLEAN
 LANGUAGE plpgsql

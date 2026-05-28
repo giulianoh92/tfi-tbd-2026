@@ -1,18 +1,19 @@
--- fn_check_vehiculo_overlap — Trigger BEFORE INSERT/UPDATE en reserva y
--- alquiler. Valida superposicion de fechas para un mismo vehiculo.
+-- fn_check_vehiculo_overlap -- Disparador BEFORE INSERT/UPDATE en reserva y
+-- alquiler. Valida la superposicion de fechas para un mismo vehiculo.
 --
--- IMPORTANTE: este trigger NO es la garantia de unicidad
--- temporal. La garantia DURA la da la EXCLUDE constraint excl_alquiler_overlap
+-- IMPORTANTE: este disparador NO es la garantia de unicidad
+-- temporal. La garantia formal la da la EXCLUDE constraint excl_alquiler_overlap
 -- / excl_reserva_overlap (schema/02_constraints/14_exclude_alquiler_reserva.sql),
--- que opera a nivel indice GiST y cierra la ventana de carrera entre
--- transacciones concurrentes que el trigger best-effort no podia cerrar.
+-- que opera a nivel de indice GiST y cierra la ventana de condicion de carrera
+-- entre transacciones concurrentes que este disparador, como validacion
+-- preventiva, no podia cerrar.
 --
--- Razon de mantener este trigger:
---   1) Mensajes mas amigables en el camino feliz (un solo cliente, sin
---      concurrencia): el RAISE EXCEPTION devuelve texto humano antes que
+-- Razon de mantener este disparador:
+--   1) Mensajes mas claros en el flujo normal (un solo cliente, sin
+--      concurrencia): el RAISE EXCEPTION devuelve texto comprensible antes que
 --      el codigo 23P01 generico del exclude.
---   2) Validacion en UPDATE: la EXCLUDE solo dispara cuando se inserta o
---      modifica una fila cuyo tsrange entra en conflicto, pero el trigger
+--   2) Validacion en UPDATE: la EXCLUDE solo actua cuando se inserta o
+--      modifica una fila cuyo tsrange entra en conflicto, pero el disparador
 --      tambien revisa transiciones que la EXCLUDE pasaria por alto (ej:
 --      actualizar fechas de una reserva 'concretada' que ya queda
 --      excluida por el WHERE de la constraint).
@@ -20,10 +21,11 @@
 --      siendo concretada (caso especial que la EXCLUDE simple no expresa
 --      sin escribir un WHERE muy complejo).
 --
--- Es decir: la EXCLUDE es la garantia formal; este trigger es UX. Si en
--- el futuro se decide eliminarlo, la unicidad queda igual.
+-- Es decir: la EXCLUDE es la garantia formal; este disparador mejora los
+-- mensajes de error en el caso habitual. Si en el futuro se decide
+-- eliminarlo, la unicidad queda intacta.
 -- Se usa IS DISTINCT FROM (no COALESCE con -1) para tratar NULL como
--- valor sin sentinels que podrian colisionar con IDs reales.
+-- valor sin centinelas que podrian colisionar con IDs reales.
 CREATE OR REPLACE FUNCTION fn_check_vehiculo_overlap()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -36,7 +38,7 @@ BEGIN
     -- Se usa NULL + IS DISTINCT FROM para excluir "la propia fila" (id NULL
     -- en INSERT, id real en UPDATE). NULL <> 5 = NULL (truthy false), pero
     -- NULL IS DISTINCT FROM 5 = TRUE. Es la forma idiomatica en Postgres
-    -- sin riesgo de colisionar con un sentinel (ej: -1) que podria ser un
+    -- sin riesgo de colisionar con un centinela (ej: -1) que podria ser un
     -- id real en otro contexto.
     IF TG_TABLE_NAME = 'reserva' THEN
         v_self_res := NEW.id_reserva;     -- NULL en INSERT, id real en UPDATE
@@ -90,7 +92,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- CREACIÓN DE DISPARADORES ASOCIADOS
+-- CREACION DE DISPARADORES ASOCIADOS
 DROP TRIGGER IF EXISTS trg_reserva_no_overlap  ON reserva;
 DROP TRIGGER IF EXISTS trg_alquiler_no_overlap ON alquiler;
 

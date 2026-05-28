@@ -7,7 +7,7 @@
 -- numero_factura) independiente del id_factura interno.
 --
 -- Aporte original: Marcia Viera (commit 257d86f, "funcionalidad finalizar
--- alquiler"), adaptado al schema actual.
+-- alquiler"), adaptado al esquema actual.
 CREATE SEQUENCE IF NOT EXISTS seq_numero_factura START WITH 1;
 
 CREATE TABLE IF NOT EXISTS factura (
@@ -19,8 +19,9 @@ CREATE TABLE IF NOT EXISTS factura (
         -- contable inmutable: si en el futuro se reasigna el alquiler a otro
         -- cliente (caso corporativo, transferencia, error administrativo), la
         -- factura debe conservar al cliente que firmo y pago en su momento.
-        -- Es una denormalizacion controlada que protege el snapshot historico.
-        -- Para "cliente actual del alquiler" leer via JOIN con alquiler.
+        -- Es una denormalizacion controlada que preserva la copia del valor
+        -- vigente al momento de emision. Para obtener el cliente actual del
+        -- alquiler, consultar via JOIN con alquiler.
     numero_factura                 VARCHAR(30)    NOT NULL UNIQUE,
     fecha_emision                  DATE           NOT NULL DEFAULT CURRENT_DATE,
     precio_por_dia_aplicado        NUMERIC(12, 2) NOT NULL,

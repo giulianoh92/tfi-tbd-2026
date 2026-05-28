@@ -10,7 +10,7 @@
 --   * Recargos mas altos en categorias donde el costo de oportunidad
 --     por entrega tardia es mayor (pickups y SUVs).
 --
--- Tarifas requeridas por el seed actual (vehiculos + alquileres):
+-- Tarifas requeridas por la carga inicial actual (vehiculos + alquileres):
 --   id=1 -> Posadas    + Sedan       (vehiculos 1, 2; alquileres 1, 2)
 --   id=2 -> Posadas    + SUV
 --   id=3 -> Obera      + Compacto    (vehiculos 3, 4; alquiler 4)

@@ -1,7 +1,7 @@
--- Lifecycle del mantenimiento.
+-- Ciclo de vida del mantenimiento.
 --
--- Dos trigger functions que reflejan en la FSM del vehiculo los hitos del
--- envio y la devolucion de un mantenimiento:
+-- Dos funciones de disparador que reflejan en la maquina de estados del vehiculo
+-- los hitos del envio y la devolucion de un mantenimiento:
 --
 --   1) fn_mantenimiento_envio (AFTER INSERT): cuando se inserta una fila
 --      en mantenimiento (apertura del servicio), mueve al vehiculo a
@@ -9,13 +9,13 @@
 --      abre una nueva.
 --   2) fn_mantenimiento_devolucion (AFTER UPDATE): cuando se completa la
 --      devolucion (fecha_devolucion NULL -> no-NULL), mueve al vehiculo
---      de vuelta a 'disponible' y vuelve a rotar el historial.
+--      de vuelta a 'disponible' y rota nuevamente el historial.
 --
 -- En conjunto cubren parte del flujo R10 (el vehiculo se reintegra al
 -- inventario operativo luego de un servicio) y mantienen consistente la
 -- maquina de estados con el resto de los procesos.
 
--- fn_mantenimiento_envio (AFTER INSERT): mueve la FSM del vehiculo a
+-- fn_mantenimiento_envio (AFTER INSERT): mueve la maquina de estados del vehiculo a
 -- 'en_mantenimiento' cuando se abre una orden de mantenimiento.
 CREATE OR REPLACE FUNCTION fn_mantenimiento_envio()
 RETURNS TRIGGER AS $$
@@ -23,9 +23,9 @@ DECLARE
     v_id_estado BIGINT;
 BEGIN
     -- El catalogo estado_vehiculo registra "en_mantenimiento" (no
-    -- "mantenimiento"). Lookup case-insensitive contra el catalogo: el
-    -- CHECK del catalogo ya fuerza minusculas, esto es robustez en el
-    -- codigo cliente para no acoplarse al casing.
+    -- "mantenimiento"). Consulta sin distincion de mayusculas contra el catalogo:
+    -- el CHECK del catalogo ya fuerza minusculas; usar lower() aqui hace al
+    -- codigo robusto ante posibles variaciones futuras.
     SELECT id_estado INTO v_id_estado
     FROM estado_vehiculo WHERE lower(nombre) = 'en_mantenimiento';
 
@@ -43,7 +43,7 @@ BEGIN
     INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
     VALUES (NEW.id_vehiculo, v_id_estado, NOW(), NULL, 'Envio a mantenimiento');
 
-    -- Mirror del estado vigente sobre la cache denormalizada de vehiculo.
+    -- Reflejo del estado vigente sobre el campo denormalizado de vehiculo.
     UPDATE vehiculo
     SET id_estado = v_id_estado
     WHERE id_vehiculo = NEW.id_vehiculo;
@@ -61,7 +61,7 @@ CREATE TRIGGER trg_mantenimiento_envio
 
 
 -- fn_mantenimiento_devolucion (AFTER UPDATE): cuando fecha_devolucion
--- pasa de NULL a no-NULL, mueve la FSM del vehiculo de vuelta a
+-- pasa de NULL a no-NULL, mueve la maquina de estados del vehiculo de vuelta a
 -- 'disponible' y rota la fila vigente del historial.
 CREATE OR REPLACE FUNCTION fn_mantenimiento_devolucion()
 RETURNS TRIGGER AS $$
@@ -85,7 +85,7 @@ BEGIN
     INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
     VALUES (NEW.id_vehiculo, v_id_estado, NOW(), NULL, 'Devolucion de mantenimiento');
 
-    -- Mirror del estado vigente sobre la cache denormalizada de vehiculo.
+    -- Reflejo del estado vigente sobre el campo denormalizado de vehiculo.
     UPDATE vehiculo
     SET id_estado = v_id_estado
     WHERE id_vehiculo = NEW.id_vehiculo;

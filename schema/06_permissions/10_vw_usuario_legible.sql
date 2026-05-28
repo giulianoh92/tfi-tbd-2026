@@ -1,17 +1,18 @@
--- vw_usuario_legible -- resuelve un auth.users.id (UUID) a un nombre humano para el panel staff.
--- Usada por /admin/auditoria para no mostrar UUIDs crudos. Joinea cliente (clientes
--- finales) y auth.users (incluye staff). Gateada por fn_es_staff(): un no-staff
--- obtiene cero filas.
+-- vw_usuario_legible -- resuelve un auth.users.id (UUID) a un nombre legible para el panel de personal.
+-- Utilizada por /admin/auditoria para no mostrar UUIDs directamente. Une cliente
+-- (clientes finales) y auth.users (incluye personal). Restringida por fn_es_staff():
+-- un usuario sin rol de personal obtiene cero filas.
 --
 -- Vive en 06_permissions (no en 05_views) por dos motivos:
 --   1) Depende de fn_es_staff(), definida en 02_rls_helpers (mismo directorio,
 --      orden lexico posterior, ya disponible cuando corre este archivo).
---   2) Referencia auth.users (schema de Supabase Auth). En entornos sin Supabase
---      (Postgres puro / CI de validacion) ese schema no existe, por eso el bloque
+--   2) Referencia auth.users (esquema de Supabase Auth). En entornos sin Supabase
+--      (Postgres puro / CI de validacion) ese esquema no existe, por eso el bloque
 --      DO solo crea la vista si auth.users esta presente; si no, la omite sin error.
 --
--- La vista corre con privilegios del owner (NO security_invoker), por eso puede
--- leer auth.users; fn_es_staff() igual evalua el JWT del caller en cada query.
+-- La vista corre con privilegios del propietario (NO security_invoker), por eso
+-- puede leer auth.users; fn_es_staff() igual evalua el JWT del invocador en cada
+-- consulta.
 
 DO $$
 BEGIN

@@ -5,7 +5,7 @@
 -- Asi se impide que un cliente edite la fila de otro aunque conozca el ID.
 --
 -- Diseno transaccional (R2): cuerpo envuelto en BEGIN ... EXCEPTION WHEN ...
--- THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
+-- THEN ... END, con parametros OUT estandarizados (p_estado, p_mensaje)
 -- segun el contrato R4.
 --
 -- R11: declarada como FUNCTION (no PROCEDURE) para que PostgREST la exponga
@@ -29,8 +29,8 @@ BEGIN
     p_estado  := 'ERROR';
     p_mensaje := NULL;
 
-    -- 1) Resolver id_cliente desde el JWT. fn_cliente_del_usuario hace el
-    --    lookup contra cliente.auth_user_id = auth.uid(). Si no hay sesion
+    -- 1) Resolver id_cliente desde el JWT. fn_cliente_del_usuario realiza la
+    --    consulta contra cliente.auth_user_id = auth.uid(). Si no hay sesion
     --    o la fila no existe, devuelve NULL.
     v_id_cliente := fn_cliente_del_usuario();
 
@@ -62,7 +62,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- 3) UPDATE. El trigger trg_audit_cliente captura los valores anteriores
+    -- 3) UPDATE. El disparador trg_audit_cliente captura los valores anteriores
     --    y nuevos en audit_log automaticamente.
     UPDATE cliente
        SET nombre    = trim(p_nombre),
@@ -77,8 +77,8 @@ BEGIN
 
 EXCEPTION
     WHEN unique_violation THEN
-        -- DNI tiene UNIQUE constraint: si otro cliente ya tiene ese DNI,
-        -- caemos aca.
+        -- DNI tiene restriccion UNIQUE: si otro cliente ya tiene ese DNI,
+        -- se entra en este bloque.
         p_estado  := 'ERROR_DUPLICADO';
         p_mensaje := 'Ya existe otro cliente registrado con ese DNI.';
     WHEN check_violation THEN

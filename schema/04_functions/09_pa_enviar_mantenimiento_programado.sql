@@ -1,14 +1,14 @@
--- pa_enviar_mantenimiento_programado(...) — Envia un vehiculo a
--- mantenimiento. El trigger fn_mantenimiento_envio (sobre la tabla
+-- pa_enviar_mantenimiento_programado(...) -- Envia un vehiculo a
+-- mantenimiento. El disparador fn_mantenimiento_envio (sobre la tabla
 -- mantenimiento) propaga el estado 'en_mantenimiento' al vehiculo via
 -- catalogo estado_vehiculo.
 --
 -- Diseno transaccional (R2): cuerpo envuelto en BEGIN ... EXCEPTION WHEN
--- ... THEN ... END, con OUT parameters estandarizados (p_estado, p_mensaje)
+-- ... THEN ... END, con parametros OUT estandarizados (p_estado, p_mensaje)
 -- segun el contrato R4.
 --
 -- Precondicion: el vehiculo no debe estar 'alquilado' (un vehiculo en
--- poder del cliente no puede irse al taller). Cualquier otro estado
+-- poder del cliente no puede enviarse al taller). Cualquier otro estado
 -- operativo del catalogo (disponible, fuera_de_servicio, en_traslado, ...)
 -- admite el envio.
 
@@ -35,8 +35,8 @@ BEGIN
     FROM estado_vehiculo
     WHERE lower(nombre) = 'alquilado';
 
-    -- FOR UPDATE bloquea la fila del vehiculo para evitar carrera con un
-    -- alquiler que se cree en paralelo.
+    -- FOR UPDATE bloquea la fila del vehiculo para evitar condicion de carrera
+    -- con un alquiler que se cree en paralelo.
     SELECT id_estado INTO v_id_estado_actual
     FROM vehiculo
     WHERE id_vehiculo = p_id_vehiculo
@@ -58,9 +58,9 @@ BEGIN
     END IF;
 
     -- Tambien rechazamos si el vehiculo ya esta en mantenimiento (orden
-    -- abierta sin devolucion). El trigger fn_mantenimiento_envio mira
-    -- el catalogo, no la tabla mantenimiento, asi que la double-booking
-    -- la atajamos aca.
+    -- abierta sin devolucion). El disparador fn_mantenimiento_envio consulta
+    -- el catalogo, no la tabla mantenimiento, por lo que la doble asignacion
+    -- se previene aca.
     SELECT lower(ev.nombre)
       INTO v_nombre_estado
       FROM estado_vehiculo ev
@@ -75,7 +75,7 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Al insertar aqui, se dispara automaticamente fn_mantenimiento_envio()
+    -- Al insertar aqui, se activa automaticamente el disparador fn_mantenimiento_envio()
     INSERT INTO mantenimiento (id_vehiculo, id_taller, fecha_envio, fecha_devolucion, observaciones)
     VALUES (p_id_vehiculo, p_id_taller, CURRENT_DATE, NULL, p_observaciones);
 

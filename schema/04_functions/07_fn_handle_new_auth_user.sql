@@ -1,15 +1,16 @@
--- Trigger AFTER INSERT en auth.users de Supabase que crea automaticamente
--- la fila correspondiente en cliente. Patron estandar Supabase para vincular
+-- Disparador AFTER INSERT en auth.users de Supabase que crea automaticamente
+-- la fila correspondiente en cliente. Patron estandar de Supabase para vincular
 -- identidades de Auth con el modelo de dominio.
 --
 -- Datos del cliente:
 --   * auth_user_id = NEW.id (UUID)
---   * nombre / apellido / dni / telefono: leidos de raw_user_meta_data si el
---     frontend los envia en el signUp; sino placeholders editables luego.
---   * dni placeholder usa el UUID truncado para garantizar UNIQUE entre signups
---     sin colisiones. El cliente lo completa al editar su perfil.
+--   * nombre / apellido / dni / telefono: leidos de raw_user_meta_data si la
+--     aplicacion cliente los envia en el registro; sino quedan como valores
+--     provisorios editables luego.
+--   * El DNI provisorio usa el UUID truncado para garantizar UNIQUE entre
+--     registros sin colisiones. El cliente lo completa al editar su perfil.
 --
--- Si el schema auth no existe (entorno docker postgres puro sin Supabase),
+-- Si el esquema auth no existe (entorno docker postgres puro sin Supabase),
 -- el CREATE TRIGGER falla silenciosamente via DO block + EXCEPTION.
 
 CREATE OR REPLACE FUNCTION fn_handle_new_auth_user()
@@ -36,9 +37,9 @@ BEGIN
 END;
 $$;
 
--- Registrar el trigger solo si el schema auth existe (entorno Supabase).
+-- Registrar el disparador solo si el esquema auth existe (entorno Supabase).
 -- En entornos sin auth (docker puro de la materia) la base sigue funcional;
--- el cliente se crea manualmente via seed o INSERT directo.
+-- el cliente se crea manualmente via datos iniciales o INSERT directo.
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'auth') THEN

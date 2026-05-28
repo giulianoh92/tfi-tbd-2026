@@ -1,22 +1,22 @@
--- Lifecycle del alquiler (R10).
+-- Ciclo de vida del alquiler (R10).
 --
--- Este archivo agrupa los tres trigger functions que sostienen la maquina
+-- Este archivo agrupa las tres funciones de disparador que sostienen la maquina
 -- de estados del alquiler y del vehiculo asociado:
 --
 --   1) fn_alquiler_set_cerrado (BEFORE UPDATE): cuando fecha_devolucion
 --      _real pasa de NULL a no-NULL, fuerza estado='cerrado' en la misma
 --      fila. Va BEFORE para que el cambio quede en el row de NEW que ven
---      los triggers AFTER, evitando un segundo UPDATE recursivo.
+--      los disparadores AFTER, evitando un segundo UPDATE recursivo.
 --   2) fn_alquiler_start (AFTER INSERT): mueve el vehiculo a 'alquilado',
 --      cierra la fila vigente del historial de estados, abre una nueva, y
 --      si el alquiler vino de una reserva, marca esa reserva como
---      'concretada'. Cumple parte del lifecycle (R10) y cierra el flujo
+--      'concretada'. Cumple parte del ciclo de vida (R10) y cierra el flujo
 --      de R6 (alquiler con reserva).
 --   3) fn_alquiler_close (AFTER UPDATE): cuando se completa la devolucion
 --      (fecha_devolucion_real NULL -> no-NULL), mueve el vehiculo a
 --      'disponible', actualiza km_actuales con km_fin, cierra la fila
 --      vigente de ubicacion y abre una nueva en la sucursal de
---      devolucion. Es parte central de R10: triggers que finalizan el
+--      devolucion. Es parte central de R10: disparadores que finalizan el
 --      alquiler.
 --
 -- La factura no se emite aca: la emision la dispara el orquestador
@@ -26,7 +26,7 @@
 
 -- fn_alquiler_set_cerrado (BEFORE UPDATE): pone estado='cerrado' cuando
 -- fecha_devolucion_real pasa de NULL a no-NULL. Va BEFORE para que el
--- cambio se vea en los triggers AFTER UPDATE, sin emitir un nuevo UPDATE
+-- cambio se vea en los disparadores AFTER UPDATE, sin emitir un nuevo UPDATE
 -- recursivo sobre alquiler.
 CREATE OR REPLACE FUNCTION fn_alquiler_set_cerrado()
 RETURNS TRIGGER AS $$
@@ -45,7 +45,7 @@ CREATE TRIGGER trg_alquiler_set_cerrado
     EXECUTE FUNCTION fn_alquiler_set_cerrado();
 
 
--- fn_alquiler_start (AFTER INSERT): mueve la FSM del vehiculo a
+-- fn_alquiler_start (AFTER INSERT): mueve la maquina de estados del vehiculo a
 -- 'alquilado' y marca la reserva asociada como 'concretada' si la
 -- hubiera.
 CREATE OR REPLACE FUNCTION fn_alquiler_start()
@@ -55,7 +55,7 @@ DECLARE
 BEGIN
     -- Se compara con lower(nombre) para alinear con el CHECK del catalogo
     -- (estado_vehiculo.nombre = lower(nombre)). El catalogo queda forzado a
-    -- minusculas, pero usar lower() en el lookup hace al codigo robusto si
+    -- minusculas, pero usar lower() en la consulta hace al codigo robusto si
     -- en el futuro entra una cadena distinta.
     SELECT id_estado INTO v_id_estado_alquilado
     FROM estado_vehiculo WHERE lower(nombre) = 'alquilado';
@@ -75,7 +75,7 @@ BEGIN
     INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
     VALUES (NEW.id_vehiculo, v_id_estado_alquilado, NOW(), NULL, 'Inicio de alquiler');
 
-    -- Mirror del estado vigente sobre la cache denormalizada de vehiculo.
+    -- Reflejo del estado vigente sobre el campo denormalizado de vehiculo.
     UPDATE vehiculo
     SET id_estado = v_id_estado_alquilado
     WHERE id_vehiculo = NEW.id_vehiculo;
@@ -100,8 +100,8 @@ CREATE TRIGGER trg_alquiler_start
 
 
 -- fn_alquiler_close (AFTER UPDATE): cuando fecha_devolucion_real pasa de
--- NULL a no-NULL, mueve la FSM del vehiculo a 'disponible', actualiza
--- km_actuales con el kilometraje de devolucion y registra la nueva
+-- NULL a no-NULL, mueve la maquina de estados del vehiculo a 'disponible',
+-- actualiza km_actuales con el kilometraje de devolucion y registra la nueva
 -- ubicacion fisica (sucursal de devolucion).
 CREATE OR REPLACE FUNCTION fn_alquiler_close()
 RETURNS TRIGGER AS $$
@@ -129,7 +129,7 @@ BEGIN
     INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
     VALUES (NEW.id_vehiculo, v_id_estado_disponible, NOW(), NULL, 'Devolucion de alquiler');
 
-    -- Mirror del estado y actualizacion del kilometraje real del vehiculo.
+    -- Reflejo del estado y actualizacion del kilometraje real del vehiculo.
     UPDATE vehiculo
     SET id_estado   = v_id_estado_disponible,
         km_actuales = NEW.km_fin

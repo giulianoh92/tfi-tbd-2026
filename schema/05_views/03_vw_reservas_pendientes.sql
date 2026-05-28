@@ -1,12 +1,13 @@
--- vw_reservas_pendientes -- reservas pendientes con cliente, vehiculo, tipo y flag de garantia activa
+-- vw_reservas_pendientes -- reservas pendientes con cliente, vehiculo, tipo y marca de garantia activa
 --
 -- Etapa 2 (R3): vista para la cola de retiros pendientes en sucursal.
--- Une reserva + cliente + vehiculo + tipo_reserva, y agrega un flag
+-- Combina reserva + cliente + vehiculo + tipo_reserva, y agrega una marca
 -- garantia_activa via EXISTS sobre garantia_reserva (cualquier garantia con
--- activa=TRUE). El flag separa "tipo de reserva exige garantia" (requiere_garantia)
--- de "la garantia esta efectivamente cargada y vigente" (garantia_activa).
+-- activa=TRUE). La marca distingue entre "el tipo de reserva exige garantia"
+-- (requiere_garantia) y "la garantia esta efectivamente cargada y vigente"
+-- (garantia_activa).
 --
--- Acceso: SELECT a staff, authenticated (cliente final ve solo SUS reservas
+-- Acceso: SELECT a staff, authenticated (el cliente final ve solo SUS reservas
 -- via RLS sobre reserva), service_role y quique.
 
 CREATE OR REPLACE VIEW vw_reservas_pendientes AS
@@ -44,4 +45,4 @@ JOIN tipo_reserva tr ON tr.id_tipo_reserva = r.id_tipo_reserva
 WHERE r.estado = 'pendiente';
 
 COMMENT ON VIEW vw_reservas_pendientes IS
-'R3 Etapa 2: reservas pendientes con cliente + vehiculo + tipo_reserva y flag garantia_activa (EXISTS sobre garantia_reserva con activa=TRUE).';
+'R3 Etapa 2: reservas pendientes con cliente + vehiculo + tipo_reserva y marca garantia_activa (EXISTS sobre garantia_reserva con activa=TRUE).';

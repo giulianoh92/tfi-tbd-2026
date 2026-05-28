@@ -1,44 +1,43 @@
--- pa_finalizar_alquiler(...) — Orquestador transaccional del CU-06 (R10).
+-- pa_finalizar_alquiler(...) -- Orquestador transaccional del CU-06 (R10).
 --
--- Cierra un alquiler activo, dispara los triggers de ciclo de vida del vehiculo
+-- Cierra un alquiler activo, activa los disparadores del ciclo de vida del vehiculo
 -- (ubicacion + historial + estado en el catalogo), emite la factura y opcionalmente
 -- envia el vehiculo a mantenimiento.
 --
 -- Diseno transaccional (R2):
 --   * El cuerpo va envuelto en BEGIN ... EXCEPTION WHEN ... THEN ... END para
---     cumplir el manejo de excepciones (COMMIT/ROLLBACK por espiritu). En
+--     cumplir el manejo de excepciones (confirmar/revertir transaccion). En
 --     Postgres el BEGIN del procedure asocia un savepoint implicito: si una
---     excepcion se captura, se hace rollback al savepoint; si el bloque
---     termina sin excepcion, la transaccion del caller se compromete
+--     excepcion se captura, se revierte al savepoint; si el bloque
+--     termina sin excepcion, la transaccion del caller se confirma
 --     normalmente.
---   * Los OUT parameters estandarizados (p_estado, p_mensaje, p_id_factura)
---     permiten al frontend mostrar mensajes legibles en lugar de error 500.
---     Mismo contrato que pa_registrar_reserva / etc.
+--   * Los parametros OUT estandarizados (p_estado, p_mensaje, p_id_factura)
+--     permiten a la aplicacion cliente mostrar mensajes legibles en lugar de
+--     un error 500. Mismo contrato que pa_registrar_reserva / etc.
 --
 -- Aporte original: Marcia Viera (commit 257d86f del 2026-05-16,
--- "funcionalidad finalizar alquiler"). Adaptaciones al schema reescrito:
---   * Drop UPDATE directo de vehiculo.estado / historial_estado_vehiculo.estado
---     (columnas inexistentes en el nuevo modelo): el trigger fn_alquiler_close
+-- "funcionalidad finalizar alquiler"). Adaptaciones al esquema reescrito:
+--   * Se eliminaron UPDATE directos de vehiculo.estado / historial_estado_vehiculo.estado
+--     (columnas inexistentes en el nuevo modelo): el disparador fn_alquiler_close
 --     ya cierra historial, abre ubicacion en la sucursal de devolucion y
---     mirrorea id_estado en vehiculo desde el catalogo estado_vehiculo.
+--     refleja id_estado en vehiculo desde el catalogo estado_vehiculo.
 --   * Si el destino es mantenimiento, basta con INSERT en mantenimiento: el
---     trigger fn_mantenimiento_envio propaga el estado 'en_mantenimiento' al
+--     disparador fn_mantenimiento_envio propaga el estado 'en_mantenimiento' al
 --     vehiculo via catalogo. La secuencia produce dos transiciones en historial
 --     (alquilado -> disponible -> en_mantenimiento), correctas para auditoria.
---   * Valida estado destino contra el catalogo (no hardcoded VARCHAR).
+--   * Valida el estado destino contra el catalogo (no como cadena fija).
 --
--- Los 3 ultimos IN parameters van con DEFAULT NULL para que el caller mas
+-- Los 3 ultimos parametros IN van con DEFAULT NULL para que el caso mas
 -- frecuente (cierre con destino "disponible", flujo normal sin envio a
--- taller) pueda invocar la function solo con los 3 args obligatorios via
+-- taller) pueda invocar la funcion solo con los 3 argumentos obligatorios via
 -- PostgREST RPC.
 --
--- Regla de Postgres: los IN con DEFAULT deben ir AL FINAL de la lista de
--- IN params; los OUT son separados y pueden ir despues. Esta firma es
--- valida.
+-- Regla de Postgres: los parametros IN con DEFAULT deben ir AL FINAL de la
+-- lista de IN; los OUT son separados y pueden ir despues. Esta firma es valida.
 --
 -- Llamadas validas desde PostgREST:
 --   * { p_id_alquiler, p_km_fin, p_id_sucursal_devolucion }
---       -> destino "disponible" (default), sin mantenimiento
+--       -> destino "disponible" (por defecto), sin mantenimiento
 --   * Mismos 3 + { p_estado_destino_vehiculo:'en_mantenimiento', p_id_taller, p_observaciones }
 --       -> destino mantenimiento al cierre
 --
@@ -65,14 +64,14 @@ DECLARE
     v_motivo_mantto    VARCHAR(255);
     v_estado_existe    BOOLEAN;
 BEGIN
-    -- Inicializacion defensiva por si alguna rama no asigna explicitamente.
+    -- Inicializacion preventiva por si alguna rama no asigna explicitamente.
     p_estado     := 'ERROR';
     p_mensaje    := NULL;
     p_id_factura := NULL;
 
-    -- Si el caller no especifica estado destino, asumimos 'disponible' (default
-     -- de negocio). Antes era un DEFAULT del IN; se movio aca para respetar la
-     -- regla de Postgres "no DEFAULT antes de OUT".
+    -- Si quien invoca no especifica estado destino, se asume 'disponible' (por
+     -- defecto de negocio). Antes era un DEFAULT del IN; se movio aca para
+     -- respetar la regla de Postgres "no DEFAULT antes de OUT".
     v_estado_limpio := lower(COALESCE(p_estado_destino_vehiculo, 'disponible'));
 
     -- 1. Precondiciones
@@ -121,11 +120,11 @@ BEGIN
         RETURN;
     END IF;
 
-    -- 2. Cierre del alquiler. Triggers asociados:
+    -- 2. Cierre del alquiler. Disparadores asociados:
     --      trg_alquiler_set_cerrado (BEFORE UPDATE): NEW.estado := 'cerrado'
     --      trg_alquiler_close       (AFTER UPDATE):  cierra historial + ubicacion,
     --                                                abre ubicacion nueva en p_id_sucursal_devolucion,
-    --                                                mirrorea vehiculo.id_estado = 'disponible',
+    --                                                refleja vehiculo.id_estado = 'disponible',
     --                                                actualiza vehiculo.km_actuales
     UPDATE alquiler
     SET fecha_devolucion_real = NOW(),
@@ -133,7 +132,7 @@ BEGIN
         id_sucursal_devolucion = p_id_sucursal_devolucion
     WHERE id_alquiler = p_id_alquiler;
 
-    -- 3. Si va a taller, registrar mantenimiento. Trigger fn_mantenimiento_envio
+    -- 3. Si va a taller, registrar mantenimiento. El disparador fn_mantenimiento_envio
     --    propaga el estado 'en_mantenimiento' al vehiculo via catalogo.
     IF v_estado_limpio = 'en_mantenimiento' THEN
         v_motivo_mantto := COALESCE(

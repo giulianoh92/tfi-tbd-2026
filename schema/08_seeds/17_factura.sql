@@ -1,6 +1,6 @@
--- Facturas para los 3 alquileres cerrados del seed (id 1, 2, 3).
--- Valores literales precomputados para que coincidan exactamente con lo que
--- produciria fn_calcular_factura(id_alquiler) si se invocara post-seed:
+-- Facturas para los 3 alquileres cerrados de la carga inicial (id 1, 2, 3).
+-- Valores literales precalculados para que coincidan exactamente con lo que
+-- produciria fn_calcular_factura(id_alquiler) si se invocara luego de la carga:
 --   horas_excedidas redondeadas hacia arriba (CEIL), como hace la funcion.
 --   porcentaje_recargo_aplicado en formato fraccion (0.10 = 10%).
 -- Formulas de facturacion (las mismas que aplica fn_calcular_factura):

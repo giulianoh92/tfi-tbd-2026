@@ -1,27 +1,27 @@
--- Grants de SELECT sobre las vistas de Etapa 2 (schema/05_views/*).
+-- Permisos de SELECT sobre las vistas de Etapa 2 (schema/05_views/*).
 --
 -- Roles destino:
 --   * quique         -- profesor / evaluador (rol LOGIN propio)
---   * authenticated  -- usuarios con sesion Supabase (incluye staff y clientes;
---                       la RLS de las tablas subyacentes filtra por id_cliente
---                       cuando aplica). Sobre alquiler/reserva el cliente final
---                       ve solo sus propias filas; el staff ve todas via la
---                       policy que chequea fn_es_staff().
---   * anon           -- requests sin sesion (catalogo publico de vehiculos).
---                       Para vistas no publicas (facturacion, audit) la
---                       sensibilidad NO esta en la vista sino en la RLS de las
+--   * authenticated  -- usuarios con sesion Supabase (incluye personal y
+--                       clientes; la RLS de las tablas subyacentes filtra por
+--                       id_cliente cuando aplica). Sobre alquiler/reserva el
+--                       cliente final ve solo sus propias filas; el personal
+--                       ve todas via la politica que verifica fn_es_staff().
+--   * anon           -- solicitudes sin sesion (catalogo publico de vehiculos).
+--                       Para vistas no publicas (facturacion, auditoria) la
+--                       restriccion NO esta en la vista sino en la RLS de las
 --                       tablas: anon sigue sin poder leer factura ni audit_log.
 --   * service_role   -- rol interno de Supabase / Edge Functions (BYPASSRLS).
 --
--- No otorgamos a roles "staff" ni "cliente" como roles Postgres porque NO
--- existen como tales en este schema: staff/cliente son claims del JWT, no
--- roles del cluster. El gating fino lo hace la RLS via fn_es_staff() /
+-- No se otorga a roles "staff" ni "cliente" como roles de Postgres porque NO
+-- existen como tales en este esquema: personal/cliente son atributos del JWT,
+-- no roles del cluster. El control fino lo hace la RLS via fn_es_staff() /
 -- fn_cliente_del_usuario() sobre las tablas base.
 --
 -- Idempotente: GRANT SELECT es seguro de reaplicar. El bloque DO envuelve los
--- grants en EXCEPTION WHEN OTHERS para que el apply siga aun si alguno de los
--- roles Supabase no existe en el entorno actual (ej: postgres puro sin
--- Supabase, donde igual existen porque 00_supabase_roles.sql los crea).
+-- permisos en EXCEPTION WHEN OTHERS para que el despliegue continue aunque
+-- alguno de los roles Supabase no exista en el entorno actual (ej: Postgres
+-- puro sin Supabase, donde igual existen porque 00_supabase_roles.sql los crea).
 
 DO $$
 BEGIN

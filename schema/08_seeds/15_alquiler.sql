@@ -1,10 +1,10 @@
 -- Patron de dos pasos para alquileres cerrados:
 --   1. INSERT con estado='activo' y fecha_devolucion_real=NULL.
---   2. UPDATE seteando fecha_devolucion_real, km_fin, id_sucursal_devolucion.
--- El trigger trg_alquiler_set_cerrado (BEFORE UPDATE) cambia estado a 'cerrado';
--- trg_alquiler_close (AFTER UPDATE) cierra historial + ubicacion, abre nueva
--- ubicacion en la sucursal de devolucion, mirrorea vehiculo.id_estado='disponible'
--- y actualiza vehiculo.km_actuales.
+--   2. UPDATE asignando fecha_devolucion_real, km_fin, id_sucursal_devolucion.
+-- El disparador trg_alquiler_set_cerrado (BEFORE UPDATE) cambia el estado a
+-- 'cerrado'; trg_alquiler_close (AFTER UPDATE) cierra historial + ubicacion,
+-- abre nueva ubicacion en la sucursal de devolucion, refleja
+-- vehiculo.id_estado='disponible' y actualiza vehiculo.km_actuales.
 
 -- Alquiler 1: v1 Fiat Cronos, cliente Juan Perez (Posadas), 5 dias en zona Posadas,
 -- devolucion en sucursal de origen (1) con 2h30m de demora.
@@ -18,8 +18,9 @@ SET fecha_devolucion_real  = '2026-01-15 11:30:00',
 WHERE id_alquiler = 1;
 
 -- Alquiler 2: v2 Toyota Corolla, cliente Maria Gomez (turista CABA), 7 dias.
--- Cross-branch return: retiro Posadas (1), devolucion Corrientes (4) tras 22h
--- de demora (cobra recargo). Demuestra feature id_sucursal_devolucion != origen.
+-- Devolucion en sucursal distinta al retiro: retiro Posadas (1), devolucion
+-- Corrientes (4) tras 22h de demora (cobra recargo). Ejercita el caso
+-- id_sucursal_devolucion != origen.
 INSERT INTO alquiler (id_reserva, id_cliente, id_vehiculo, id_tarifa, id_sucursal_devolucion, fecha_inicio, fecha_fin_prevista, fecha_devolucion_real, km_inicio, km_fin, estado)
 VALUES (NULL, 2, 2, 1, NULL, '2026-01-20 10:00:00', '2026-01-27 10:00:00', NULL, 18000, NULL, 'activo');
 
