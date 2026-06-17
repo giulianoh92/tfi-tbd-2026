@@ -853,6 +853,50 @@ export type Database = {
           },
         ]
       }
+      resumen_mensual_sucursal: {
+        Row: {
+          facturas_emitidas: number
+          fecha_cierre: string
+          id_resumen: number
+          id_sucursal: number
+          km_recorridos: number
+          periodo: string
+          total_costo_base: number
+          total_facturado: number
+          total_recargos: number
+        }
+        Insert: {
+          facturas_emitidas?: number
+          fecha_cierre?: string
+          id_resumen?: number
+          id_sucursal: number
+          km_recorridos?: number
+          periodo: string
+          total_costo_base?: number
+          total_facturado?: number
+          total_recargos?: number
+        }
+        Update: {
+          facturas_emitidas?: number
+          fecha_cierre?: string
+          id_resumen?: number
+          id_sucursal?: number
+          km_recorridos?: number
+          periodo?: string
+          total_costo_base?: number
+          total_facturado?: number
+          total_recargos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_resumen_mensual_sucursal_sucursal"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "sucursal"
+            referencedColumns: ["id_sucursal"]
+          },
+        ]
+      }
       sucursal: {
         Row: {
           ciudad: string
@@ -1682,6 +1726,8 @@ export type DevolucionVencida =
   Database["public"]["Tables"]["devolucion_vencida"]["Row"]
 export type Sucursal =
   Database["public"]["Tables"]["sucursal"]["Row"]
+export type ResumenMensualSucursal =
+  Database["public"]["Tables"]["resumen_mensual_sucursal"]["Row"]
 export type TipoVehiculo =
   Database["public"]["Tables"]["tipo_vehiculo"]["Row"]
 export type TipoReserva =
