@@ -16,7 +16,8 @@
 -- Acceso: SELECT a staff, authenticated (el cliente final ve solo SUS
 -- alquileres via la RLS de la tabla alquiler), service_role y quique.
 
-CREATE OR REPLACE VIEW vw_alquileres_activos AS
+CREATE OR REPLACE VIEW vw_alquileres_activos
+    WITH (security_invoker = true) AS
 SELECT
     a.id_alquiler,
     a.fecha_inicio,

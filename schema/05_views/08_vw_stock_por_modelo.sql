@@ -2,7 +2,8 @@
 -- Permite que el catalogo muestre "N disponibles de este modelo" sin que el usuario
 -- tenga que contar patentes. Se apoya en vw_vehiculos_disponibles (solo unidades
 -- con estado disponible y sucursal vigente).
-CREATE OR REPLACE VIEW vw_stock_por_modelo AS
+CREATE OR REPLACE VIEW vw_stock_por_modelo
+    WITH (security_invoker = true) AS
 SELECT
     marca,
     modelo,

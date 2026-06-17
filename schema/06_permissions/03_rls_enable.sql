@@ -25,3 +25,4 @@ ALTER TABLE mantenimiento                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE factura                      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log                    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE devolucion_vencida           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resumen_mensual_sucursal     ENABLE ROW LEVEL SECURITY;

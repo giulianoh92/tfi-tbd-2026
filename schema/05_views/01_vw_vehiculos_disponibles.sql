@@ -21,7 +21,8 @@
 -- y al rol del profesor quique. La tabla vehiculo no tiene RLS porque el
 -- catalogo es de acceso publico; las tablas combinadas tampoco filtran por usuario.
 
-CREATE OR REPLACE VIEW vw_vehiculos_disponibles AS
+CREATE OR REPLACE VIEW vw_vehiculos_disponibles
+    WITH (security_invoker = true) AS
 SELECT
     v.id_vehiculo,
     v.marca,

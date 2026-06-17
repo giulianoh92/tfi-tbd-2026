@@ -210,6 +210,16 @@ CREATE POLICY devolucion_vencida_staff_update ON devolucion_vencida
     USING      ((SELECT fn_es_staff()))
     WITH CHECK ((SELECT fn_es_staff()));
 
+-- resumen_mensual_sucursal (R13): cierre contable agregado por sucursal.
+-- Solo el personal lo lee (informacion gerencial). La unica via de escritura
+-- es la tarea pa_cerrar_facturacion_mensual, que corre como postgres
+-- (BYPASSRLS); por eso no se define politica de INSERT/UPDATE para clientes y
+-- ademas se revoca la escritura en el bloque de GRANTs de abajo. anon no la ve.
+DROP POLICY IF EXISTS resumen_mensual_sucursal_staff_read ON resumen_mensual_sucursal;
+CREATE POLICY resumen_mensual_sucursal_staff_read ON resumen_mensual_sucursal
+    FOR SELECT TO authenticated
+    USING ((SELECT fn_es_staff()));
+
 -- ============================================================
 -- GRANTS para roles de Supabase
 -- ============================================================
@@ -238,6 +248,12 @@ BEGIN
         -- no la ve.
         EXECUTE 'REVOKE INSERT, DELETE ON devolucion_vencida FROM authenticated';
         EXECUTE 'REVOKE ALL ON devolucion_vencida FROM anon';
+
+        -- resumen_mensual_sucursal: solo lectura para staff (via RLS). La
+        -- escritura es exclusiva de la tarea pa_cerrar_facturacion_mensual
+        -- (corre como postgres). anon no la ve.
+        EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON resumen_mensual_sucursal FROM authenticated';
+        EXECUTE 'REVOKE ALL ON resumen_mensual_sucursal FROM anon';
     END IF;
 END
 $$;

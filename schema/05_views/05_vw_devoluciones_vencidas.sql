@@ -19,7 +19,8 @@
 -- via RLS sobre devolucion_vencida si esta configurada), service_role y
 -- quique.
 
-CREATE OR REPLACE VIEW vw_devoluciones_vencidas AS
+CREATE OR REPLACE VIEW vw_devoluciones_vencidas
+    WITH (security_invoker = true) AS
 SELECT
     dv.id_devolucion_vencida,
     dv.fecha_deteccion,

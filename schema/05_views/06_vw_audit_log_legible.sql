@@ -16,7 +16,8 @@
 -- service_role y quique. La tabla audit_log subyacente esta protegida por
 -- trg_audit_log_append_only y por las RLS pertinentes.
 
-CREATE OR REPLACE VIEW vw_audit_log_legible AS
+CREATE OR REPLACE VIEW vw_audit_log_legible
+    WITH (security_invoker = true) AS
 SELECT
     al.id_audit,
     al.fecha_hora                       AS fecha_operacion,

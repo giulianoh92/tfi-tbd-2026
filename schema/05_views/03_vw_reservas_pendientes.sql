@@ -10,7 +10,8 @@
 -- Acceso: SELECT a staff, authenticated (el cliente final ve solo SUS reservas
 -- via RLS sobre reserva), service_role y quique.
 
-CREATE OR REPLACE VIEW vw_reservas_pendientes AS
+CREATE OR REPLACE VIEW vw_reservas_pendientes
+    WITH (security_invoker = true) AS
 SELECT
     r.id_reserva,
     r.fecha_inicio,

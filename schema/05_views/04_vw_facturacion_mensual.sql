@@ -20,7 +20,8 @@
 -- Acceso: SELECT a staff, authenticated (gerencia/personal), service_role y quique.
 -- El cliente final no debe ver el agregado completo: se restringe via GRANT.
 
-CREATE OR REPLACE VIEW vw_facturacion_mensual AS
+CREATE OR REPLACE VIEW vw_facturacion_mensual
+    WITH (security_invoker = true) AS
 SELECT
     DATE_TRUNC('month', f.fecha_emision)::DATE  AS mes,
     s.id_sucursal,
