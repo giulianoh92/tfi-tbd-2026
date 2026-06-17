@@ -3,7 +3,7 @@ tipo: tp
 materia: Tecnologias de Bases de Datos
 titulo: TFI - Sistema de Alquiler de Vehículos
 fecha_entrega: 2026-06-11
-estado: En progreso
+estado: Completado
 unidad: Integrador
 grupo: []
 tags:
@@ -140,6 +140,20 @@ tags:
       <li><a href="#mapeo-r"><span class="t">Mapeo de requerimientos</span><span class="dots"></span><span class="pn"></span></a></li>
       <li><a href="#der-etapa2"><span class="t">Diagrama ER actualizado</span><span class="dots"></span><span class="pn"></span></a></li>
       <li><a href="#conclusiones-etapa-2"><span class="t">Conclusiones</span><span class="dots"></span><span class="pn"></span></a></li>
+    </ul>
+  </li>
+  <li>
+    <a href="#etapa-3"><span class="t">Etapa 3: presentación de la solución final</span><span class="dots"></span><span class="pn"></span></a>
+    <ul>
+      <li><a href="#objetivo-etapa-3"><span class="t">Objetivo y alcance de la etapa</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#cierre-sgbd"><span class="t">Cierre de la lógica de negocio en el SGBD</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#proc-masivo"><span class="t">Procesamiento masivo programado: expiración de reservas</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#cierre-mensual"><span class="t">Cierre contable mensual de facturación</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#capa-interfaz"><span class="t">La capa de interfaz: arquitectura y alcance</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#modulos-interfaz"><span class="t">Módulos implementados</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#recorrido-cu"><span class="t">Recorrido funcional de los casos de uso</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#seguridad-interfaz"><span class="t">Seguridad de la capa de interfaz</span><span class="dots"></span><span class="pn"></span></a></li>
+      <li><a href="#conclusiones-etapa-3"><span class="t">Conclusiones</span><span class="dots"></span><span class="pn"></span></a></li>
     </ul>
   </li>
   <li><a href="#referencias"><span class="t">Referencias</span><span class="dots"></span><span class="pn"></span></a></li>
@@ -1053,6 +1067,138 @@ La implementación concreta del modelo confirmó la solidez del diseño conceptu
 Las decisiones arquitectónicas tomadas en esta etapa responden a problemas reales del entorno que solo aparecen al implementar: elegir Supabase como BaaS sobre PostgreSQL nativo, declarar los orquestadores como `FUNCTION` en lugar de `PROCEDURE` para exponerlos por PostgREST, modelar la auditoría con triple identidad para tener trazabilidad forense real ante manipulación, y resolver la antisuperposición temporal a nivel de índice con `EXCLUDE USING gist`. Cada una de ellas está justificada en los comentarios que acompañan al código en los archivos `.sql` correspondientes, de modo que la trazabilidad entre la decisión y el código que la materializa sea inmediata para el lector.
 
 Hacia la Etapa 3 quedan tareas dentro de la propia capa de SGBD: refinar los índices según las consultas más frecuentes que aparezcan en producción, ampliar la cobertura de pruebas automatizadas sobre los flujos de error de los procedimientos almacenados (los flujos exitosos ya cuentan con pruebas), y evaluar el particionamiento de `audit_log` cuando el volumen lo justifique. La interfaz visual del sistema, aunque ya cuenta con una prueba de concepto funcional para consumir las RPC y las vistas, queda fuera del alcance de esta entrega. La capa de SGBD, en su forma actual, ya satisface la totalidad de los requerimientos R1–R10 del enunciado, más la decisión documentada del equipo para R11.
+
+<div style="page-break-before: always"></div>
+
+<a id="etapa-3"></a>
+
+## Etapa 3: presentación de la solución final
+
+<a id="objetivo-etapa-3"></a>
+
+### Objetivo y alcance de la etapa
+
+La consigna define la tercera etapa como la "presentación de la solución final, lógica de negocio terminada en el SGBD más desarrollado en framework a elección, de las interfaces necesarias para el funcionamiento del sistema" (TFI 2026, sección *Etapas*, ítem 3). Respecto de la Etapa 2 —cuya consigna pedía lógica de negocio explícitamente *parcial*—, esta etapa introduce dos diferencias concretas:
+
+1. **La lógica de negocio en el SGBD pasa de parcial a terminada**: se consolidan y cierran los pendientes que la propia [conclusión de la Etapa 2](#conclusiones-etapa-2) dejó enunciados dentro de la capa de base de datos.
+2. **Se incorpora la capa de interfaz**: una aplicación construida sobre un framework a elección que expone las operaciones del sistema al usuario final. La consigna acota su alcance —"no abarcará la totalidad del sistema"—, de modo que esta capa no contiene reglas de negocio propias: se limita a invocar la lógica que ya reside en el motor.
+
+El eje del trabajo sigue siendo la base de datos. La interfaz se documenta aquí en tanto evidencia de que cada caso de uso modelado en la Etapa 1 e implementado en la Etapa 2 es hoy operable de extremo a extremo, no como una pieza con valor propio sujeta a evaluación.
+
+<a id="cierre-sgbd"></a>
+
+### Cierre de la lógica de negocio en el SGBD
+
+La capa de SGBD alcanzó en esta etapa su forma definitiva. El catálogo de objetos quedó conformado por **veinte tablas** (diecisiete de negocio más las tres transversales `audit_log`, `devolucion_vencida` y `resumen_mensual_sucursal`), **veinticinco funciones y orquestadores** en `04_functions/`, **ocho vistas** en `05_views/`, **ocho triggers** en `07_triggers/` y el árbol de permisos de `06_permissions/`. Respecto del catálogo documentado en la Etapa 2, los agregados de cierre fueron acotados: dos vistas de lectura —`vw_stock_por_modelo` (`05_views/08_vw_stock_por_modelo.sql`), que agrega el inventario disponible por marca, modelo y año para alimentar el catálogo público, y `vw_usuario_legible` (`06_permissions/10_vw_usuario_legible.sql`), que expone de forma controlada los datos de cuenta que la interfaz de perfil necesita sin filtrar columnas sensibles— y **dos tareas programadas de procesamiento masivo** —junto con la tabla de reporting `resumen_mensual_sucursal` que una de ellas materializa— descritas en las subsecciones siguientes.
+
+La totalidad de los requerimientos R1 a R11 enumerados en el [mapeo de requerimientos](#mapeo-r) permanece satisfecha por los mismos objetos allí citados; esta etapa no removió ni redefinió ninguno. El cierre de la capa no alteró el modelo de negocio: los únicos agregados son dos vistas, dos tareas programadas y una tabla de reporting derivada (`resumen_mensual_sucursal`) que consolida datos ya existentes sin redefinir ninguna entidad del dominio. Esto vuelve a confirmar, como ya lo había hecho la transición de la Etapa 1 a la 2, la solidez del modelo conceptual original.
+
+<a id="proc-masivo"></a>
+
+### Procesamiento masivo programado: expiración de reservas (R12)
+
+A pedido de la cátedra, la entrega final incorpora un **procedimiento de procesamiento masivo accionado por un cron job**, que ejecuta varias actividades dentro de la base de datos en una sola corrida. La funcionalidad elegida resuelve un problema operativo concreto del escenario: la **higiene de reservas no concretadas**.
+
+**El problema.** Una reserva en estado `pendiente` bloquea el vehículo en su período a través de la constraint `excl_reserva_overlap`. Si el cliente nunca se presenta a retirar la unidad (un *no-show*), esa reserva fantasma sigue impidiendo que otro cliente reserve —o que el personal alquile— el vehículo en esas fechas. Sin una limpieza periódica, el inventario realmente disponible se degrada con el tiempo.
+
+**La solución.** El procedimiento `pa_expirar_reservas_vencidas` (`04_functions/24_pa_expirar_reservas_vencidas.sql`) recorre y cancela **en lote** todas las reservas que cumplen, simultáneamente:
+
+- `estado = 'pendiente'` (ni concretada ni ya cancelada);
+- `fecha_inicio < NOW() - INTERVAL '24 horas'` (la ventana de retiro venció hace más de la gracia de 24 h, que tolera demoras del mismo día);
+- no existe ningún `alquiler` que referencie esa reserva (defensa en profundidad: el cliente efectivamente nunca retiró).
+
+Sobre ese conjunto, una única sentencia con dos **CTE** (*Common Table Expression: subconsulta nombrada con `WITH`; aquí, dos que además modifican datos*) modificadoras ejecuta las **varias actividades** que exige la consigna, todas dentro de la misma transacción que `pg_cron` abre:
+
+1. **Cancela las reservas**: `UPDATE reserva` lleva el `estado` a `cancelada` y graba un `motivo_cancelacion` con marca de tiempo y origen `sistema:cron`.
+2. **Desactiva las garantías asociadas**: `UPDATE garantia_reserva` pone `activa = FALSE` para esas reservas, preservando el historial de tarjetas (no se borran filas) en línea con el criterio fiscal del resto del modelo.
+3. **Audita la baja**: cada fila modificada dispara el trigger `trg_audit_reserva` ya existente, de modo que `audit_log` registra automáticamente la cancelación masiva sin código adicional en el procedimiento.
+
+Al liberarse las reservas, la constraint de superposición deja de bloquear esos períodos y el vehículo vuelve a ofrecerse en el catálogo, cerrando el ciclo.
+
+**Programación y aislamiento.** La tarea se registra en `pg_cron` (`04_functions/21_schedule_jobs.sql`) con la expresión `0 3 * * *` —una corrida diaria a las 03:00, en horario de baja actividad— y convive con la tarea de detección de devoluciones vencidas (R9) bajo guardas de idempotencia independientes por `jobname`. El procedimiento se declara `SECURITY DEFINER` con `search_path` fijo y, replicando el criterio de seguridad de R9, se le **revoca el permiso de ejecución** a los roles `authenticated` y `anon` (`06_permissions/08_grants_jobs.sql`): es una tarea interna de mantenimiento, no una API pública, y no debe poder dispararse desde PostgREST. Su ejecución es idempotente: una reserva ya cancelada deja de cumplir el filtro de estado, por lo que corridas sucesivas no la reprocesan.
+
+Esta funcionalidad se incorpora al mapeo de requerimientos como **R12**.
+
+<a id="cierre-mensual"></a>
+
+### Cierre contable mensual de facturación (R13)
+
+La segunda tarea masiva responde a una necesidad de negocio distinta —de reporting, no de higiene de datos— y muestra una variante complementaria del procesamiento por lotes: en lugar de modificar muchas filas, **agrega muchas filas en una sola** y materializa el resultado.
+
+**El problema.** La vista `vw_facturacion_mensual` (Etapa 2) calcula el agregado de facturación por mes y sucursal recorriendo `factura`, `alquiler` y `vehiculo` en cada consulta. Es adecuada para el mes en curso, pero recalcular una y otra vez meses ya cerrados —cuyos números son inmutables— es costoso e innecesario para tableros gerenciales e informes históricos.
+
+**La solución.** El procedimiento `pa_cerrar_facturacion_mensual` (`04_functions/25_pa_cerrar_facturacion_mensual.sql`) ejecuta, una vez por mes, un **cierre contable** del período recién terminado: una única sentencia `INSERT … SELECT … GROUP BY` recorre todas las facturas del mes, las une con su alquiler y vehículo, agrega por sucursal y **consolida una fila por sucursal** en la tabla nueva `resumen_mensual_sucursal` (`01_tables/20_resumen_mensual_sucursal.sql`). Cada fila congela: cantidad de facturas emitidas, total de costo base, total de recargos, total facturado y kilómetros recorridos en el mes.
+
+Decisiones de diseño que mantienen la coherencia del modelo:
+
+- **Atribución de sucursal idéntica a la vista**: se imputa a la sucursal de origen del vehículo (`vehiculo.id_sucursal_origen`), el mismo criterio que `vw_facturacion_mensual`, de modo que el cierre materializado y la vista en vivo jamás se contradicen.
+- **Período cerrado, no actual**: la corrida del día 1 consolida el mes calendario anterior (`DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')`), ya completo.
+- **Idempotencia por `UPSERT`**: la unicidad `(periodo, id_sucursal)` (`uq_resumen_periodo_sucursal`) permite que `ON CONFLICT … DO UPDATE` refresque el cierre de un mes si se re-ejecuta, sin duplicar filas. La columna `fecha_cierre` registra cuándo se consolidó.
+
+**Programación y aislamiento.** La tarea se registra en `pg_cron` con la expresión `0 4 1 * *` —el día 1 de cada mes a las 04:00, después de la expiración diaria— y, como las demás tareas internas, se declara `SECURITY DEFINER` y se le revoca la ejecución a `authenticated`/`anon` (`06_permissions/08_grants_jobs.sql`). La tabla `resumen_mensual_sucursal` se mantiene sin permisos para los roles de cliente: es información gerencial que, de exponerse a futuro a un panel de personal, requeriría únicamente un `GRANT SELECT` puntual.
+
+Esta funcionalidad se incorpora al mapeo de requerimientos como **R13**. Con R12 y R13, la entrega final suma dos procesamientos masivos programados —uno que modifica datos en lote (expiración de reservas) y otro que los consolida en lote (cierre contable)— y completa el conjunto de lógica de negocio del SGBD.
+
+<a id="capa-interfaz"></a>
+
+### La capa de interfaz: arquitectura y alcance
+
+El framework elegido fue **Next.js** (React) con **App Router** (*el enrutador de Next.js basado en el árbol de carpetas de `app/`, donde cada carpeta es un segmento de URL y cada `page.tsx` la vista que la renderiza*), TypeScript y Tailwind CSS para el estilado. La aplicación reside en `frontend/` y se comunica con el motor exclusivamente a través de la API que Supabase expone: invoca los orquestadores `pa_*` como llamadas **RPC** sobre PostgREST y lee las vistas `vw_*` como recursos REST. No existe en la interfaz ninguna sentencia SQL ni regla de negocio: cada acción del usuario se traduce en una única llamada a una función almacenada, y cada listado en una consulta a una vista.
+
+Esta disciplina se materializa en un único punto de contacto tipado con el motor. El helper `rpcCall` (`frontend/lib/supabase/rpc.ts`) centraliza toda invocación de orquestadores y verifica en tiempo de compilación que los argumentos de cada llamada coincidan con la firma declarada en `frontend/types/database.ts`, un reflejo del schema real de la base. De este modo, la frontera entre la aplicación y el SGBD queda controlada en un solo archivo y cualquier divergencia respecto de la firma de un `pa_*` se detecta antes de ejecutar.
+
+La aplicación distingue dos audiencias, alineadas con los actores de la Etapa 1: un área **pública y de cliente registrado** (catálogo, reservas, perfil) y un área **de personal** (`/admin/*`) para la operación presencial. La separación no es solo de navegación: se sostiene en las políticas RLS y los roles del motor descritos más abajo, de modo que la pertenencia de un usuario a un área no depende de la interfaz sino de su identidad ante la base.
+
+<a id="modulos-interfaz"></a>
+
+### Módulos implementados
+
+Los módulos desarrollados, definidos durante el cursado, cubren el ciclo de vida completo del negocio. La siguiente tabla relaciona cada módulo de la interfaz con su ruta en la aplicación, los objetos del SGBD que invoca y el caso de uso o requerimiento que satisface.
+
+| Módulo | Ruta(s) | Objeto(s) del SGBD | CU / R |
+| ----- | ----- | ----- | :---: |
+| Catálogo de vehículos | `/`, `/vehiculos/[id_vehiculo]` | `vw_vehiculos_disponibles`, `vw_stock_por_modelo` | CU-01/02 |
+| Autenticación | `/login` | Supabase Auth (GoTrue + JWT) | — |
+| Registro y perfil | `/perfil` | `pa_registrar_cliente_con_usuario`, `pa_actualizar_cliente`, `vw_usuario_legible` | R3 |
+| Reserva online | `/reservar/[id_vehiculo]` | `pa_registrar_reserva` | CU-03, R7 |
+| Mis reservas y cancelación | `/mis-reservas` | `vw_reservas_pendientes`, `pa_cancelar_reserva` | CU-04, R8 |
+| Gestión de flota (CRUD) | `/admin/vehiculos` | `pa_crear_vehiculo`, `pa_actualizar_vehiculo`, `pa_baja_vehiculo` | R3 |
+| Alta de alquiler | `/admin/alquileres/nuevo`, `/admin/alquileres` | `pa_registrar_alquiler`, `pa_registrar_cliente_walkin`, `vw_alquileres_activos`, `vw_reservas_pendientes` | CU-05, R5/R6 |
+| Cierre de alquiler y factura | `/admin/alquileres/[id_alquiler]/cerrar` | `pa_finalizar_alquiler` → `fn_calcular_factura` | CU-06, R10 |
+| Facturación | `/admin/facturas`, `/admin/facturas/[id_factura]` | `vw_facturacion_mensual` | R10 |
+| Envío a mantenimiento | `/admin/mantenimientos/nuevo`, `/admin/mantenimientos` | `pa_enviar_mantenimiento_programado` | CU-07 |
+| Devolución de mantenimiento | `/admin/mantenimientos/[id_mantenimiento]/devolucion` | `pa_registrar_devolucion_mantenimiento` | CU-08 |
+| Devoluciones vencidas | `/admin/devoluciones-vencidas` | `vw_devoluciones_vencidas` | R9 |
+| Auditoría | `/admin/auditoria`, `/admin/auditoria/[id]` | `vw_audit_log_legible` | R1 |
+
+En total, la interfaz consume **doce orquestadores `pa_*`** y **ocho vistas `vw_*`**. La correspondencia es exhaustiva en ambos sentidos: no hay pantalla que invoque una función inexistente, ni operación de negocio del motor que carezca de un punto de entrada en la interfaz. La única excepción deliberada es `pa_detectar_devoluciones_vencidas`, que no se invoca desde la aplicación porque su disparo es automático: `pg_cron` lo ejecuta cada seis horas (R9) y el resultado se consulta desde la pantalla de devoluciones vencidas a través de `vw_devoluciones_vencidas`. Es decir, la interfaz observa el efecto del job, no lo dispara.
+
+<a id="recorrido-cu"></a>
+
+### Recorrido funcional de los casos de uso
+
+Los cuatro casos de uso principales identificados en la Etapa 1 se ejecutan sobre el sistema vivo del siguiente modo:
+
+- **CU-03 — Reservar vehículo online**: el cliente registrado parte del catálogo (`vw_vehiculos_disponibles`), elige una unidad y un período en `/reservar/[id_vehiculo]`, y la interfaz invoca `pa_registrar_reserva`. Toda la validación —período, cliente activo, vehículo operativo y, sobre todo, la antisuperposición temporal reforzada por la constraint `excl_reserva_overlap`— ocurre en el motor. La interfaz se limita a mostrar el `p_mensaje` legible que el orquestador devuelve.
+- **CU-05 — Iniciar alquiler (retiro)**: el personal opera `/admin/alquileres/nuevo`. Si el alquiler proviene de una reserva, la toma del listado `vw_reservas_pendientes`; si es presencial (*walk-in*), da de alta al cliente en el acto con `pa_registrar_cliente_walkin`. En ambos casos cierra con `pa_registrar_alquiler`, que registra `km_inicio` y dispara la transición del vehículo a `alquilado`.
+- **CU-06 — Finalizar alquiler y generar factura**: desde `/admin/alquileres/[id_alquiler]/cerrar`, el personal informa `km_fin`, fecha de devolución real y sucursal de entrega; `pa_finalizar_alquiler` orquesta el cierre, y `fn_calcular_factura` calcula días, recargo por horas excedidas y total, emitiendo la factura con el *snapshot* de tarifa. La interfaz solo presenta el comprobante resultante.
+- **CU-07/08 — Mantenimiento**: el envío al taller se registra en `/admin/mantenimientos/nuevo` (`pa_enviar_mantenimiento_programado`, que lleva el vehículo a `en_mantenimiento`) y la devolución en `/admin/mantenimientos/[id_mantenimiento]/devolucion` (`pa_registrar_devolucion_mantenimiento`, que lo devuelve a `disponible`).
+
+En cada recorrido la propiedad invariante es la misma: la interfaz no decide nada. Recibe datos del usuario, los envía a un orquestador y muestra la respuesta. La autoridad sobre el estado del sistema permanece íntegramente en el SGBD.
+
+<a id="seguridad-interfaz"></a>
+
+### Seguridad de la capa de interfaz
+
+La separación entre el área pública/cliente y el área de personal no se confía a la navegación de la aplicación, sino que se apoya en los mecanismos del motor descritos en la Etapa 2. La autenticación la provee Supabase Auth, que emite un **JWT** firmado por sesión; ese token viaja en cada llamada y el motor lo usa para resolver la identidad (`auth.uid()`) y el rol efectivo. Sobre esa base, las políticas **RLS** definidas en `06_permissions/` garantizan que un cliente solo pueda ver y operar sus propios alquileres y reservas, con independencia de lo que la interfaz le ofrezca en pantalla. La consecuencia de diseño es que aun una interfaz mal construida —o un cliente HTTP que la sortee por completo— no puede acceder a datos ajenos: el filtrado ocurre en el motor, no en la aplicación. La pantalla de auditoría (`/admin/auditoria`) hereda esta misma lógica y queda reservada al personal autorizado, cumpliendo el segundo párrafo de R1.
+
+<a id="conclusiones-etapa-3"></a>
+
+### Conclusiones de la Etapa 3
+
+El trabajo cierra su ciclo completo: del modelo conceptual de la Etapa 1, a la implementación de la lógica en el motor en la Etapa 2, a un sistema operable de extremo a extremo en la Etapa 3. La interfaz construida confirma empíricamente lo que el modelo de datos y los procedimientos almacenados prometían: cada requisito del escenario —reservar con validación de superposición, alquilar registrando kilómetros, facturar con recargo por demora, gestionar el ciclo de mantenimiento y auditar cada operación— es hoy ejecutable por un usuario real.
+
+La decisión arquitectónica de fondo —mantener toda la lógica de negocio dentro del SGBD y reducir la interfaz a un consumidor de RPC y vistas— se reveló acertada en la práctica: permitió delegar la construcción de la capa visual sin riesgo para la pieza evaluada, porque ninguna regla de negocio vive fuera del motor. El sistema entregado satisface la totalidad de los requerimientos R1–R11 del enunciado y los expone, módulo por módulo, a través de las interfaces necesarias para su funcionamiento, tal como exige la consigna de esta etapa.
 
 <a id="referencias"></a>
 
