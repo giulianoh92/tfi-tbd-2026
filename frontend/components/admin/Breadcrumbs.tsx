@@ -15,6 +15,7 @@ const LABELS: Record<string, string> = {
   auditoria: 'Auditoria',
   vehiculos: 'Flota',
   'devoluciones-vencidas': 'Devoluciones vencidas',
+  'reportes-mensuales': 'Reportes mensuales',
   nuevo: 'Nuevo',
   cerrar: 'Cerrar',
 }

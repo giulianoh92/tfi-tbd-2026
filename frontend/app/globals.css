@@ -9,3 +9,22 @@ body[data-density='compact'] table th {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
+
+/* Print: dejar solo el contenido del reporte, apto A4.
+   Ocultamos el nav superior (layout root) y el sidebar admin (<aside>).
+   Los wrappers con utilidad `print:hidden` (banner staff, breadcrumbs,
+   density toggle, botones de export) se ocultan via Tailwind. */
+@media print {
+  nav,
+  aside {
+    display: none !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}

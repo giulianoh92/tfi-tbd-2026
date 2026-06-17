@@ -37,7 +37,7 @@ export default async function AdminLayout({
   return (
     <div>
       {/* Banner de modo staff */}
-      <div className="mb-6 flex items-center gap-3 rounded-lg border border-brand-staff-border bg-brand-staff-bg px-4 py-3">
+      <div className="print:hidden mb-6 flex items-center gap-3 rounded-lg border border-brand-staff-border bg-brand-staff-bg px-4 py-3">
         <ShieldCheck className="w-4 h-4 text-brand-staff-fg shrink-0" aria-hidden="true" />
         <Badge variant="staff">STAFF</Badge>
         <span className="text-sm text-brand-staff-fg font-medium truncate">
@@ -48,7 +48,7 @@ export default async function AdminLayout({
       <div className="flex flex-col lg:flex-row gap-6">
         <AdminSidebar />
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="print:hidden flex items-start justify-between gap-3 mb-2">
             <Breadcrumbs />
             <DensityToggle />
           </div>
