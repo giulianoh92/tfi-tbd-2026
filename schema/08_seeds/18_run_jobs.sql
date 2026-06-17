@@ -13,5 +13,10 @@
 --   * pa_expirar_reservas_vencidas: cancela las reservas pendientes vencidas
 --     (no-show) de los seeds y desactiva sus garantias; el efecto queda
 --     trazado en audit_log.
+--   * pa_detectar_devoluciones_vencidas: detecta los alquileres 'activo' cuya
+--     fecha_fin_prevista ya paso sin devolucion real (en los seeds, los
+--     alquileres 4 y 5) y los registra en devolucion_vencida; alimenta
+--     /admin/devoluciones-vencidas.
 CALL pa_cerrar_facturacion_mensual();
 CALL pa_expirar_reservas_vencidas();
+CALL pa_detectar_devoluciones_vencidas();
