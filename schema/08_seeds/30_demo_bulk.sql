@@ -674,4 +674,59 @@ ALTER TABLE factura  ENABLE TRIGGER trg_audit_factura;
 ALTER TABLE mantenimiento     ENABLE TRIGGER trg_audit_mantenimiento;
 ALTER TABLE imagen_vehiculo   ENABLE TRIGGER trg_imagen_vehiculo_max;
 
+-- =============================================================================
+-- FASE 9: easter egg 🐍 -- Dodge Viper.
+--
+--   Una unica unidad DETERMINISTICA agregada a la flota de demo (NO entra en
+--   el loop aleatorio de la FASE 3). No tiene reservas/alquileres/facturas:
+--   es solo una guinada para quien revise el catalogo. Se inserta DESPUES de
+--   rehabilitar los triggers (FASE 8), por lo que corre con todos los
+--   disparadores de negocio y auditoria activos -- como lo haria un alta real
+--   via la aplicacion.
+--
+--   Detalles de catalogo:
+--     * id_sucursal_origen = 1 (Posadas).
+--     * id_tipo = 2 (Sedan): el catalogo no tiene categoria deportiva, asi
+--       que el Viper viaja "de incognito" como sedan.
+--     * id_estado = disponible.
+--     * anio = 2017 (ultimo ano de produccion; pasa el CHECK anio <= year+1).
+--     * patente = 'V1PER' (unica, 5 chars, dentro de VARCHAR(15)).
+--
+--   La foto real (Wikimedia Commons, SRT Viper GTS) vive en el repo bajo
+--   assets/vehiculos/dodge-viper/exterior-01.jpg y se sirve via GitHub raw.
+-- =============================================================================
+DO $$
+DECLARE
+    v_id_vehiculo BIGINT;
+    v_id_disponible BIGINT := (SELECT id_estado FROM estado_vehiculo WHERE nombre = 'disponible');
+    v_alta TIMESTAMP := TIMESTAMP '2025-01-01 09:00:00';
+BEGIN
+    -- 1) La bestia.
+    INSERT INTO vehiculo (
+        id_sucursal_origen, id_tipo, id_estado,
+        marca, modelo, anio, patente, km_actuales, detalle_confort
+    ) VALUES (
+        1, 2, v_id_disponible,
+        'Dodge', 'Viper', 2017, 'V1PER', 12000,
+        'Easter egg 🐍 — V10 8.4L 645 CV, caja manual 6 vel, traccion trasera'
+    )
+    RETURNING id_vehiculo INTO v_id_vehiculo;
+
+    -- 2) Imagen de portada (orden 1).
+    INSERT INTO imagen_vehiculo (id_vehiculo, url_imagen, orden)
+    VALUES (
+        v_id_vehiculo,
+        'https://raw.githubusercontent.com/giulianoh92/tfi-tbd-2026/main/assets/vehiculos/dodge-viper/exterior-01.jpg',
+        1
+    );
+
+    -- 3) Ubicacion vigente en Posadas (fecha_hasta NULL = actual).
+    INSERT INTO ubicacion_vehiculo (id_vehiculo, id_sucursal, fecha_desde, fecha_hasta)
+    VALUES (v_id_vehiculo, 1, v_alta, NULL);
+
+    -- 4) Estado inicial en la bitacora (disponible, fila vigente).
+    INSERT INTO historial_estado_vehiculo (id_vehiculo, id_estado, fecha_inicio, fecha_fin, motivo)
+    VALUES (v_id_vehiculo, v_id_disponible, v_alta, NULL, 'Alta easter egg');
+END $$;
+
 -- Fin de 30_demo_bulk.sql
