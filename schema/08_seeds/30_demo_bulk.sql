@@ -178,7 +178,7 @@ END $$;
 -- =============================================================================
 -- FASE 3: vehiculos nuevos (~50, id > 10). Distribuidos en 5 sucursales y
 --   5 tipos. Marca/modelo coherentes con el tipo. Por cada vehiculo:
---     - 5 imagen_vehiculo (orden 1..5)
+--     - 1 imagen_vehiculo de portada (orden 1), foto real del modelo desde el repo
 --     - 1 ubicacion_vehiculo vigente (fecha_hasta NULL) en su sucursal origen
 --     - 1 historial_estado_vehiculo inicial 'disponible' vigente
 --   Estado inicial 'disponible'; en fases posteriores algunos pasan a
@@ -205,7 +205,6 @@ DECLARE
     v_km     INTEGER;
     v_estado INTEGER;
     v_id_veh BIGINT;
-    j        INTEGER;
     v_letras TEXT := 'ABCDEFGHJKLMNPRSTUVWXYZ';
 BEGIN
     FOR i IN 1..n_veh LOOP
@@ -257,11 +256,18 @@ BEGIN
         )
         RETURNING id_vehiculo INTO v_id_veh;
 
-        -- 5 imagenes (orden 1..5).
-        FOR j IN 1..5 LOOP
-            INSERT INTO imagen_vehiculo (id_vehiculo, url_imagen, orden)
-            VALUES (v_id_veh, 'https://cdn.demo.local/veh/' || v_id_veh || '/' || j || '.jpg', j);
-        END LOOP;
+        -- 1 imagen de portada (orden 1): foto real del modelo, servida desde el
+        -- repo (GitHub raw), mismo patron que los vehiculos iniciales. El slug
+        -- deriva del nombre del modelo, asi todo vehiculo de ese modelo comparte
+        -- la misma foto (coherente con el agrupado "N disponibles" del frontend).
+        INSERT INTO imagen_vehiculo (id_vehiculo, url_imagen, orden)
+        VALUES (
+            v_id_veh,
+            'https://raw.githubusercontent.com/giulianoh92/tfi-tbd-2026/main/assets/vehiculos/'
+                || lower(replace(v_marca_modelo, ' ', '-'))
+                || '/exterior-01.jpg',
+            1
+        );
 
         -- Ubicacion vigente en la sucursal de origen.
         INSERT INTO ubicacion_vehiculo (id_vehiculo, id_sucursal, fecha_desde, fecha_hasta)
