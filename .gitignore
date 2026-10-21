@@ -38,3 +38,7 @@ package-lock.json
 *.backup
 *.dump
 *.sql.gz
+
+# Assignment statement files (local copies, not part of the project)
+TFI-2026 - Alquiler de Vehiculos - Etapa 2.zip
+TFI-2026 - Alquiler de Vehículos.pdf
